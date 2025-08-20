@@ -1,251 +1,381 @@
+# 📘 **SMSPROJ - Comprehensive Communication Platform**
 
-
-### 📘 **Project Plan: Docker-Hosted SMS App Using Twilio API**
-
----
-
-## 🔸 PHASE 1: **Planning & Requirements**
-
-### ✅ **Stage 1.1: Define Core Features**
-
-1. **Send SMS Endpoint**: Allows clients to send SMS messages.
-
-   * **POST /send-sms** → `recipient_number`, `message_content`
-   * Twilio API call to send SMS.
-
-2. **Receive SMS Endpoint**: If you're using **Twilio’s webhook** for incoming SMS, this will capture those messages.
-
-   * **POST /receive-sms** → Twilio webhook with SMS details.
-   * Optionally store received messages in a database.
-
-3. **Health Endpoint**: A simple `/status` or `/health` endpoint to check the app's health.
-
-4. **Authentication** (Optional):
-
-   * Use **JWT tokens** or **Basic Auth** to secure API endpoints.
-
-5. **Logging & Monitoring** (Optional):
-
-   * Integrate logging for SMS transactions.
-   * Set up error handling and alerts.
-
-### ✅ **Stage 1.2: Twilio Setup**
-
-* **Create a Twilio account** and get your **Twilio SID** and **Auth Token**.
-* Set up a **Twilio phone number** to send/receive SMS.
-* Familiarize yourself with Twilio’s **REST API** documentation for sending SMS:
-
-  * [Twilio Send SMS Docs](https://www.twilio.com/docs/sms/send-messages)
-  * [Twilio Incoming SMS Webhooks](https://www.twilio.com/docs/usage/webhooks/incoming-sms)
-
-### ✅ **Stage 1.3: Choose Stack & Tools**
-
-* **Backend Framework**: Python with **Flask** (or **FastAPI** for better performance).
-* **Database**: PostgreSQL or SQLite (to store message logs).
-* **Twilio API**: For sending and receiving SMS.
-* **Authentication**: JWT for API security.
-* **Docker**: For containerization.
-* **Hosting**: VPS (like DigitalOcean) or any cloud provider (AWS, Google Cloud, etc.).
+**SMSPROJ** is a powerful FastAPI-based communication platform that combines TextVerified and Twilio APIs to provide comprehensive SMS services including service verification, international messaging, and AI-powered communication assistance.
 
 ---
 
-## 🔸 PHASE 2: **Development**
+## 🔸 **Platform Overview**
 
-### ✅ **Stage 2.1: Environment Setup**
+### 🚀 **Core Capabilities**
 
-1. Install **Docker** and **Docker Compose** on your local machine.
-2. Set up a **Flask** project structure:
+1. **Service Verification Hub**
+   * Use TextVerified API to get temporary numbers for service verification
+   * Support for WhatsApp, Google, Telegram, and 100+ other services
+   * Automated SMS code retrieval and display
 
+2. **International SMS & Voice Communication**
+   * Send/receive SMS and make/receive voice calls globally using Twilio
+   * Smart routing with country-code optimization for both SMS and calls
+   * Choose between personal number or purchase local numbers for better rates
+   * Full voice features: call recording, forwarding, conference calls
+
+3. **Dedicated Number Management**
+   * Purchase numbers by subscription or one-time payment
+   * Country-specific numbers for optimal delivery rates
+   * Long-term communication capabilities (1+ months)
+
+4. **AI-Powered Messaging**
+   * Embedded language model for conversation assistance
+   * Response suggestions and contextual help
+   * Privacy-focused local processing
+
+5. **Flexible Usage Models**
+   * One-time verification: Temporary numbers via TextVerified
+   * Long-term communication: Dedicated numbers via Twilio
+   * Cost optimization: Smart routing based on destination
+
+### 🛠 **Technology Stack**
+
+* **Backend**: FastAPI (Python 3.11+)
+* **APIs**: Twilio (SMS/Voice) + TextVerified (Verification)
+* **Database**: SQLAlchemy with PostgreSQL
+* **Caching**: Redis for token management
+* **AI**: Local transformer models (privacy-focused)
+* **Authentication**: JWT tokens
+* **Deployment**: Docker + Docker Compose
+
+---
+
+## 🔸 **Quick Start**
+
+### 📋 **Prerequisites**
+
+1. **Python 3.11+** installed
+2. **TextVerified Account**: Get API key from [TextVerified](https://www.textverified.com)
+3. **Twilio Account**: Get credentials from [Twilio Console](https://console.twilio.com)
+4. **Redis** (for caching) - optional but recommended
+
+### ⚙️ **Environment Setup**
+
+1. **Clone and Install Dependencies**
+```bash
+git clone <repository-url>
+cd SMSPROJ
+pip install -r requirements.txt
 ```
-sms-api/
-│
-├── app/
-│   ├── __init__.py
-│   ├── config.py          # Twilio config
-│   ├── main.py            # Flask app entry
-│   ├── routes/
-│   │   ├── sms.py         # Send & receive SMS routes
-│   │   └── auth.py        # Auth routes (JWT, etc.)
-│   ├── models.py          # DB models (optional)
-│   ├── utils/
-│   │   └── twilio.py      # Twilio API helpers
-│   └── templates/
-│
-├── logs/                  # Logs for sent/received SMS
-├── Dockerfile             # Flask app Dockerfile
-├── docker-compose.yml     # Docker Compose config
-├── requirements.txt       # Python dependencies
-├── .env                   # Environment variables (Twilio keys, JWT secret)
-└── README.md
+
+2. **Environment Variables**
+Create a `.env` file:
+```env
+# TextVerified API
+TEXTVERIFIED_API_KEY=your_textverified_api_key
+TEXTVERIFIED_EMAIL=your_email@example.com
+
+# Twilio API
+TWILIO_ACCOUNT_SID=your_twilio_account_sid
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+TWILIO_PHONE_NUMBER=your_twilio_phone_number
+
+# Database
+DATABASE_URL=postgresql://user:password@localhost/communication_db
+
+# Redis (optional)
+REDIS_URL=redis://localhost:6379
+
+# JWT Secret
+JWT_SECRET_KEY=your_jwt_secret_key
+
+# AI Model (optional)
+AI_MODEL_PATH=./models/local_model
 ```
 
-### ✅ **Stage 2.2: Flask App Implementation**
+3. **Run the Application**
+```bash
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
 
-#### **Twilio Helper (app/utils/twilio.py)**
+---
 
-This module will handle all interactions with the Twilio API.
+## 🔸 **API Endpoints**
+
+### 🔐 **Authentication**
+- `POST /api/auth/login` - User login
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/refresh` - Refresh JWT token
+
+### 📱 **Verification Services**
+- `POST /api/verification/create` - Create service verification
+- `GET /api/verification/{id}/number` - Get verification number
+- `GET /api/verification/{id}/messages` - Get received SMS codes
+- `DELETE /api/verification/{id}` - Cancel verification
+
+### 💬 **SMS & Voice Communication**
+- `POST /api/sms/send` - Send SMS with routing options
+- `POST /api/sms/receive` - Webhook for incoming SMS
+- `POST /api/voice/call` - Make outbound voice call
+- `POST /api/voice/receive` - Webhook for incoming calls
+- `POST /api/voice/record` - Start/stop call recording
+- `POST /api/voice/forward` - Forward calls to another number
+- `POST /api/voice/conference` - Create conference call
+- `GET /api/conversations/{user_id}` - Get SMS and call history
+- `GET /api/sms/suggestions` - Get AI response suggestions
+
+### 📞 **Number Management**
+- `GET /api/numbers/available/{country_code}` - List available numbers
+- `POST /api/numbers/purchase` - Purchase dedicated number
+- `GET /api/numbers/user/{user_id}` - Get user's numbers
+- `DELETE /api/numbers/{number_id}` - Release number
+
+### 💳 **Subscriptions**
+- `GET /api/subscriptions/plans` - List subscription plans
+- `POST /api/subscriptions/subscribe` - Create subscription
+- `GET /api/subscriptions/user/{user_id}` - Get user subscriptions
+
+---
+
+## 🔸 **Usage Examples**
+
+### 📱 **Service Verification**
 
 ```python
-from twilio.rest import Client
-import os
+import httpx
 
-# Load Twilio environment variables
-TWILIO_SID = os.getenv("TWILIO_SID")
-TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
-TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")
+# Create verification for WhatsApp
+response = await httpx.post("http://localhost:8000/api/verification/create", 
+    json={"service_name": "whatsapp", "capability": "sms"},
+    headers={"Authorization": "Bearer your_jwt_token"}
+)
+verification_id = response.json()["verification_id"]
 
-client = Client(TWILIO_SID, TWILIO_AUTH_TOKEN)
+# Get the temporary number
+number_response = await httpx.get(f"http://localhost:8000/api/verification/{verification_id}/number")
+temp_number = number_response.json()["number"]
 
-def send_sms(to, message):
-    try:
-        message = client.messages.create(
-            body=message,
-            from_=TWILIO_PHONE_NUMBER,
-            to=to
-        )
-        return message.sid  # Return message SID (unique identifier)
-    except Exception as e:
-        return str(e)
+print(f"Use this number for WhatsApp verification: {temp_number}")
+
+# Poll for received SMS codes
+messages_response = await httpx.get(f"http://localhost:8000/api/verification/{verification_id}/messages")
+codes = messages_response.json()["messages"]
+print(f"Verification codes: {codes}")
 ```
 
-#### **SMS Routes (app/routes/sms.py)**
-
-This will expose the endpoints for sending and receiving SMS.
+### 💬 **International SMS with Smart Routing**
 
 ```python
-from flask import Blueprint, request, jsonify
-from app.utils.twilio import send_sms
+# Send SMS with routing optimization
+response = await httpx.post("http://localhost:8000/api/sms/send",
+    json={
+        "to_number": "+44123456789",  # UK number
+        "message": "Hello from the platform!",
+        "routing_options": {
+            "optimize_cost": True,
+            "suggest_local_number": True
+        }
+    },
+    headers={"Authorization": "Bearer your_jwt_token"}
+)
 
-sms_bp = Blueprint('sms', __name__)
-
-@sms_bp.route('/send-sms', methods=['POST'])
-def send_sms_route():
-    data = request.get_json()
-    to = data.get("recipient_number")
-    message = data.get("message_content")
-    
-    if not to or not message:
-        return jsonify({"error": "Missing recipient number or message"}), 400
-
-    # Send the SMS using Twilio API
-    sms_sid = send_sms(to, message)
-    
-    if "error" in sms_sid:
-        return jsonify({"error": sms_sid}), 500
-
-    return jsonify({"message_sid": sms_sid}), 200
-
-@sms_bp.route('/receive-sms', methods=['POST'])
-def receive_sms_route():
-    # Twilio sends incoming SMS as form data
-    from_number = request.form['From']
-    body = request.form['Body']
-    
-    # Optionally store in a database or log the incoming message
-    print(f"Received SMS from {from_number}: {body}")
-    
-    return jsonify({"status": "success"}), 200
+routing_info = response.json()
+print(f"Suggested routing: {routing_info['suggested_routing']}")
+print(f"Cost comparison: {routing_info['cost_comparison']}")
 ```
 
-#### **Main Flask App (app/main.py)**
+### 📞 **Voice Calling with Smart Routing**
 
 ```python
-from flask import Flask
-from app.routes.sms import sms_bp
+# Make an international call with cost optimization
+response = await httpx.post("http://localhost:8000/api/voice/call",
+    json={
+        "to_number": "+44123456789",  # UK number
+        "from_number": "auto",  # Let system choose optimal number
+        "routing_options": {
+            "optimize_cost": True,
+            "record_call": True,
+            "max_duration": 1800  # 30 minutes
+        }
+    },
+    headers={"Authorization": "Bearer your_jwt_token"}
+)
 
-app = Flask(__name__)
-app.register_blueprint(sms_bp, url_prefix='/api')
-
-@app.route('/')
-def health_check():
-    return "SMS API is running!", 200
-
-if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=8000)
+call_info = response.json()
+print(f"Call SID: {call_info['call_sid']}")
+print(f"Using number: {call_info['from_number']}")
+print(f"Estimated cost: ${call_info['estimated_cost']}")
 ```
 
-### ✅ **Stage 2.3: Docker Setup**
+### 📞 **Number Management**
 
-#### **Dockerfile**
+```python
+# Purchase a UK number for better rates
+response = await httpx.post("http://localhost:8000/api/numbers/purchase",
+    json={
+        "country_code": "GB",
+        "subscription_type": "monthly",
+        "duration_months": 3
+    },
+    headers={"Authorization": "Bearer your_jwt_token"}
+)
 
-```Dockerfile
-FROM python:3.11-slim
-
-WORKDIR /app
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY app/ app/
-COPY .env ./
-
-EXPOSE 8000
-
-CMD ["python", "app/main.py"]
+new_number = response.json()["phone_number"]
+print(f"Purchased UK number: {new_number}")
 ```
 
-#### **docker-compose.yml**
+---
+
+## 🔸 **Docker Deployment**
+
+### 🐳 **Docker Compose Setup**
 
 ```yaml
-version: '3'
+version: '3.8'
 services:
-  sms-api:
+  app:
     build: .
     ports:
       - "8000:8000"
     environment:
-      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://postgres:password@db:5432/communication_db
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - db
+      - redis
     volumes:
-      - ./logs:/app/logs
+      - ./models:/app/models
 
   db:
-    image: postgres:16
+    image: postgres:15
     environment:
-      POSTGRES_USER: smsuser
-      POSTGRES_PASSWORD: smspass
-      POSTGRES_DB: smsdb
+      POSTGRES_DB: communication_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
 
 volumes:
-  pgdata:
+  postgres_data:
 ```
 
-### ✅ **Stage 2.4: Authentication (Optional)**
+### 🚀 **Deploy**
 
-If you want to secure your API endpoints, you can integrate **JWT authentication** using **Flask-JWT-Extended**.
+```bash
+# Build and start services
+docker-compose up -d
 
----
+# Run database migrations
+docker-compose exec app alembic upgrade head
 
-## 🔸 PHASE 3: **Testing & Validation**
-
-### ✅ **Stage 3.1: Functional Testing**
-
-* Test the `/send-sms` endpoint with **Postman** or **curl**.
-* Ensure the Twilio API sends SMS correctly.
-* Set up **unit tests** for the SMS API to validate successful responses.
-
----
-
-## 🔸 PHASE 4: **Deployment**
-
-### ✅ **Stage 4.1: Build Docker Images**
-
-* Run `docker-compose build` to create the images.
-* Run `docker-compose up -d` to start the app in the background.
-
-### ✅ **Stage 4.2: Deployment to Cloud**
-
-* Deploy to your cloud server or VPS.
-* You can set up **GitHub Actions** to automate deployments upon pushing changes to your GitHub repo.
+# Check logs
+docker-compose logs -f app
+```
 
 ---
 
-## 🔸 PHASE 5: **Release & Support**
+## 🔸 **Features in Detail**
 
-### ✅ **Stage 5.1: Documentation**
+### 🎯 **Smart Routing Engine**
 
-* Generate Swagger or OpenAPI docs for your API.
-* Write a README.md with setup and usage instructions.
+The platform automatically suggests the most cost-effective routing for international SMS:
+
+1. **Cost Analysis**: Compares rates between your primary number and local numbers
+2. **Country Matching**: Suggests numbers with closest country codes to destination
+3. **Delivery Optimization**: Prioritizes local numbers for better delivery rates
+4. **Real-time Pricing**: Shows cost comparisons before sending
+
+### 🤖 **AI Assistant Integration**
+
+- **Local Processing**: All AI features run locally for privacy
+- **Context Awareness**: Understands conversation history
+- **Response Suggestions**: Provides smart reply options
+- **Intent Analysis**: Helps categorize and route messages
+
+### 📊 **Analytics & Monitoring**
+
+- **Usage Tracking**: Monitor SMS volume and costs
+- **Performance Metrics**: Track delivery rates and response times
+- **Cost Optimization**: Identify savings opportunities
+- **Health Monitoring**: Real-time system status
 
 ---
+
+## 🔸 **Development**
+
+### 🧪 **Testing**
+
+```bash
+# Run unit tests
+pytest tests/unit/
+
+# Run integration tests
+pytest tests/integration/
+
+# Run with coverage
+pytest --cov=app tests/
+```
+
+### 📝 **Contributing**
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
+
+### 🐛 **Troubleshooting**
+
+**Common Issues:**
+
+1. **TextVerified Authentication Failed**
+   - Check API key and email in environment variables
+   - Verify account balance
+
+2. **Twilio SMS Delivery Issues**
+   - Verify phone number format
+   - Check Twilio account balance and permissions
+
+3. **Database Connection Issues**
+   - Ensure PostgreSQL is running
+   - Check DATABASE_URL format
+
+---
+
+## 📄 **License**
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+---
+
+## 🤝 **Support**
+
+For support and questions:
+- Create an issue on GitHub
+- Check the documentation
+- Review the API examples
+
+---
+
+## 🚀 **Development Roadmap**
+
+### **Phase 1: Core Platform (Current Release)**
+- ✅ Basic SMS verification with TextVerified
+- ✅ SMS communication with Twilio
+- ✅ Docker containerization
+- ✅ CI/CD pipeline with CircleCI
+- ✅ Production deployment ready
+
+### **Phase 2: Advanced Features (Future Releases)**
+We can add the advanced features (AI, smart routing, voice calls) in subsequent releases after we have the core platform deployed and running:
+
+- 🔄 **Smart International Routing**: Cost optimization and local number suggestions
+- 🤖 **AI-Powered Messaging**: Local LLM integration for conversation assistance
+- 📞 **Voice Calling**: Full voice capabilities with recording and forwarding
+- 💳 **Advanced Subscriptions**: Flexible billing and number management
+- 📊 **Analytics Dashboard**: Usage tracking and cost optimization insights
+
+---
+
+**Built with ❤️ using FastAPI, Twilio, and TextVerified APIs**
