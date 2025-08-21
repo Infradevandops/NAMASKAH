@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verify Phone Number</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>Verify Your Phone Number</h1>
+    <p>We've sent a verification code to {{ phone }}. Please enter it below.</p>
+
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+
+    <form action="/verify" method="post">
+        <input type="hidden" name="phone" value="{{ phone }}">
+        <div class="form-group">
+            <label for="code">Verification Code:</label>
+            <input type="text" id="code" name="code" required>
+        </div>
+
+        <button type="submit">Verify</button>
+    </form>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Your Resume</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>Your Generated Resume</h1>
+    
+    <div class="resume">
+        <div class="header">
+            <h2>{{ resume.name }}</h2>
+            <p>{{ resume.email }} | {{ resume.phone }}</p>
+        </div>
+        
+        <div class="section">
+            <h3 class="section-title">Work Experience</h3>
+            <p>{{ resume.experience }}</p>
+        </div>
+    </div>
+    
+    <div class="back-button">
+        <a href="/">Create Another Resume</a>
+    </div>
+</body>
+</html>
