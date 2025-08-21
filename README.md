@@ -378,4 +378,4 @@ We can add the advanced features (AI, smart routing, voice calls) in subsequent 
 
 ---
 
-**Built with ❤️ using FastAPI, Twilio, and TextVerified APIs**
+**Crafted with ❤️ You Will ❤️ It**
