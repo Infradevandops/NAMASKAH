@@ -18,6 +18,7 @@ from twilio.rest import Client
 # Import our custom clients
 from textverified_client import TextVerifiedClient
 from groq_client import GroqAIClient
+from mock_twilio_client import create_twilio_client, MockTwilioClient
 
 # Load environment variables from .env file
 load_dotenv()
@@ -55,9 +56,16 @@ twilio_client = None
 textverified_client = None
 groq_client = None
 
-if all([TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER]):
+# Use mock Twilio client if real credentials aren't available
+USE_MOCK_TWILIO = os.getenv("USE_MOCK_TWILIO", "true").lower() == "true"
+
+if USE_MOCK_TWILIO or not all([TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER]):
+    twilio_client = create_twilio_client(use_mock=True)
+    TWILIO_PHONE_NUMBER = TWILIO_PHONE_NUMBER or "+1555000001"  # Default mock number
+    logger.info("Mock Twilio client initialized successfully")
+else:
     twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-    logger.info("Twilio client initialized successfully")
+    logger.info("Real Twilio client initialized successfully")
 
 if all([TEXTVERIFIED_API_KEY, TEXTVERIFIED_EMAIL]):
     textverified_client = TextVerifiedClient(TEXTVERIFIED_API_KEY, TEXTVERIFIED_EMAIL)
@@ -73,6 +81,16 @@ app = FastAPI(
     description="Comprehensive SMS and voice communication platform with AI assistance",
     version="1.0.0"
 )
+
+# Include messaging API routes
+try:
+    from api.messaging_api import router as messaging_router
+    app.include_router(messaging_router)
+    logger.info("Messaging API routes included successfully")
+except ImportError as e:
+    logger.warning(f"Could not import messaging API: {e}")
+except Exception as e:
+    logger.warning(f"Error including messaging API: {e}")
 
 # Mount static files (for CSS, JS, images, etc.)
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -327,6 +345,73 @@ async def cancel_verification(verification_id: str):
         logger.error(f"Failed to cancel verification: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to cancel verification: {str(e)}")
 
+# --- Mock Twilio Management Endpoints ---
+@app.get("/api/mock/sms/history")
+async def get_mock_sms_history(limit: int = 50):
+    """Get SMS history from mock Twilio client."""
+    if not isinstance(twilio_client, MockTwilioClient):
+        raise HTTPException(status_code=400, detail="This endpoint is only available with mock Twilio client")
+    
+    history = twilio_client.get_message_history(limit)
+    return {
+        "messages": history,
+        "count": len(history),
+        "is_mock": True
+    }
+
+@app.get("/api/mock/calls/history")
+async def get_mock_call_history(limit: int = 50):
+    """Get call history from mock Twilio client."""
+    if not isinstance(twilio_client, MockTwilioClient):
+        raise HTTPException(status_code=400, detail="This endpoint is only available with mock Twilio client")
+    
+    history = twilio_client.get_call_history(limit)
+    return {
+        "calls": history,
+        "count": len(history),
+        "is_mock": True
+    }
+
+@app.post("/api/mock/sms/simulate-incoming")
+async def simulate_incoming_sms(from_number: str, to_number: str, body: str):
+    """Simulate receiving an incoming SMS."""
+    if not isinstance(twilio_client, MockTwilioClient):
+        raise HTTPException(status_code=400, detail="This endpoint is only available with mock Twilio client")
+    
+    event = twilio_client.simulate_incoming_sms(from_number, to_number, body)
+    return {
+        "status": "simulated",
+        "event": event,
+        "message": "Incoming SMS simulated successfully"
+    }
+
+@app.get("/api/mock/statistics")
+async def get_mock_statistics():
+    """Get usage statistics from mock Twilio client."""
+    if not isinstance(twilio_client, MockTwilioClient):
+        raise HTTPException(status_code=400, detail="This endpoint is only available with mock Twilio client")
+    
+    stats = twilio_client.get_usage_statistics()
+    return {
+        "statistics": stats,
+        "is_mock": True,
+        "note": "These are simulated statistics for development purposes"
+    }
+
+@app.get("/api/numbers/available/{country_code}")
+async def get_available_numbers(country_code: str):
+    """Get available phone numbers for purchase."""
+    if isinstance(twilio_client, MockTwilioClient):
+        numbers = twilio_client.get_available_phone_numbers(country_code.upper())
+        return {
+            "country_code": country_code.upper(),
+            "available_numbers": numbers,
+            "is_mock": True
+        }
+    else:
+        # Real Twilio implementation would go here
+        raise HTTPException(status_code=501, detail="Real Twilio number lookup not implemented yet")
+
 # --- AI Assistant Endpoints ---
 @app.post("/api/ai/suggest-response")
 async def suggest_response(request: AIRequest):
@@ -382,7 +467,17 @@ async def get_service_help(service_name: str, step: str = "general"):
 # --- Original Resume Verification Endpoints (Legacy) ---
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    """Serves the initial form page."""
+    """Serves the platform dashboard."""
+    return templates.TemplateResponse("dashboard.html", {"request": request})
+
+@app.get("/chat", response_class=HTMLResponse)
+async def chat_interface(request: Request):
+    """Serves the chat interface."""
+    return templates.TemplateResponse("chat.html", {"request": request})
+
+@app.get("/legacy", response_class=HTMLResponse)
+async def legacy_home(request: Request):
+    """Serves the original form page."""
     return templates.TemplateResponse("index.html", {"request": request})
 
 @app.post("/generate", response_class=HTMLResponse)
