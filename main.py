@@ -6,7 +6,7 @@ import logging
 from datetime import datetime
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Form, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -98,9 +98,8 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Set up Jinja2 templates
 templates = Jinja2Templates(directory="templates")
 
-# --- In-memory storage for verification data ---
+# --- In-memory storage for TextVerified data ---
 # In a production app, use a more persistent store like Redis or a database.
-verification_data_store: Dict[str, Dict] = {}
 textverified_store: Dict[str, Dict] = {}
 
 # --- Pydantic Models ---
@@ -123,9 +122,6 @@ class AIRequest(BaseModel):
     context: Optional[str] = None
 
 # --- Utility Functions ---
-def generate_verification_code(length: int = 6) -> str:
-    """Generates a random numeric verification code."""
-    return "".join([str(random.randint(0, 9)) for _ in range(length)])
 
 # --- Health Check Endpoint ---
 @app.get("/health")
@@ -464,7 +460,7 @@ async def get_service_help(service_name: str, step: str = "general"):
         logger.error(f"Failed to generate help text: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to generate help: {str(e)}")
 
-# --- Original Resume Verification Endpoints (Legacy) ---
+# --- Main Application Routes ---
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     """Serves the platform dashboard."""
@@ -474,86 +470,6 @@ async def home(request: Request):
 async def chat_interface(request: Request):
     """Serves the chat interface."""
     return templates.TemplateResponse("chat.html", {"request": request})
-
-@app.get("/legacy", response_class=HTMLResponse)
-async def legacy_home(request: Request):
-    """Serves the original form page."""
-    return templates.TemplateResponse("index.html", {"request": request})
-
-@app.post("/generate", response_class=HTMLResponse)
-async def start_verification(
-    request: Request,
-    name: str = Form(...),
-    email: str = Form(...),
-    phone: str = Form(...),
-    experience: str = Form(...),
-):
-    """
-    Handles the initial form submission.
-    Generates a verification code, stores user data, sends an SMS,
-    and returns the verification page.
-    """
-    if not twilio_client:
-        return templates.TemplateResponse(
-            "verify.html",
-            {
-                "request": request,
-                "phone": phone,
-                "error": "SMS service is not configured. Please contact administrator.",
-            },
-        )
-
-    verification_code = generate_verification_code()
-
-    # Store the resume data and verification code temporarily, keyed by phone number
-    verification_data_store[phone] = {
-        "code": verification_code,
-        "resume_data": {
-            "name": name,
-            "email": email,
-            "phone": phone,
-            "experience": experience,
-        },
-    }
-
-    try:
-        message = twilio_client.messages.create(
-            body=f"Your SMSPROJ verification code is: {verification_code}",
-            from_=TWILIO_PHONE_NUMBER,
-            to=phone,
-        )
-        logger.info(f"SMS sent to {phone}. Message SID: {message.sid}")
-    except TwilioRestException as e:
-        logger.error(f"Error sending SMS: {e}")
-        return templates.TemplateResponse(
-            "verify.html",
-            {
-                "request": request,
-                "phone": phone,
-                "error": "Could not send verification code. Please check the phone number and try again.",
-            },
-        )
-
-    return templates.TemplateResponse("verify.html", {"request": request, "phone": phone})
-
-@app.post("/verify", response_class=HTMLResponse)
-async def verify_code(request: Request, phone: str = Form(...), code: str = Form(...)):
-    """Verifies the SMS code. If correct, displays the result."""
-    stored_data = verification_data_store.get(phone)
-
-    if not stored_data or stored_data["code"] != code:
-        return templates.TemplateResponse(
-            "verify.html",
-            {"request": request, "phone": phone, "error": "Invalid verification code. Please try again."},
-        )
-
-    # Verification successful, retrieve resume data and clear the stored entry
-    resume_data = stored_data["resume_data"]
-    del verification_data_store[phone]
-
-    return templates.TemplateResponse(
-        "result.html", {"request": request, "resume": resume_data}
-    )
 
 if __name__ == "__main__":
     import uvicorn
