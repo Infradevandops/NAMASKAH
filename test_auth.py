@@ -18,7 +18,7 @@ except Exception as e:
 
 async def test_authentication():
     """Test the authentication system"""
-    print("Testing SMSPROJ Authentication System...")
+    print("Testing CumApp Authentication System...")
     
     # Check database connection
     if not check_database_connection():

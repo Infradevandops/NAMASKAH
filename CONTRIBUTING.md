@@ -1,6 +1,6 @@
-# Contributing to SMSPROJ
+# Contributing to CumApp
 
-Thank you for your interest in contributing to SMSPROJ! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to CumApp! This document provides guidelines and information for contributors.
 
 ## 🚀 Getting Started
 
@@ -14,8 +14,8 @@ Thank you for your interest in contributing to SMSPROJ! This document provides g
 
 1. **Fork and Clone**
    ```bash
-   git clone https://github.com/Infradevandops/SMSPROJ.git
-   cd SMSPROJ
+   git clone https://github.com/Infradevandops/CumApp.git
+   cd CumApp
    ```
 
 2. **Environment Setup**
@@ -122,7 +122,7 @@ Then create a Pull Request on GitHub.
 ## 🏗 Project Structure
 
 ```
-SMSPROJ/
+CumApp/
 ├── main.py                 # FastAPI application
 ├── textverified_client.py  # TextVerified API client
 ├── groq_client.py         # Groq AI client
@@ -289,4 +289,4 @@ Contributors will be:
 - Mentioned in release notes
 - Invited to maintainer team (for significant contributions)
 
-Thank you for contributing to SMSPROJ! 🚀
+Thank you for contributing to CumApp! 🚀

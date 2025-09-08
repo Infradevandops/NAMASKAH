@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-JWT Handler for SMSPROJ Platform
+JWT Handler for CumApp Platform
 Handles JWT token creation and validation
 """
 from datetime import datetime, timedelta

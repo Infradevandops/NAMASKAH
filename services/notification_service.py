@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Notification Service for SMSPROJ Communication Platform
+Notification Service for CumApp Communication Platform
 Handles user notifications for various events
 """
 import logging

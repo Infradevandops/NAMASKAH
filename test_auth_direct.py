@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 async def test_auth_direct():
     """Test authentication system directly"""
-    print("Testing SMSPROJ Authentication System (Direct)...")
+    print("Testing CumApp Authentication System (Direct)...")
     
     try:
         # Import required modules

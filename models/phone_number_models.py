@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Phone Number Models for SMSPROJ Platform
+Phone Number Models for CumApp Platform
 """
 import uuid
 import enum

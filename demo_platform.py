@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SMSPROJ Platform Demo Script
+CumApp Platform Demo Script
 Demonstrates all platform capabilities using mock services
 """
 import asyncio
@@ -14,8 +14,8 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-class SMSPROJDemo:
-    """Demo class for SMSPROJ platform capabilities"""
+class CumAppDemo:
+    """Demo class for CumApp platform capabilities"""
     
     def __init__(self, base_url: str = "http://localhost:8000"):
         self.base_url = base_url
@@ -86,7 +86,7 @@ class SMSPROJDemo:
             # Send a test SMS
             sms_data = {
                 "to_number": "+1234567890",
-                "message": "Hello from SMSPROJ! This is a test message from our communication platform. 🚀",
+                "message": "Hello from CumApp! This is a test message from our communication platform. 🚀",
                 "from_number": "+1555000001"
             }
             
@@ -241,7 +241,7 @@ class SMSPROJDemo:
     
     async def run_full_demo(self):
         """Run complete platform demonstration"""
-        print("🚀 SMSPROJ Platform Demo Starting...")
+        print("🚀 CumApp Platform Demo Starting...")
         print("=" * 60)
         
         # Check health first
@@ -283,20 +283,20 @@ class SMSPROJDemo:
 
 async def main():
     """Main demo function"""
-    print("🌟 Welcome to SMSPROJ Platform Demo!")
+    print("🌟 Welcome to CumApp Platform Demo!")
     print("This demo showcases all platform capabilities using mock services.")
-    print("Make sure the SMSPROJ server is running on http://localhost:8000")
+    print("Make sure the CumApp server is running on http://localhost:8000")
     print()
     
     # Wait a moment for user to read
     await asyncio.sleep(2)
     
-    async with SMSPROJDemo() as demo:
+    async with CumAppDemo() as demo:
         try:
             await demo.run_full_demo()
         except Exception as e:
             print(f"❌ Demo failed: {e}")
-            print("Make sure the SMSPROJ server is running: uvicorn main:app --reload")
+            print("Make sure the CumApp server is running: uvicorn main:app --reload")
 
 
 if __name__ == "__main__":

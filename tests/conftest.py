@@ -1,5 +1,5 @@
 """
-Pytest configuration and fixtures for SMSPROJ tests.
+Pytest configuration and fixtures for CumApp tests.
 """
 import os
 import pytest

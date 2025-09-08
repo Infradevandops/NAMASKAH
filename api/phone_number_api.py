@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Phone Number Management API endpoints for SMSPROJ Platform
+Phone Number Management API endpoints for CumApp Platform
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
 from sqlalchemy.orm import Session

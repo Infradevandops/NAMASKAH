@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Authentication API endpoints for SMSPROJ Platform
+Authentication API endpoints for CumApp Platform
 """
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer

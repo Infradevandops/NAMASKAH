@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Authentication Service for SMSPROJ Platform
+Authentication Service for CumApp Platform
 """
 import uuid
 from datetime import datetime, timedelta

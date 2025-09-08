@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Enhanced Verification Service for SMSPROJ Communication Platform
+Enhanced Verification Service for CumApp Communication Platform
 Handles TextVerified integration with user association, history tracking, and code extraction
 """
 import re

@@ -12,7 +12,7 @@ def test_health_endpoint(client):
     
     data = response.json()
     assert data["status"] == "healthy"
-    assert data["app_name"] == "SMSPROJ"
+    assert data["app_name"] == "CumApp"
     assert data["version"] == "1.0.0"
     assert "services" in data
 
@@ -23,7 +23,7 @@ def test_app_info_endpoint(client):
     assert response.status_code == 200
     
     data = response.json()
-    assert data["app_name"] == "SMSPROJ"
+    assert data["app_name"] == "CumApp"
     assert data["version"] == "1.0.0"
     assert "features" in data
     assert "endpoints" in data
@@ -54,4 +54,4 @@ def test_openapi_docs(client):
     assert response.status_code == 200
     
     data = response.json()
-    assert data["info"]["title"] == "SMSPROJ - Communication Platform"
+    assert data["info"]["title"] == "CumApp - Communication Platform"

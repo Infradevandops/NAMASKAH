@@ -1,6 +1,6 @@
-# 🐳 Docker Setup Guide for SMSPROJ
+# 🐳 Docker Setup Guide for CumApp
 
-This guide explains how to run SMSPROJ using Docker containers.
+This guide explains how to run CumApp using Docker containers.
 
 ## 📋 Prerequisites
 

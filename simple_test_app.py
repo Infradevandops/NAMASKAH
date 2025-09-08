@@ -10,11 +10,11 @@ import os
 # Add current directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-app = FastAPI(title="SMSPROJ Auth Test", version="1.0.0")
+app = FastAPI(title="CumApp Auth Test", version="1.0.0")
 
 @app.get("/")
 async def root():
-    return {"message": "SMSPROJ Auth Test API is running"}
+    return {"message": "CumApp Auth Test API is running"}
 
 @app.get("/test-imports")
 async def test_imports():

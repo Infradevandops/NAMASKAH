@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Messaging Service for SMSPROJ Communication Platform
+Messaging Service for CumApp Communication Platform
 Handles both internal messaging and SMS to external numbers
 """
 import asyncio

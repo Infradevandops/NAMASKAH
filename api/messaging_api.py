@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Messaging API for SMSPROJ Platform
+Messaging API for CumApp Platform
 Handles SMS sending and receiving functionality
 """
 from fastapi import APIRouter, HTTPException

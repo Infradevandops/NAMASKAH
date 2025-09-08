@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 def main():
     try:
-        print("Starting SMSPROJ server...")
+        print("Starting CumApp server...")
         
         # Import the app
         from main import app

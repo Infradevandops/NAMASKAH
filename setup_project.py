@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SMSPROJ Setup Script
+CumApp Setup Script
 Helps configure the project for development and production
 """
 import os
@@ -69,7 +69,7 @@ def setup_git_hooks():
         try:
             # Create a simple pre-commit hook
             hook_content = """#!/bin/sh
-# Simple pre-commit hook for SMSPROJ
+# Simple pre-commit hook for CumApp
 echo "Running pre-commit checks..."
 
 # Check for Python syntax errors
@@ -127,9 +127,9 @@ def create_startup_scripts():
     
     # Development startup script
     dev_script = """#!/bin/bash
-# SMSPROJ Development Startup Script
+# CumApp Development Startup Script
 
-echo "🚀 Starting SMSPROJ in development mode..."
+echo "🚀 Starting CumApp in development mode..."
 
 # Check if virtual environment exists
 if [ ! -d ".venv" ]; then
@@ -154,9 +154,9 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     
     # Production startup script
     prod_script = """#!/bin/bash
-# SMSPROJ Production Startup Script
+# CumApp Production Startup Script
 
-echo "🚀 Starting SMSPROJ in production mode..."
+echo "🚀 Starting CumApp in production mode..."
 
 # Activate virtual environment if it exists
 if [ -d ".venv" ]; then
@@ -234,7 +234,7 @@ def print_next_steps():
 
 def main():
     """Main setup function"""
-    print_header("SMSPROJ Platform Setup")
+    print_header("CumApp Platform Setup")
     
     print_step(1, "Checking Python version")
     check_python_version()

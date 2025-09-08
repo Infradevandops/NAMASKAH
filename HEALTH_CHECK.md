@@ -1,4 +1,4 @@
-# 🏥 SMSPROJ Health Check Report
+# 🏥 CumApp Health Check Report
 
 ## ✅ Project Status: HEALTHY
 

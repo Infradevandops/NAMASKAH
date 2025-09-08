@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Conversation Management Service for SMSPROJ Platform
+Conversation Management Service for CumApp Platform
 """
 import uuid
 from datetime import datetime

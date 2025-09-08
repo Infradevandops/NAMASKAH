@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Database models for SMSPROJ Communication Platform
+Database models for CumApp Communication Platform
 """
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean, Text, ForeignKey, Float, Enum
 from sqlalchemy.ext.declarative import declarative_base

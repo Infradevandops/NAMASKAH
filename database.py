@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Database configuration and session management for SMSPROJ
+Database configuration and session management for CumApp
 """
 import os
 from sqlalchemy import create_engine

@@ -10,7 +10,7 @@ BASE_URL = "http://localhost:8001"
 
 async def test_auth_api():
     """Test the authentication API endpoints"""
-    print("Testing SMSPROJ Authentication API...")
+    print("Testing CumApp Authentication API...")
     
     async with httpx.AsyncClient() as client:
         try:

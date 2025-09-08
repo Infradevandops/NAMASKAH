@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 def main():
     try:
-        print("Initializing SMSPROJ database...")
+        print("Initializing CumApp database...")
         
         # Import and test database connection
         from database import check_database_connection, create_tables

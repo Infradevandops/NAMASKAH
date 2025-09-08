@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Database service for SMSPROJ Platform
+Database service for CumApp Platform
 Provides database session management
 """
 from sqlalchemy.orm import Session

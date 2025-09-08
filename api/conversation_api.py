@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Conversation API endpoints for SMSPROJ Platform
+Conversation API endpoints for CumApp Platform
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy.orm import Session

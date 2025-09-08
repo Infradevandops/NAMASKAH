@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-User Management Models for SMSPROJ Communication Platform
+User Management Models for CumApp Communication Platform
 """
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any

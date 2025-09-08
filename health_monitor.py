@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Health monitoring for SMSPROJ Platform
+Health monitoring for CumApp Platform
 """
 import asyncio
 import time

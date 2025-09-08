@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Security utilities for SMSPROJ Platform
+Security utilities for CumApp Platform
 Handles input sanitization, CSRF protection, and security headers
 """
 import html

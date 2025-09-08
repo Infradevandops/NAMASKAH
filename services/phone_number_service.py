@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Phone Number Service for SMSPROJ Platform
+Phone Number Service for CumApp Platform
 Handles phone number marketplace, purchasing, and management
 """
 import json

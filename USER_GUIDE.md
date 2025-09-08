@@ -1,8 +1,8 @@
-# 📱 SMSPROJ - User Guide
+# 📱 CumApp - User Guide
 
 ## 🎯 **What Users Can Do Right Now**
 
-Your SMSPROJ platform is **fully functional** with these capabilities:
+Your CumApp platform is **fully functional** with these capabilities:
 
 ---
 

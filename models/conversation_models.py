@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Enhanced Conversation and Message Models for SMSPROJ Platform
+Enhanced Conversation and Message Models for CumApp Platform
 """
 import uuid
 import enum

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This design document outlines the architecture and implementation approach for SMSPROJ v1.1, which transforms the platform from a demo-ready application into a production-ready multi-user communication platform. The design focuses on implementing robust user authentication, persistent data storage, enhanced real-time communication, comprehensive phone number management, and advanced verification tracking.
+This design document outlines the architecture and implementation approach for CumApp v1.1, which transforms the platform from a demo-ready application into a production-ready multi-user communication platform. The design focuses on implementing robust user authentication, persistent data storage, enhanced real-time communication, comprehensive phone number management, and advanced verification tracking.
 
 The v1.1 upgrade builds upon the existing FastAPI architecture while adding essential production features including JWT-based authentication, PostgreSQL database integration, enhanced WebSocket communication, and comprehensive user management capabilities.
 
@@ -417,35 +417,35 @@ class Message(Base):
 ### Centralized Error Management
 
 ```python
-class SMSPROJException(Exception):
-    """Base exception for SMSPROJ platform"""
+class CumAppException(Exception):
+    """Base exception for CumApp platform"""
     def __init__(self, message: str, error_code: str = None, details: dict = None):
         self.message = message
         self.error_code = error_code
         self.details = details or {}
         super().__init__(self.message)
 
-class AuthenticationError(SMSPROJException):
+class AuthenticationError(CumAppException):
     """Authentication related errors"""
     pass
 
-class AuthorizationError(SMSPROJException):
+class AuthorizationError(CumAppException):
     """Authorization related errors"""
     pass
 
-class ValidationError(SMSPROJException):
+class ValidationError(CumAppException):
     """Data validation errors"""
     pass
 
-class ResourceNotFoundError(SMSPROJException):
+class ResourceNotFoundError(CumAppException):
     """Resource not found errors"""
     pass
 
-class RateLimitError(SMSPROJException):
+class RateLimitError(CumAppException):
     """Rate limiting errors"""
     pass
 
-class ExternalServiceError(SMSPROJException):
+class ExternalServiceError(CumAppException):
     """External service integration errors"""
     pass
 ```
@@ -461,8 +461,8 @@ class ErrorResponse(BaseModel):
     timestamp: datetime
     request_id: str
 
-@app.exception_handler(SMSPROJException)
-async def smsproj_exception_handler(request: Request, exc: SMSPROJException):
+@app.exception_handler(CumAppException)
+async def smsproj_exception_handler(request: Request, exc: CumAppException):
     return JSONResponse(
         status_code=400,
         content=ErrorResponse(

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Enhanced Communication API for SMSPROJ Platform
+Enhanced Communication API for CumApp Platform
 Handles conversations, messaging, and real-time communication
 """
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect

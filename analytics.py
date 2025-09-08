@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Analytics and monitoring for SMSPROJ Platform
+Analytics and monitoring for CumApp Platform
 """
 from datetime import datetime, timedelta
 from typing import Dict, List, Any
