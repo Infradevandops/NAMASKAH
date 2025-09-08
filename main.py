@@ -7,6 +7,8 @@ from datetime import datetime
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, HTTPException
+from analytics import analytics
+from health_monitor import health_monitor
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -240,17 +242,17 @@ class AIRequest(BaseModel):
 # --- Health Check Endpoint ---
 @app.get("/health")
 async def health_check():
-    """Health check endpoint for monitoring."""
-    return {
-        "status": "healthy",
+    """Enhanced health check endpoint for monitoring."""
+    health_status = health_monitor.get_health_status()
+    health_status.update({
         "app_name": "SMSPROJ",
-        "version": "1.0.0",
         "services": {
             "twilio": twilio_client is not None,
             "textverified": textverified_client is not None,
             "groq": groq_client is not None
         }
-    }
+    })
+    return health_status
 
 # --- Application Info ---
 @app.get("/api/info")
@@ -328,6 +330,7 @@ async def send_sms(request: SMSRequest):
         )
         
         logger.info(f"SMS sent to {request.to_number}. Message SID: {message.sid}")
+        analytics.track_event('sms_sent', {'to': request.to_number, 'message_sid': message.sid})
         return {
             "status": "sent",
             "message_sid": message.sid,
@@ -364,6 +367,7 @@ async def create_verification(request: VerificationRequest):
         }
         
         logger.info(f"Created verification {verification_id} for service {request.service_name}")
+        analytics.track_event('verification_created', {'service': request.service_name, 'verification_id': verification_id})
         return VerificationResponse(
             verification_id=verification_id,
             status="created",
@@ -552,6 +556,7 @@ async def analyze_intent(message: str):
     
     try:
         analysis = await groq_client.analyze_message_intent(message)
+        analytics.track_event('ai_analysis', {'message_length': len(message), 'intent': analysis.get('intent')})
         return analysis
     except Exception as e:
         logger.error(f"Failed to analyze message intent: {e}")
@@ -584,6 +589,26 @@ async def home(request: Request):
 async def chat_interface(request: Request):
     """Serves the chat interface."""
     return templates.TemplateResponse("chat.html", {"request": request})
+
+@app.get("/hub", response_class=HTMLResponse)
+async def communication_hub(request: Request):
+    """Serves the main communication hub interface."""
+    return templates.TemplateResponse("communication_hub.html", {"request": request})
+
+@app.get("/analytics", response_class=HTMLResponse)
+async def analytics_dashboard(request: Request):
+    """Serves the analytics dashboard."""
+    return templates.TemplateResponse("analytics.html", {"request": request})
+
+@app.get("/api/analytics/stats")
+async def get_analytics_stats():
+    """Get platform statistics."""
+    return analytics.get_stats()
+
+@app.get("/api/analytics/events")
+async def get_analytics_events():
+    """Get recent events."""
+    return analytics.get_recent_events()
 
 @app.get("/verification-history", response_class=HTMLResponse)
 async def verification_history(request: Request):

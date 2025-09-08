@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMSPROJ - Communication Hub</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .communication-hub {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        .hub-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .hub-card:hover {
+            transform: translateY(-5px);
+        }
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 2rem;
+        }
+        .sms-icon { background: linear-gradient(45deg, #667eea, #764ba2); }
+        .verify-icon { background: linear-gradient(45deg, #f093fb, #f5576c); }
+        .ai-icon { background: linear-gradient(45deg, #4facfe, #00f2fe); }
+        .chat-icon { background: linear-gradient(45deg, #43e97b, #38f9d7); }
+        .stats-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="communication-hub">
+        <!-- Header -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container">
+                <a class="navbar-brand" href="/">
+                    <i class="fas fa-comments me-2"></i>SMSPROJ Hub
+                </a>
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-link" href="/docs">API Docs</a>
+                    <a class="nav-link" href="/health">Status</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container py-5">
+            <!-- Welcome Section -->
+            <div class="text-center mb-5">
+                <h1 class="display-4 fw-bold text-dark mb-3">Communication Hub</h1>
+                <p class="lead text-muted">Your complete SMS, verification, and AI communication platform</p>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="row mb-5">
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <i class="fas fa-paper-plane text-primary fa-2x mb-2"></i>
+                        <h4 id="sms-count">0</h4>
+                        <small class="text-muted">SMS Sent</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <i class="fas fa-shield-alt text-success fa-2x mb-2"></i>
+                        <h4 id="verify-count">0</h4>
+                        <small class="text-muted">Verifications</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <i class="fas fa-robot text-info fa-2x mb-2"></i>
+                        <h4 id="ai-count">0</h4>
+                        <small class="text-muted">AI Analyses</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <i class="fas fa-users text-warning fa-2x mb-2"></i>
+                        <h4 id="user-count">1</h4>
+                        <small class="text-muted">Active Users</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Features -->
+            <div class="row g-4">
+                <!-- SMS Communication -->
+                <div class="col-lg-6">
+                    <div class="card hub-card h-100">
+                        <div class="card-body p-4">
+                            <div class="feature-icon sms-icon text-white">
+                                <i class="fas fa-sms"></i>
+                            </div>
+                            <h3 class="text-center mb-4">SMS Communication</h3>
+                            
+                            <form id="sms-form">
+                                <div class="mb-3">
+                                    <label class="form-label">Phone Number</label>
+                                    <input type="tel" class="form-control" id="phone" placeholder="+1234567890" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Message</label>
+                                    <textarea class="form-control" id="sms-message" rows="3" placeholder="Type your message here..." required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-paper-plane me-2"></i>Send SMS
+                                </button>
+                            </form>
+                            <div id="sms-result" class="mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phone Verification -->
+                <div class="col-lg-6">
+                    <div class="card hub-card h-100">
+                        <div class="card-body p-4">
+                            <div class="feature-icon verify-icon text-white">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <h3 class="text-center mb-4">Phone Verification</h3>
+                            
+                            <form id="verify-form">
+                                <div class="mb-3">
+                                    <label class="form-label">Service</label>
+                                    <select class="form-select" id="service" required>
+                                        <option value="">Choose service...</option>
+                                        <option value="whatsapp">WhatsApp</option>
+                                        <option value="google">Google</option>
+                                        <option value="facebook">Facebook</option>
+                                        <option value="telegram">Telegram</option>
+                                        <option value="twitter">Twitter</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="fas fa-shield-alt me-2"></i>Get Verification Number
+                                </button>
+                            </form>
+                            <div id="verify-result" class="mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Assistant -->
+                <div class="col-lg-6">
+                    <div class="card hub-card h-100">
+                        <div class="card-body p-4">
+                            <div class="feature-icon ai-icon text-white">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <h3 class="text-center mb-4">AI Assistant</h3>
+                            
+                            <form id="ai-form">
+                                <div class="mb-3">
+                                    <label class="form-label">Message to Analyze</label>
+                                    <textarea class="form-control" id="ai-message" rows="3" placeholder="Enter message for AI analysis..." required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-info w-100">
+                                    <i class="fas fa-brain me-2"></i>Analyze with AI
+                                </button>
+                            </form>
+                            <div id="ai-result" class="mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Real-time Chat -->
+                <div class="col-lg-6">
+                    <div class="card hub-card h-100">
+                        <div class="card-body p-4">
+                            <div class="feature-icon chat-icon text-white">
+                                <i class="fas fa-comments"></i>
+                            </div>
+                            <h3 class="text-center mb-4">Real-time Chat</h3>
+                            
+                            <div class="chat-area mb-3" style="height: 200px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px;">
+                                <div id="chat-messages">
+                                    <div class="text-muted text-center">
+                                        <i class="fas fa-comments me-2"></i>Chat messages will appear here
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <form id="chat-form">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="chat-input" placeholder="Type a message...">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Feed -->
+            <div class="row mt-5">
+                <div class="col-12">
+                    <div class="card hub-card">
+                        <div class="card-header bg-transparent">
+                            <h5 class="mb-0">
+                                <i class="fas fa-activity me-2"></i>Recent Activity
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="activity-feed">
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-clock me-2"></i>No recent activity
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let stats = { sms: 0, verify: 0, ai: 0, users: 1 };
+
+        // Update stats display
+        function updateStats() {
+            document.getElementById('sms-count').textContent = stats.sms;
+            document.getElementById('verify-count').textContent = stats.verify;
+            document.getElementById('ai-count').textContent = stats.ai;
+            document.getElementById('user-count').textContent = stats.users;
+        }
+
+        // Add activity to feed
+        function addActivity(type, message, status = 'success') {
+            const feed = document.getElementById('activity-feed');
+            const time = new Date().toLocaleTimeString();
+            
+            const activity = document.createElement('div');
+            activity.className = `alert alert-${status} alert-dismissible fade show`;
+            activity.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-${getActivityIcon(type)} me-2"></i>
+                        <strong>${type}:</strong> ${message}
+                    </div>
+                    <small class="text-muted">${time}</small>
+                </div>
+            `;
+            
+            if (feed.children[0]?.classList.contains('text-center')) {
+                feed.innerHTML = '';
+            }
+            
+            feed.insertBefore(activity, feed.firstChild);
+            
+            // Keep only last 5 activities
+            while (feed.children.length > 5) {
+                feed.removeChild(feed.lastChild);
+            }
+        }
+
+        function getActivityIcon(type) {
+            const icons = {
+                'SMS': 'paper-plane',
+                'Verification': 'shield-alt',
+                'AI Analysis': 'robot',
+                'Chat': 'comments'
+            };
+            return icons[type] || 'circle';
+        }
+
+        // SMS Form Handler
+        document.getElementById('sms-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const phone = document.getElementById('phone').value;
+            const message = document.getElementById('sms-message').value;
+            const resultDiv = document.getElementById('sms-result');
+            
+            resultDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Sending SMS...</div>';
+            
+            try {
+                const response = await fetch('/api/sms/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ to_number: phone, message: message })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="alert alert-success"><i class="fas fa-check me-2"></i>SMS sent successfully!</div>`;
+                    addActivity('SMS', `Sent to ${phone}`, 'success');
+                    stats.sms++;
+                    updateStats();
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-times me-2"></i>Error: ${data.detail}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-times me-2"></i>Network error</div>`;
+            }
+        });
+
+        // Verification Form Handler
+        document.getElementById('verify-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const service = document.getElementById('service').value;
+            const resultDiv = document.getElementById('verify-result');
+            
+            resultDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Creating verification...</div>';
+            
+            try {
+                const response = await fetch('/api/verification/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ service_name: service, capability: 'sms' })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check me-2"></i>Verification created!
+                            <br><small>ID: ${data.verification_id}</small>
+                        </div>
+                    `;
+                    addActivity('Verification', `Created for ${service}`, 'success');
+                    stats.verify++;
+                    updateStats();
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-times me-2"></i>Error: ${data.detail}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-times me-2"></i>Network error</div>`;
+            }
+        });
+
+        // AI Form Handler
+        document.getElementById('ai-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const message = document.getElementById('ai-message').value;
+            const resultDiv = document.getElementById('ai-result');
+            
+            resultDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Analyzing...</div>';
+            
+            try {
+                const response = await fetch(`/api/ai/analyze-intent?message=${encodeURIComponent(message)}`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-brain me-2"></i>Analysis complete!
+                            <br><small>Intent: ${data.intent} | Sentiment: ${data.sentiment}</small>
+                        </div>
+                    `;
+                    addActivity('AI Analysis', `Intent: ${data.intent}`, 'info');
+                    stats.ai++;
+                    updateStats();
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>AI service not configured</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-times me-2"></i>Network error</div>`;
+            }
+        });
+
+        // Chat Form Handler
+        document.getElementById('chat-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            
+            if (message) {
+                const chatMessages = document.getElementById('chat-messages');
+                
+                if (chatMessages.children[0]?.classList.contains('text-center')) {
+                    chatMessages.innerHTML = '';
+                }
+                
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'mb-2 p-2 bg-primary text-white rounded';
+                messageDiv.innerHTML = `<strong>You:</strong> ${message}`;
+                chatMessages.appendChild(messageDiv);
+                
+                // Simulate response
+                setTimeout(() => {
+                    const responseDiv = document.createElement('div');
+                    responseDiv.className = 'mb-2 p-2 bg-light rounded';
+                    responseDiv.innerHTML = `<strong>System:</strong> Message received: "${message}"`;
+                    chatMessages.appendChild(responseDiv);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }, 1000);
+                
+                input.value = '';
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                addActivity('Chat', `Message sent`, 'info');
+            }
+        });
+
+        // Initialize
+        updateStats();
+    </script>
+</body>
+</html>
