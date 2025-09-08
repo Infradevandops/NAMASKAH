@@ -20,7 +20,9 @@ from services.database import get_db
 from services.auth_service import get_current_user
 from services.websocket_manager import ConnectionManager
 from services.sms_service import SMSService
-from services.textverified_service import TextVerifiedService
+from services.verification_service import VerificationService
+from textverified_client import TextVerifiedClient
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -320,25 +322,21 @@ async def create_verification(
 ):
     """Create a TextVerified verification request"""
     try:
-        textverified_service = TextVerifiedService()
+        # Initialize TextVerified client
+        textverified_client = TextVerifiedClient(
+            api_key=os.getenv("TEXTVERIFIED_API_KEY"),
+            email=os.getenv("TEXTVERIFIED_EMAIL")
+        )
         
-        # Create verification with TextVerified
-        textverified_id = await textverified_service.create_verification(
+        # Create verification service
+        verification_service = VerificationService(db, textverified_client)
+        
+        # Create verification
+        db_verification = await verification_service.create_verification(
+            user_id=current_user.id,
             service_name=verification.service_name,
             capability=verification.capability
         )
-        
-        # Store in database
-        db_verification = VerificationRequest(
-            user_id=current_user.id,
-            textverified_id=textverified_id,
-            service_name=verification.service_name,
-            status="pending"
-        )
-        
-        db.add(db_verification)
-        db.commit()
-        db.refresh(db_verification)
         
         logger.info(f"Created verification {db_verification.id} for user {current_user.id}")
         
@@ -365,20 +363,24 @@ async def get_verification_number(
 ):
     """Get phone number for verification"""
     try:
+        # Initialize TextVerified client and service
+        textverified_client = TextVerifiedClient(
+            api_key=os.getenv("TEXTVERIFIED_API_KEY"),
+            email=os.getenv("TEXTVERIFIED_EMAIL")
+        )
+        verification_service = VerificationService(db, textverified_client)
+        
+        # Get phone number
+        phone_number = await verification_service.get_verification_number(
+            user_id=current_user.id,
+            verification_id=verification_id
+        )
+        
+        # Get verification for response
         verification = db.query(VerificationRequest)\
             .filter(VerificationRequest.id == verification_id)\
             .filter(VerificationRequest.user_id == current_user.id)\
             .first()
-        
-        if not verification:
-            raise HTTPException(status_code=404, detail="Verification not found")
-        
-        textverified_service = TextVerifiedService()
-        phone_number = await textverified_service.get_verification_number(verification.textverified_id)
-        
-        # Update database
-        verification.phone_number = phone_number
-        db.commit()
         
         return {
             "verification_id": verification_id,
@@ -386,8 +388,8 @@ async def get_verification_number(
             "service_name": verification.service_name
         }
         
-    except HTTPException:
-        raise
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Failed to get verification number: {e}")
         raise HTTPException(status_code=500, detail="Failed to get verification number")
@@ -398,35 +400,37 @@ async def get_verification_messages(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get SMS messages for verification"""
+    """Get SMS messages for verification with automatic code extraction"""
     try:
+        # Initialize TextVerified client and service
+        textverified_client = TextVerifiedClient(
+            api_key=os.getenv("TEXTVERIFIED_API_KEY"),
+            email=os.getenv("TEXTVERIFIED_EMAIL")
+        )
+        verification_service = VerificationService(db, textverified_client)
+        
+        # Check messages and extract codes
+        messages = await verification_service.check_verification_messages(
+            user_id=current_user.id,
+            verification_id=verification_id
+        )
+        
+        # Get updated verification status
         verification = db.query(VerificationRequest)\
             .filter(VerificationRequest.id == verification_id)\
             .filter(VerificationRequest.user_id == current_user.id)\
             .first()
         
-        if not verification:
-            raise HTTPException(status_code=404, detail="Verification not found")
-        
-        textverified_service = TextVerifiedService()
-        messages = await textverified_service.get_sms_messages(verification.textverified_id)
-        
-        # Update verification if we got messages
-        if messages and not verification.verification_code:
-            # Extract verification code from first message
-            verification.verification_code = messages[0]
-            verification.status = "completed"
-            verification.completed_at = datetime.utcnow()
-            db.commit()
-        
         return {
             "verification_id": verification_id,
             "messages": messages,
-            "status": verification.status
+            "status": verification.status,
+            "verification_code": verification.verification_code,
+            "completed_at": verification.completed_at.isoformat() if verification.completed_at else None
         }
         
-    except HTTPException:
-        raise
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Failed to get verification messages: {e}")
         raise HTTPException(status_code=500, detail="Failed to get verification messages")
@@ -560,3 +564,222 @@ async def purchase_number(
     except Exception as e:
         logger.error(f"Failed to purchase number: {e}")
         raise HTTPException(status_code=500, detail="Failed to purchase number")
+
+# --- Enhanced Verification Management ---
+
+@router.get("/verification/history", response_model=List[VerificationResponse])
+async def get_verification_history(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    service_name: Optional[str] = None,
+    status: Optional[str] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+    limit: int = 50,
+    offset: int = 0
+):
+    """Get verification history with optional filters"""
+    try:
+        # Initialize verification service
+        textverified_client = TextVerifiedClient(
+            api_key=os.getenv("TEXTVERIFIED_API_KEY"),
+            email=os.getenv("TEXTVERIFIED_EMAIL")
+        )
+        verification_service = VerificationService(db, textverified_client)
+        
+        # Build filters
+        filters = {}
+        if service_name:
+            filters['service_name'] = service_name
+        if status:
+            filters['status'] = status
+        if date_from:
+            filters['date_from'] = date_from
+        if date_to:
+            filters['date_to'] = date_to
+        
+        # Get history
+        verifications = await verification_service.get_verification_history(
+            user_id=current_user.id,
+            filters=filters
+        )
+        
+        # Apply pagination
+        paginated_verifications = verifications[offset:offset + limit]
+        
+        return [
+            VerificationResponse(
+                id=v.id,
+                textverified_id=v.textverified_id,
+                service_name=v.service_name,
+                phone_number=v.phone_number,
+                status=v.status,
+                verification_code=v.verification_code,
+                created_at=v.created_at,
+                expires_at=v.expires_at
+            )
+            for v in paginated_verifications
+        ]
+        
+    except Exception as e:
+        logger.error(f"Failed to get verification history: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get verification history")
+
+@router.get("/verification/search", response_model=List[VerificationResponse])
+async def search_verifications(
+    query: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    status: Optional[str] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+    limit: int = 20
+):
+    """Search verification history"""
+    try:
+        # Initialize verification service
+        textverified_client = TextVerifiedClient(
+            api_key=os.getenv("TEXTVERIFIED_API_KEY"),
+            email=os.getenv("TEXTVERIFIED_EMAIL")
+        )
+        verification_service = VerificationService(db, textverified_client)
+        
+        # Build filters
+        filters = {}
+        if status:
+            filters['status'] = status
+        if date_from:
+            filters['date_from'] = date_from
+        if date_to:
+            filters['date_to'] = date_to
+        
+        # Search verifications
+        verifications = await verification_service.search_verifications(
+            user_id=current_user.id,
+            search_query=query,
+            filters=filters
+        )
+        
+        # Apply limit
+        limited_verifications = verifications[:limit]
+        
+        return [
+            VerificationResponse(
+                id=v.id,
+                textverified_id=v.textverified_id,
+                service_name=v.service_name,
+                phone_number=v.phone_number,
+                status=v.status,
+                verification_code=v.verification_code,
+                created_at=v.created_at,
+                expires_at=v.expires_at
+            )
+            for v in limited_verifications
+        ]
+        
+    except Exception as e:
+        logger.error(f"Failed to search verifications: {e}")
+        raise HTTPException(status_code=500, detail="Failed to search verifications")
+
+@router.delete("/verification/{verification_id}")
+async def cancel_verification(
+    verification_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Cancel a verification request"""
+    try:
+        # Initialize verification service
+        textverified_client = TextVerifiedClient(
+            api_key=os.getenv("TEXTVERIFIED_API_KEY"),
+            email=os.getenv("TEXTVERIFIED_EMAIL")
+        )
+        verification_service = VerificationService(db, textverified_client)
+        
+        # Cancel verification
+        success = await verification_service.cancel_verification(
+            user_id=current_user.id,
+            verification_id=verification_id
+        )
+        
+        return {
+            "verification_id": verification_id,
+            "status": "cancelled" if success else "failed",
+            "message": "Verification cancelled successfully" if success else "Failed to cancel verification"
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Failed to cancel verification: {e}")
+        raise HTTPException(status_code=500, detail="Failed to cancel verification")
+
+@router.get("/verification/statistics")
+async def get_verification_statistics(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    period_days: int = 30
+):
+    """Get verification statistics for the user"""
+    try:
+        # Initialize verification service
+        textverified_client = TextVerifiedClient(
+            api_key=os.getenv("TEXTVERIFIED_API_KEY"),
+            email=os.getenv("TEXTVERIFIED_EMAIL")
+        )
+        verification_service = VerificationService(db, textverified_client)
+        
+        # Get statistics
+        statistics = await verification_service.get_verification_statistics(
+            user_id=current_user.id,
+            period_days=period_days
+        )
+        
+        return statistics
+        
+    except Exception as e:
+        logger.error(f"Failed to get verification statistics: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get verification statistics")
+
+@router.get("/verification/export")
+async def export_verification_data(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    format_type: str = "json",
+    service_name: Optional[str] = None,
+    status: Optional[str] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None
+):
+    """Export verification data"""
+    try:
+        # Initialize verification service
+        textverified_client = TextVerifiedClient(
+            api_key=os.getenv("TEXTVERIFIED_API_KEY"),
+            email=os.getenv("TEXTVERIFIED_EMAIL")
+        )
+        verification_service = VerificationService(db, textverified_client)
+        
+        # Build filters
+        filters = {}
+        if service_name:
+            filters['service_name'] = service_name
+        if status:
+            filters['status'] = status
+        if date_from:
+            filters['date_from'] = date_from
+        if date_to:
+            filters['date_to'] = date_to
+        
+        # Export data
+        export_result = await verification_service.export_verification_data(
+            user_id=current_user.id,
+            format_type=format_type,
+            filters=filters
+        )
+        
+        return export_result
+        
+    except Exception as e:
+        logger.error(f"Failed to export verification data: {e}")
+        raise HTTPException(status_code=500, detail="Failed to export verification data")

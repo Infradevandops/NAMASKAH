@@ -12,6 +12,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
+# Import database components
+from database import check_database_connection, create_tables
+
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
 
@@ -79,10 +82,67 @@ if GROQ_API_KEY:
 app = FastAPI(
     title="SMSPROJ - Communication Platform",
     description="Comprehensive SMS and voice communication platform with AI assistance",
-    version="1.0.0"
+    version="1.1.0"
 )
 
-# Include messaging API routes
+# Add JWT Authentication Middleware
+try:
+    from middleware.auth_middleware import JWTAuthMiddleware, RateLimitMiddleware
+    
+    # Add rate limiting middleware
+    app.add_middleware(RateLimitMiddleware, requests_per_minute=100)
+    
+    # Add JWT authentication middleware with excluded paths
+    excluded_paths = [
+        "/health",
+        "/docs",
+        "/redoc", 
+        "/openapi.json",
+        "/api/auth/register",
+        "/api/auth/login",
+        "/api/auth/refresh",
+        "/api/info",
+        "/static",
+        "/",
+        "/chat"
+    ]
+    app.add_middleware(JWTAuthMiddleware, exclude_paths=excluded_paths)
+    
+    logger.info("JWT Authentication middleware added successfully")
+except ImportError as e:
+    logger.warning(f"Could not import JWT middleware: {e}")
+except Exception as e:
+    logger.warning(f"Error adding JWT middleware: {e}")
+
+# Initialize database on startup
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database and check connections on startup"""
+    logger.info("Initializing database...")
+    
+    # Check database connection
+    if not check_database_connection():
+        logger.error("Database connection failed!")
+        return
+    
+    # Create tables if they don't exist
+    try:
+        create_tables()
+        logger.info("Database initialization completed successfully")
+    except Exception as e:
+        logger.error(f"Database initialization failed: {e}")
+        raise
+
+# Include API routes
+try:
+    from api.auth_api import router as auth_router
+    app.include_router(auth_router)
+    logger.info("Authentication API routes included successfully")
+except ImportError as e:
+    logger.warning(f"Could not import authentication API: {e}")
+except Exception as e:
+    logger.warning(f"Error including authentication API: {e}")
+
 try:
     from api.messaging_api import router as messaging_router
     app.include_router(messaging_router)
@@ -91,6 +151,60 @@ except ImportError as e:
     logger.warning(f"Could not import messaging API: {e}")
 except Exception as e:
     logger.warning(f"Error including messaging API: {e}")
+
+try:
+    from api.session_api import router as session_router
+    app.include_router(session_router)
+    logger.info("Session management API routes included successfully")
+except ImportError as e:
+    logger.warning(f"Could not import session API: {e}")
+except Exception as e:
+    logger.warning(f"Error including session API: {e}")
+
+try:
+    from api.conversation_api import router as conversation_router
+    app.include_router(conversation_router)
+    logger.info("Conversation API routes included successfully")
+except ImportError as e:
+    logger.warning(f"Could not import conversation API: {e}")
+except Exception as e:
+    logger.warning(f"Error including conversation API: {e}")
+
+try:
+    from api.websocket_api import router as websocket_router
+    app.include_router(websocket_router)
+    logger.info("WebSocket API routes included successfully")
+except ImportError as e:
+    logger.warning(f"Could not import WebSocket API: {e}")
+except Exception as e:
+    logger.warning(f"Error including WebSocket API: {e}")
+
+try:
+    from api.enhanced_chat_api import router as enhanced_chat_router
+    app.include_router(enhanced_chat_router)
+    logger.info("Enhanced Chat API routes included successfully")
+except ImportError as e:
+    logger.warning(f"Could not import Enhanced Chat API: {e}")
+except Exception as e:
+    logger.warning(f"Error including Enhanced Chat API: {e}")
+
+try:
+    from api.phone_number_api import router as phone_number_router
+    app.include_router(phone_number_router)
+    logger.info("Phone Number API routes included successfully")
+except ImportError as e:
+    logger.warning(f"Could not import Phone Number API: {e}")
+except Exception as e:
+    logger.warning(f"Error including Phone Number API: {e}")
+
+try:
+    from api.verification_api import router as verification_router
+    app.include_router(verification_router)
+    logger.info("Verification API routes included successfully")
+except ImportError as e:
+    logger.warning(f"Could not import Verification API: {e}")
+except Exception as e:
+    logger.warning(f"Error including Verification API: {e}")
 
 # Mount static files (for CSS, JS, images, etc.)
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -470,6 +584,11 @@ async def home(request: Request):
 async def chat_interface(request: Request):
     """Serves the chat interface."""
     return templates.TemplateResponse("chat.html", {"request": request})
+
+@app.get("/verification-history", response_class=HTMLResponse)
+async def verification_history(request: Request):
+    """Serves the verification history interface."""
+    return templates.TemplateResponse("verification_history.html", {"request": request})
 
 if __name__ == "__main__":
     import uvicorn

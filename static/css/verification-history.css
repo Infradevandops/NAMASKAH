@@ -1,0 +1,282 @@
+/* Verification History Styles */
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border-radius: 0.5rem;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    font-weight: 600;
+}
+
+/* Status badges */
+.status-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+.status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.status-completed {
+    background-color: #d1edff;
+    color: #0c5460;
+    border: 1px solid #b8daff;
+}
+
+.status-failed {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.status-cancelled {
+    background-color: #e2e3e5;
+    color: #383d41;
+    border: 1px solid #d6d8db;
+}
+
+.status-expired {
+    background-color: #ffeaa7;
+    color: #856404;
+    border: 1px solid #fff3cd;
+}
+
+/* Service icons */
+.service-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: white;
+    margin-right: 0.5rem;
+}
+
+.service-whatsapp { background-color: #25d366; }
+.service-google { background-color: #4285f4; }
+.service-telegram { background-color: #0088cc; }
+.service-discord { background-color: #7289da; }
+.service-facebook { background-color: #1877f2; }
+.service-instagram { background-color: #e4405f; }
+.service-twitter { background-color: #1da1f2; }
+.service-tiktok { background-color: #000000; }
+.service-default { background-color: #6c757d; }
+
+/* Table styles */
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.875rem;
+}
+
+.table td {
+    vertical-align: middle;
+    font-size: 0.875rem;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* Action buttons */
+.btn-action {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 0.25rem;
+}
+
+/* Statistics cards */
+.card.bg-primary,
+.card.bg-success,
+.card.bg-info,
+.card.bg-warning {
+    border: none;
+}
+
+.card.bg-primary .card-body,
+.card.bg-success .card-body,
+.card.bg-info .card-body,
+.card.bg-warning .card-body {
+    padding: 1.25rem;
+}
+
+/* Filter form */
+#filterForm .form-label {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #495057;
+}
+
+#filterForm .form-control,
+#filterForm .form-select {
+    font-size: 0.875rem;
+}
+
+/* Pagination */
+.pagination .page-link {
+    color: #0d6efd;
+    border-color: #dee2e6;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+/* Loading states */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.8rem;
+    }
+    
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    #filterForm .row > div {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Animation for loading */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Code display */
+.verification-code {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    background-color: #f8f9fa;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    border: 1px solid #dee2e6;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* Export buttons */
+.export-buttons .btn {
+    margin-left: 0.5rem;
+}
+
+/* Modal customizations */
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-body .row {
+    margin-bottom: 1rem;
+}
+
+.modal-body .row:last-child {
+    margin-bottom: 0;
+}
+
+/* Verification details */
+.verification-detail-item {
+    padding: 0.75rem;
+    background-color: #f8f9fa;
+    border-radius: 0.375rem;
+    margin-bottom: 0.5rem;
+}
+
+.verification-detail-label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.875rem;
+}
+
+.verification-detail-value {
+    color: #212529;
+    margin-top: 0.25rem;
+}
+
+/* Success/Error messages */
+.alert {
+    border: none;
+    border-radius: 0.5rem;
+}
+
+.alert-success {
+    background-color: #d1edff;
+    color: #0c5460;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* Tooltip customizations */
+.tooltip {
+    font-size: 0.75rem;
+}
+
+/* Progress indicators */
+.progress {
+    height: 0.5rem;
+    border-radius: 0.25rem;
+}
+
+.progress-bar {
+    border-radius: 0.25rem;
+}
