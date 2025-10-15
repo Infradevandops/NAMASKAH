@@ -41,10 +41,8 @@
                 </div>
                 
                 <!-- Single persistent Google button container -->
-                <div id="google-separator" style="text-align: center; color: var(--text-primary); margin: 20px 0; font-size: 14px; font-weight: 600;">or</div>
-                <div id="google-auth-btn" style="display: flex; justify-content: center; align-items: center; min-height: 50px; margin-bottom: 15px;">
-                    <div style="color: var(--text-secondary); font-size: 14px;">Loading...</div>
-                </div>
+                <div id="google-separator" style="text-align: center; color: var(--text-primary); margin: 20px 0; font-size: 14px; font-weight: 600; display: none;">or</div>
+                <div id="google-auth-btn" style="display: none; justify-content: center; align-items: center; min-height: 50px; margin-bottom: 15px;"></div>
                 
                 <p id="login-hint" style="font-size: 13px; color: var(--text-primary); margin-top: 10px; text-align: center; font-weight: 600;">💡 Press Enter to login</p>
                 <p id="register-hint" class="hidden" style="font-size: 14px; color: #10b981; margin-top: 10px; text-align: center; font-weight: 700;">🎁 Get <span style="font-size: 16px;">1 FREE</span> verification on signup!</p>
@@ -397,11 +395,7 @@
         let googleInitialized = false;
         
         function initGoogleSignIn() {
-            if (!window.GOOGLE_CLIENT_ID) {
-                document.getElementById('google-auth-btn').style.display = 'none';
-                document.getElementById('google-separator').style.display = 'none';
-                return;
-            }
+            if (!window.GOOGLE_CLIENT_ID) return;
 
             if (!googleInitialized && typeof google !== 'undefined' && google.accounts) {
                 try {
@@ -412,8 +406,8 @@
                     googleInitialized = true;
                     
                     const container = document.getElementById('google-auth-btn');
+                    const separator = document.getElementById('google-separator');
                     if (container) {
-                        container.innerHTML = '';
                         google.accounts.id.renderButton(container, { 
                             theme: 'outline', 
                             size: 'large', 
@@ -421,11 +415,11 @@
                             text: 'continue_with',
                             shape: 'rectangular'
                         });
+                        container.style.display = 'flex';
+                        separator.style.display = 'block';
                     }
                 } catch (error) {
                     console.error('Google init error:', error);
-                    document.getElementById('google-auth-btn').style.display = 'none';
-                    document.getElementById('google-separator').style.display = 'none';
                 }
             }
         }
