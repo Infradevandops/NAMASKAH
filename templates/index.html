@@ -41,8 +41,10 @@
                 </div>
                 
                 <!-- Single persistent Google button container -->
-                <div style="text-align: center; color: var(--text-primary); margin: 20px 0; font-size: 14px; font-weight: 600;">or</div>
-                <div id="google-auth-btn" style="display: flex; justify-content: center; min-height: 50px; margin-bottom: 15px;"></div>
+                <div id="google-separator" style="text-align: center; color: var(--text-primary); margin: 20px 0; font-size: 14px; font-weight: 600;">or</div>
+                <div id="google-auth-btn" style="display: flex; justify-content: center; align-items: center; min-height: 50px; margin-bottom: 15px;">
+                    <div style="color: var(--text-secondary); font-size: 14px;">Loading...</div>
+                </div>
                 
                 <p id="login-hint" style="font-size: 13px; color: var(--text-primary); margin-top: 10px; text-align: center; font-weight: 600;">💡 Press Enter to login</p>
                 <p id="register-hint" class="hidden" style="font-size: 14px; color: #10b981; margin-top: 10px; text-align: center; font-weight: 700;">🎁 Get <span style="font-size: 16px;">1 FREE</span> verification on signup!</p>
@@ -377,7 +379,6 @@
         </div>
     </div>
 
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="/static/js/config.js"></script>
     <script src="/static/js/app.js"></script>
     <script>
@@ -396,29 +397,35 @@
         let googleInitialized = false;
         
         function initGoogleSignIn() {
-            if (!GOOGLE_CLIENT_ID) {
+            if (!window.GOOGLE_CLIENT_ID || window.GOOGLE_CLIENT_ID === 'undefined') {
                 document.getElementById('google-auth-btn').style.display = 'none';
                 document.getElementById('google-auth-btn').previousElementSibling.style.display = 'none';
                 return;
             }
 
-            if (!googleInitialized) {
-                google.accounts.id.initialize({
-                    client_id: GOOGLE_CLIENT_ID,
-                    callback: handleGoogleSignIn
-                });
-                googleInitialized = true;
-                
-                // Render button once and keep it
-                const container = document.getElementById('google-auth-btn');
-                if (container && container.children.length === 0) {
-                    google.accounts.id.renderButton(container, { 
-                        theme: 'outline', 
-                        size: 'large', 
-                        width: '100%',
-                        text: 'continue_with',
-                        shape: 'rectangular'
+            if (!googleInitialized && typeof google !== 'undefined' && google.accounts) {
+                try {
+                    google.accounts.id.initialize({
+                        client_id: window.GOOGLE_CLIENT_ID,
+                        callback: handleGoogleSignIn
                     });
+                    googleInitialized = true;
+                    
+                    // Render button
+                    const container = document.getElementById('google-auth-btn');
+                    if (container && container.children.length === 0) {
+                        google.accounts.id.renderButton(container, { 
+                            theme: 'outline', 
+                            size: 'large', 
+                            width: '100%',
+                            text: 'continue_with',
+                            shape: 'rectangular'
+                        });
+                    }
+                } catch (error) {
+                    console.error('Google init error:', error);
+                    document.getElementById('google-auth-btn').style.display = 'none';
+                    document.getElementById('google-auth-btn').previousElementSibling.style.display = 'none';
                 }
             }
         }
@@ -451,16 +458,28 @@
             }
         }
 
-        // Initialize when page loads
-        window.addEventListener('load', () => {
-            // Wait for Google SDK to load
-            if (typeof google !== 'undefined') {
-                initGoogleSignIn();
-            } else {
-                // Retry after a short delay
-                setTimeout(initGoogleSignIn, 1000);
-            }
-        });
+        // Load Google SDK and initialize
+        function loadGoogleSDK() {
+            const script = document.createElement('script');
+            script.src = 'https://accounts.google.com/gsi/client';
+            script.onload = () => {
+                // Wait a bit for SDK to fully initialize
+                setTimeout(initGoogleSignIn, 100);
+            };
+            script.onerror = () => {
+                console.error('Failed to load Google SDK');
+                document.getElementById('google-auth-btn').style.display = 'none';
+                document.getElementById('google-auth-btn').previousElementSibling.style.display = 'none';
+            };
+            document.head.appendChild(script);
+        }
+
+        // Start loading when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadGoogleSDK);
+        } else {
+            loadGoogleSDK();
+        }
         
         // Switch tabs - Google button stays persistent
         window.showTab = function(tab) {
