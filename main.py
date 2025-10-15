@@ -133,6 +133,22 @@ class Referral(Base):
     reward_amount = Column(Float, default=1.0)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
+class NumberRental(Base):
+    __tablename__ = "number_rentals"
+    id = Column(String, primary_key=True)
+    user_id = Column(String, nullable=False)
+    phone_number = Column(String, nullable=False)
+    service_name = Column(String)
+    duration_hours = Column(Float, nullable=False)
+    cost = Column(Float, nullable=False)
+    status = Column(String, default="active")  # active, expired, released
+    started_at = Column(DateTime, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    released_at = Column(DateTime)
+    auto_extend = Column(Boolean, default=False)
+    warning_sent = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
 Base.metadata.create_all(bind=engine)
 
 # Email Helper
@@ -195,6 +211,14 @@ class CreateAPIKeyRequest(BaseModel):
 
 class CreateWebhookRequest(BaseModel):
     url: str
+
+class CreateRentalRequest(BaseModel):
+    service_name: str
+    duration_hours: float
+    auto_extend: bool = False
+
+class ExtendRentalRequest(BaseModel):
+    additional_hours: float
 
 # Dependencies
 security = HTTPBearer()
@@ -320,6 +344,7 @@ Get token via `/auth/login` or `/auth/register`.
     openapi_tags=[
         {"name": "Authentication", "description": "User registration, login, and OAuth"},
         {"name": "Verification", "description": "Create and manage SMS verifications"},
+        {"name": "Rentals", "description": "Long-term number rentals (hourly/daily/weekly)"},
         {"name": "Wallet", "description": "Fund wallet and manage credits"},
         {"name": "Admin", "description": "Admin-only endpoints (requires admin role)"},
         {"name": "API Keys", "description": "Manage API keys for programmatic access"},
@@ -1269,6 +1294,236 @@ def get_referral_stats(user: User = Depends(get_current_user), db: Session = Dep
         "total_earnings": user.referral_earnings,
         "referral_link": f"http://localhost:8000/app?ref={user.referral_code}",
         "referred_users": referred_users
+    }
+
+# Rental Pricing
+RENTAL_PRICING = {
+    1: 2.0,    # 1 hour
+    6: 8.0,    # 6 hours
+    24: 10.0,  # 24 hours (1 day)
+    168: 50.0, # 7 days
+    720: 150.0 # 30 days
+}
+
+def calculate_rental_cost(hours: float) -> float:
+    """Calculate rental cost based on duration"""
+    if hours in RENTAL_PRICING:
+        return RENTAL_PRICING[hours]
+    # Custom duration: ₵2 per hour
+    return round(hours * 2.0, 2)
+
+def calculate_refund(rental: NumberRental) -> float:
+    """Calculate refund for early release (50% of unused time, min 1hr used)"""
+    used_hours = (datetime.now(timezone.utc) - rental.started_at).total_seconds() / 3600
+    if used_hours < 1:
+        used_hours = 1
+    unused_hours = max(0, rental.duration_hours - used_hours)
+    hourly_rate = rental.cost / rental.duration_hours
+    return round((unused_hours * hourly_rate) * 0.5, 2)
+
+# Rental Endpoints
+@app.post("/rentals/create", tags=["Rentals"], summary="Create Number Rental")
+def create_rental(req: CreateRentalRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Rent a phone number for specified duration
+    
+    Duration options: 1hr (₵2), 6hr (₵8), 24hr (₵10), 7days (₵50), 30days (₵150)
+    """
+    cost = calculate_rental_cost(req.duration_hours)
+    
+    if user.credits < cost:
+        raise HTTPException(status_code=402, detail=f"Insufficient credits. Need ₵{cost}, have ₵{user.credits}")
+    
+    # Check active rental limit (max 5)
+    active_count = db.query(NumberRental).filter(
+        NumberRental.user_id == user.id,
+        NumberRental.status == "active"
+    ).count()
+    if active_count >= 5:
+        raise HTTPException(status_code=400, detail="Maximum 5 active rentals allowed")
+    
+    # Deduct credits
+    user.credits -= cost
+    
+    # Create verification for rental
+    verification_id = tv_client.create_verification(req.service_name, "sms")
+    details = tv_client.get_verification(verification_id)
+    
+    now = datetime.now(timezone.utc)
+    rental = NumberRental(
+        id=f"rental_{int(now.timestamp() * 1000)}",
+        user_id=user.id,
+        phone_number=details.get("number"),
+        service_name=req.service_name,
+        duration_hours=req.duration_hours,
+        cost=cost,
+        status="active",
+        started_at=now,
+        expires_at=now + timedelta(hours=req.duration_hours),
+        auto_extend=req.auto_extend
+    )
+    db.add(rental)
+    
+    # Create transaction
+    db.add(Transaction(
+        id=f"txn_{now.timestamp()}",
+        user_id=user.id,
+        amount=-cost,
+        type="debit",
+        description=f"Rental: {req.service_name} for {req.duration_hours}h"
+    ))
+    db.commit()
+    
+    return {
+        "id": rental.id,
+        "phone_number": rental.phone_number,
+        "service_name": rental.service_name,
+        "duration_hours": rental.duration_hours,
+        "cost": rental.cost,
+        "expires_at": rental.expires_at.isoformat(),
+        "auto_extend": rental.auto_extend,
+        "remaining_credits": user.credits,
+        "status": rental.status
+    }
+
+@app.get("/rentals/active", tags=["Rentals"], summary="List Active Rentals")
+def list_active_rentals(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get all active rentals for current user"""
+    rentals = db.query(NumberRental).filter(
+        NumberRental.user_id == user.id,
+        NumberRental.status == "active"
+    ).order_by(NumberRental.expires_at).all()
+    
+    now = datetime.now(timezone.utc)
+    return {
+        "rentals": [
+            {
+                "id": r.id,
+                "phone_number": r.phone_number,
+                "service_name": r.service_name,
+                "expires_at": r.expires_at.isoformat(),
+                "time_remaining_seconds": max(0, int((r.expires_at - now).total_seconds())),
+                "auto_extend": r.auto_extend
+            }
+            for r in rentals
+        ]
+    }
+
+@app.get("/rentals/{rental_id}", tags=["Rentals"], summary="Get Rental Details")
+def get_rental(rental_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get rental status and details"""
+    rental = db.query(NumberRental).filter(
+        NumberRental.id == rental_id,
+        NumberRental.user_id == user.id
+    ).first()
+    
+    if not rental:
+        raise HTTPException(status_code=404, detail="Rental not found")
+    
+    now = datetime.now(timezone.utc)
+    return {
+        "id": rental.id,
+        "phone_number": rental.phone_number,
+        "service_name": rental.service_name,
+        "status": rental.status,
+        "started_at": rental.started_at.isoformat(),
+        "expires_at": rental.expires_at.isoformat(),
+        "time_remaining_seconds": max(0, int((rental.expires_at - now).total_seconds())),
+        "duration_hours": rental.duration_hours,
+        "cost": rental.cost,
+        "auto_extend": rental.auto_extend
+    }
+
+@app.post("/rentals/{rental_id}/extend", tags=["Rentals"], summary="Extend Rental")
+def extend_rental(rental_id: str, req: ExtendRentalRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Extend rental duration"""
+    rental = db.query(NumberRental).filter(
+        NumberRental.id == rental_id,
+        NumberRental.user_id == user.id,
+        NumberRental.status == "active"
+    ).first()
+    
+    if not rental:
+        raise HTTPException(status_code=404, detail="Active rental not found")
+    
+    cost = calculate_rental_cost(req.additional_hours)
+    
+    if user.credits < cost:
+        raise HTTPException(status_code=402, detail=f"Insufficient credits. Need ₵{cost}, have ₵{user.credits}")
+    
+    user.credits -= cost
+    rental.expires_at += timedelta(hours=req.additional_hours)
+    rental.duration_hours += req.additional_hours
+    rental.cost += cost
+    
+    db.add(Transaction(
+        id=f"txn_{datetime.now(timezone.utc).timestamp()}",
+        user_id=user.id,
+        amount=-cost,
+        type="debit",
+        description=f"Extended rental {rental_id} by {req.additional_hours}h"
+    ))
+    db.commit()
+    
+    return {
+        "id": rental.id,
+        "new_expires_at": rental.expires_at.isoformat(),
+        "cost": cost,
+        "remaining_credits": user.credits
+    }
+
+@app.post("/rentals/{rental_id}/release", tags=["Rentals"], summary="Release Rental Early")
+def release_rental(rental_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Release rental early and get 50% refund for unused time"""
+    rental = db.query(NumberRental).filter(
+        NumberRental.id == rental_id,
+        NumberRental.user_id == user.id,
+        NumberRental.status == "active"
+    ).first()
+    
+    if not rental:
+        raise HTTPException(status_code=404, detail="Active rental not found")
+    
+    refund = calculate_refund(rental)
+    user.credits += refund
+    rental.status = "released"
+    rental.released_at = datetime.now(timezone.utc)
+    
+    if refund > 0:
+        db.add(Transaction(
+            id=f"txn_{datetime.now(timezone.utc).timestamp()}",
+            user_id=user.id,
+            amount=refund,
+            type="credit",
+            description=f"Refund for early release of rental {rental_id}"
+        ))
+    
+    db.commit()
+    
+    return {
+        "id": rental.id,
+        "status": "released",
+        "refund": refund,
+        "remaining_credits": user.credits,
+        "message": f"Refunded ₵{refund} for unused time"
+    }
+
+@app.get("/rentals/{rental_id}/messages", tags=["Rentals"], summary="Get Rental Messages")
+def get_rental_messages(rental_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get all SMS messages for rented number"""
+    rental = db.query(NumberRental).filter(
+        NumberRental.id == rental_id,
+        NumberRental.user_id == user.id
+    ).first()
+    
+    if not rental:
+        raise HTTPException(status_code=404, detail="Rental not found")
+    
+    # For now, return placeholder - would integrate with TextVerified rental API
+    return {
+        "rental_id": rental.id,
+        "phone_number": rental.phone_number,
+        "messages": [],
+        "note": "Message retrieval for rentals coming soon"
     }
 
 # CORS for frontend

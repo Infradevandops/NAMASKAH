@@ -880,6 +880,92 @@ async function sendResetEmail() {
     }
 }
 
+// Rental Functions
+async function createRental(serviceName, durationHours, autoExtend = false) {
+    try {
+        const response = await fetch('/rentals/create', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                service_name: serviceName,
+                duration_hours: durationHours,
+                auto_extend: autoExtend
+            })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            showNotification(`Rental created! Number: ${data.phone_number}`, 'success');
+            return data;
+        } else {
+            showNotification(data.detail || 'Failed to create rental', 'error');
+        }
+    } catch (error) {
+        showNotification('Network error', 'error');
+    }
+}
+
+async function loadActiveRentals() {
+    try {
+        const response = await fetch('/rentals/active', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const data = await response.json();
+        if (response.ok) {
+            displayRentals(data.rentals);
+        }
+    } catch (error) {
+        console.error('Failed to load rentals:', error);
+    }
+}
+
+function displayRentals(rentals) {
+    // Placeholder - would render rental cards with countdown timers
+    console.log('Active rentals:', rentals);
+}
+
+async function extendRental(rentalId, hours) {
+    try {
+        const response = await fetch(`/rentals/${rentalId}/extend`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ additional_hours: hours })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            showNotification(`Rental extended by ${hours}h`, 'success');
+            loadActiveRentals();
+        } else {
+            showNotification(data.detail || 'Failed to extend rental', 'error');
+        }
+    } catch (error) {
+        showNotification('Network error', 'error');
+    }
+}
+
+async function releaseRental(rentalId) {
+    try {
+        const response = await fetch(`/rentals/${rentalId}/release`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const data = await response.json();
+        if (response.ok) {
+            showNotification(data.message, 'success');
+            loadActiveRentals();
+        } else {
+            showNotification(data.detail || 'Failed to release rental', 'error');
+        }
+    } catch (error) {
+        showNotification('Network error', 'error');
+    }
+}
+
 function showCryptoPayment(data, method, amount) {
     const modal = document.getElementById('fund-wallet-modal');
     const content = modal.querySelector('.modal-content');
