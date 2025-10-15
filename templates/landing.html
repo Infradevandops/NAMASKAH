@@ -170,11 +170,22 @@
 <body>
     <div class="landing-nav">
         <div class="logo">📱 Namaskah</div>
+        <div style="flex: 1; overflow: hidden; margin: 0 20px;">
+            <div style="animation: scroll-left 15s linear infinite; white-space: nowrap; font-weight: 700; font-size: 16px; background: linear-gradient(90deg, #667eea, #764ba2, #667eea); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                🎁 Get 1 FREE Verification on Signup! 🎁 Get 1 FREE Verification on Signup! 🎁 Get 1 FREE Verification on Signup!
+            </div>
+        </div>
         <div style="display: flex; gap: 10px; align-items: center;">
             <button onclick="window.location.href='/app'" style="background: var(--accent);">Login</button>
             <div class="theme-toggle" onclick="toggleTheme()"></div>
         </div>
     </div>
+    <style>
+        @keyframes scroll-left {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-33.33%); }
+        }
+    </style>
     <div class="hero">
         <h1>📱 Namaskah SMS</h1>
         <p>Instant SMS Verification for 1,807+ Services</p>
