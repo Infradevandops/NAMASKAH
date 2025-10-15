@@ -1,14 +1,14 @@
 // Google OAuth Configuration
-// SETUP REQUIRED: Get your Client ID from Google Cloud Console
-// Follow these steps:
-// 1. Go to https://console.cloud.google.com/
-// 2. Create a new project
-// 3. Enable Google+ API
-// 4. Create OAuth 2.0 Client ID (Web application)
-// 5. Add http://localhost:8000 to Authorized JavaScript origins
-// 6. Copy your Client ID and paste it below
+// Loaded from backend .env file
+let GOOGLE_CLIENT_ID = null;
 
-// Replace this with YOUR actual Client ID:
-const GOOGLE_CLIENT_ID = '1084434463992-demo.apps.googleusercontent.com';
-
-// Example format: '123456789-abc123def456.apps.googleusercontent.com'
+// Fetch config from backend
+fetch('/auth/google/config')
+    .then(r => r.json())
+    .then(data => {
+        GOOGLE_CLIENT_ID = data.client_id;
+        if (GOOGLE_CLIENT_ID && window.initGoogleSignIn) {
+            window.initGoogleSignIn();
+        }
+    })
+    .catch(() => console.log('Google OAuth not configured'));

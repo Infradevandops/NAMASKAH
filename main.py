@@ -345,6 +345,13 @@ def register(req: RegisterRequest, referral_code: str = None, db: Session = Depe
     token = jwt.encode({"user_id": user.id, "exp": datetime.now(timezone.utc) + timedelta(days=30)}, JWT_SECRET)
     return {"token": token, "user_id": user.id, "credits": user.credits, "referral_code": user.referral_code}
 
+@app.get("/auth/google/config")
+def get_google_config():
+    """Get Google OAuth configuration"""
+    return {
+        "client_id": GOOGLE_CLIENT_ID if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_ID != "your-google-client-id.apps.googleusercontent.com" else None
+    }
+
 @app.post("/auth/google")
 def google_auth(req: GoogleAuthRequest, db: Session = Depends(get_db)):
     """Authenticate with Google OAuth"""
