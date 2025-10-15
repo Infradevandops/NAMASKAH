@@ -1,15 +1,37 @@
 # 📱 Namaskah SMS - Simple Verification Service
 
-**Minimal SMS verification platform using TextVerified API**
+**Minimal SMS verification platform**
 
 ## ✨ Features
 
+### Core
 - 🔐 User authentication (JWT + Google OAuth)
-- 📱 SMS verification for 1,807 services
-- 🎨 Clean web interface
-- 🚀 Single-file backend
-- 💾 SQLite database
+- 📱 SMS & Voice verification for 1,807 services
+- 🏠 Number rentals (hourly/daily/weekly/monthly)
+- 💰 Wallet system with Paystack integration
+- 🎨 Clean web interface with dark/light theme
+- 🚀 Production-ready backend
+- 💾 PostgreSQL database (SQLite for local dev)
 - 🐳 Docker ready
+
+### Security
+- 🔒 HTTPS enforcement
+- 🛡️ Security headers (HSTS, X-Frame-Options, etc.)
+- 🚦 Redis rate limiting (100 req/min)
+- 📧 Email verification
+- 🔑 Password reset flow
+- 🐛 Sentry error tracking
+- 🔍 Request ID tracking
+
+### Advanced
+- 📞 Voice call verification (premium)
+- 🏠 Long-term number rentals with auto-extend
+- 💳 Real payment integration (Paystack webhooks)
+- 🔔 Email & webhook notifications
+- 🎁 Referral program
+- 📊 Analytics dashboard
+- 🔑 API keys for developers
+- ✅ 70%+ test coverage
 
 ## 🚀 Quick Start
 
@@ -42,16 +64,38 @@ Or create your own account using the Register tab.
 ## 📋 Requirements
 
 - Python 3.11+
-- TextVerified API account ([Get one here](https://www.textverified.com))
 
 ## 🔧 Configuration
 
 Edit `.env`:
 ```bash
+# JWT
 JWT_SECRET_KEY=your-secret-key-here
-TEXTVERIFIED_API_KEY=your-api-key
-TEXTVERIFIED_EMAIL=your-email@example.com
-DATABASE_URL=sqlite:///./sms.db
+
+# Database
+DATABASE_URL=sqlite:///./sms.db  # Local dev
+# DATABASE_URL=postgresql://user:pass@host/db  # Production
+
+# SMS Provider
+SMS_API_KEY=your-api-key
+SMS_API_EMAIL=your-email@example.com
+
+# Google OAuth (optional)
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-client-secret
+
+# Payment (optional)
+PAYSTACK_SECRET_KEY=sk_test_xxx
+
+# Redis (optional - for rate limiting)
+REDIS_URL=redis://localhost:6379
+
+# Sentry (optional - for error tracking)
+SENTRY_DSN=https://xxx@sentry.io/xxx
+ENVIRONMENT=production
+
+# CORS
+CORS_ORIGINS=http://localhost:8000,https://your-domain.com
 ```
 
 ## 🎯 Supported Services
@@ -68,17 +112,38 @@ DATABASE_URL=sqlite:///./sms.db
 
 ## 📡 API Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/` | Web interface |
-| GET | `/health` | Health check |
-| POST | `/auth/register` | Register user |
-| POST | `/auth/login` | Login |
-| GET | `/auth/me` | Get user info |
-| POST | `/verify/create` | Create verification |
-| GET | `/verify/{id}` | Get verification status |
-| GET | `/verify/{id}/messages` | Get SMS messages |
-| DELETE | `/verify/{id}` | Cancel verification |
+### Authentication
+- `POST /auth/register` - Register user
+- `POST /auth/login` - Login
+- `POST /auth/google` - Google OAuth
+- `GET /auth/me` - Get user info
+- `POST /auth/forgot-password` - Request password reset
+- `POST /auth/reset-password` - Reset password
+
+### Verification
+- `POST /verify/create` - Create SMS/voice verification
+- `GET /verify/{id}` - Get verification status
+- `GET /verify/{id}/messages` - Get SMS messages
+- `GET /verify/{id}/voice` - Get voice call details
+- `DELETE /verify/{id}` - Cancel verification
+
+### Rentals
+- `POST /rentals/create` - Rent number (1hr-30days)
+- `GET /rentals/active` - List active rentals
+- `GET /rentals/{id}` - Get rental details
+- `POST /rentals/{id}/extend` - Extend rental
+- `POST /rentals/{id}/release` - Release early (50% refund)
+
+### Wallet
+- `POST /wallet/fund` - Fund wallet
+- `POST /wallet/paystack/initialize` - Initialize payment
+- `POST /wallet/paystack/webhook` - Payment webhook
+- `GET /wallet/paystack/verify/{ref}` - Verify payment
+
+### More
+- `GET /health` - Health check
+- `GET /docs` - Interactive API docs
+- See [API_EXAMPLES.md](API_EXAMPLES.md) for code samples
 
 ## 🐳 Docker Deployment
 
@@ -142,38 +207,115 @@ print(f"Codes: {messages}")
 
 ```
 .
-├── main.py              # Backend API (200 lines)
-├── requirements.txt     # Dependencies
-├── Dockerfile          # Container config
-├── .env.example        # Config template
+├── main.py                      # Backend API
+├── requirements.txt             # Dependencies
+├── pytest.ini                   # Test configuration
+├── .env.example                 # Config template
 ├── static/
-│   ├── css/
-│   │   └── style.css   # Styles
+│   ├── css/style.css           # Styles
 │   └── js/
-│       └── app.js      # Frontend logic
-└── templates/
-    └── index.html      # Web interface
+│       ├── app.js              # Frontend logic
+│       └── config.js           # Config loader
+├── templates/
+│   └── index.html              # Web interface
+├── tests/                       # Test suite (70%+ coverage)
+│   ├── test_auth.py
+│   ├── test_verification.py
+│   ├── test_rentals.py
+│   ├── test_wallet.py
+│   └── test_system.py
+└── docs/
+    ├── API_EXAMPLES.md          # API usage examples
+    ├── POSTGRESQL_MIGRATION.md  # Database migration
+    └── REDIS_SETUP.md           # Redis configuration
 ```
 
 ## 🔒 Security
 
-- JWT token authentication
+- JWT token authentication (30-day expiry)
 - Password hashing (bcrypt)
-- Secure API communication
+- HTTPS enforcement (production)
+- Security headers (HSTS, X-Frame-Options, CSP)
+- Redis rate limiting (100 req/min per user)
+- Email verification on registration
+- Secure password reset (1-hour tokens)
+- Request ID tracking (X-Request-ID)
+- Sentry error monitoring
 - Environment-based secrets
+- CORS restrictions
+- Paystack webhook signature verification
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=main --cov-report=html
+
+# Run specific test file
+pytest tests/test_auth.py -v
+```
 
 ## 🐛 Troubleshooting
 
 **"Invalid token"**
-- Token expired (30 days)
-- Login again
+- Token expired (30 days) - Login again
+- Check Authorization header format
+
+**"Insufficient credits"**
+- Fund wallet via Paystack/crypto
+- Check balance: GET /auth/me
+
+**"Rate limit exceeded"**
+- Max 100 requests per minute
+- Wait 60 seconds or upgrade plan
 
 **"Authentication failed"**
-- Check TextVerified API key
+- Check SMS API key
 - Verify account has balance
 
 **Database errors**
-- Delete `sms.db` and restart
+- Local: Delete `sms.db` and restart
+- Production: Check PostgreSQL connection
+
+**Redis not available**
+- App continues with in-memory rate limiting
+- Install Redis for persistent limits
+
+**Google Sign-In not showing**
+- Check GOOGLE_CLIENT_ID in .env
+- Verify authorized origins in Google Console
+
+## 📚 Documentation
+
+- **API Docs**: `http://localhost:8000/docs` (Interactive)
+- **API Examples**: [API_EXAMPLES.md](API_EXAMPLES.md)
+- **PostgreSQL Migration**: [POSTGRESQL_MIGRATION.md](POSTGRESQL_MIGRATION.md)
+- **Redis Setup**: [REDIS_SETUP.md](REDIS_SETUP.md)
+- **Deployment**: [DEPLOY.md](DEPLOY.md)
+- **Security**: [SECURITY_SETUP.md](SECURITY_SETUP.md)
+
+## 🚀 Production Deployment
+
+1. **Database**: Migrate to PostgreSQL ([guide](POSTGRESQL_MIGRATION.md))
+2. **Redis**: Add for persistent rate limiting ([guide](REDIS_SETUP.md))
+3. **Sentry**: Configure error tracking
+4. **Paystack**: Add webhook URL to dashboard
+5. **Google OAuth**: Add authorized origins
+6. **Environment**: Set all variables on Render
+
+## 📈 Pricing
+
+- **SMS Verification**: ₵0.50 (categorized) / ₵0.75 (uncategorized)
+- **Voice Verification**: ₵0.75 (categorized) / ₵1.13 (uncategorized)
+- **Number Rentals**:
+  - 1 hour: ₵2.00
+  - 6 hours: ₵8.00
+  - 24 hours: ₵10.00
+  - 7 days: ₵50.00
+  - 30 days: ₵150.00
 
 ## 📝 License
 
@@ -181,9 +323,12 @@ MIT
 
 ## 🆘 Support
 
-- API Docs: `http://localhost:8000/docs`
-- TextVerified: [textverified.com](https://www.textverified.com)
+- **Email**: support@namaskah.app
+- **API Docs**: `http://localhost:8000/docs`
+- **Issues**: [GitHub Issues](https://github.com/Infradevandops/NAMASKAH/issues)
 
 ---
 
-**Simple. Fast. Focused.**
+**Production-Ready. Secure. Scalable.**
+
+**Version**: 2.0.0
