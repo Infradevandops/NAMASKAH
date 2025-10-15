@@ -351,6 +351,7 @@
     </div>
 
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="/static/js/config.js"></script>
     <script src="/static/js/app.js"></script>
     <script>
         // Theme toggle
@@ -364,24 +365,51 @@
             localStorage.setItem('theme', next);
         }
 
-        // Google Sign-In
-        window.onload = function() {
+        // Google Sign-In initialization
+        function initGoogleSignIn() {
+            if (!GOOGLE_CLIENT_ID) {
+                // Hide Google buttons if not configured
+                document.getElementById('google-signin-btn').style.display = 'none';
+                document.getElementById('google-signup-btn').style.display = 'none';
+                const separators = document.querySelectorAll('.form-container > div');
+                separators.forEach(el => {
+                    if (el.textContent.trim() === 'or') el.style.display = 'none';
+                });
+                return;
+            }
+
+            // Initialize Google Sign-In
             google.accounts.id.initialize({
-                client_id: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+                client_id: GOOGLE_CLIENT_ID,
                 callback: handleGoogleSignIn
             });
             
+            // Render Sign In button
             google.accounts.id.renderButton(
                 document.getElementById('google-signin-btn'),
-                { theme: 'outline', size: 'large', width: '100%', text: 'signin_with' }
+                { 
+                    theme: 'outline', 
+                    size: 'large', 
+                    width: '100%',
+                    text: 'signin_with',
+                    shape: 'rectangular'
+                }
             );
             
+            // Render Sign Up button
             google.accounts.id.renderButton(
                 document.getElementById('google-signup-btn'),
-                { theme: 'outline', size: 'large', width: '100%', text: 'signup_with' }
+                { 
+                    theme: 'outline', 
+                    size: 'large', 
+                    width: '100%',
+                    text: 'signup_with',
+                    shape: 'rectangular'
+                }
             );
-        };
+        }
 
+        // Handle Google Sign-In response
         async function handleGoogleSignIn(response) {
             try {
                 showLoading();
@@ -396,17 +424,29 @@
                 if (res.ok) {
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('user_id', data.user_id);
-                    showNotification('✅ Signed in with Google!', 'success');
+                    showNotification('✅ Signed in with Google successfully!', 'success');
                     setTimeout(() => location.reload(), 500);
                 } else {
-                    showNotification('❌ ' + data.detail, 'error');
+                    showNotification('❌ ' + (data.detail || 'Google sign-in failed'), 'error');
                 }
             } catch (error) {
-                showNotification('❌ Google sign-in failed', 'error');
+                console.error('Google sign-in error:', error);
+                showNotification('❌ Google sign-in failed. Please try again.', 'error');
             } finally {
                 hideLoading();
             }
         }
+
+        // Initialize when page loads
+        window.addEventListener('load', () => {
+            // Wait for Google SDK to load
+            if (typeof google !== 'undefined') {
+                initGoogleSignIn();
+            } else {
+                // Retry after a short delay
+                setTimeout(initGoogleSignIn, 1000);
+            }
+        });
     </script>
 </body>
 </html>

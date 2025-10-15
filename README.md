@@ -4,10 +4,10 @@
 
 ## ✨ Features
 
-- 🔐 User authentication (JWT)
-- 📱 SMS verification for 100+ services
+- 🔐 User authentication (JWT + Google OAuth)
+- 📱 SMS verification for 1,807 services
 - 🎨 Clean web interface
-- 🚀 Single-file backend (200 lines)
+- 🚀 Single-file backend
 - 💾 SQLite database
 - 🐳 Docker ready
 

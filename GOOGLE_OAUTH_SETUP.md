@@ -33,12 +33,12 @@ GOOGLE_CLIENT_SECRET=your-client-secret
 
 ### 3. Update Frontend
 
-Edit `templates/index.html` line 587:
+Edit `static/js/config.js`:
 ```javascript
-client_id: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+const GOOGLE_CLIENT_ID = 'your-actual-client-id.apps.googleusercontent.com';
 ```
 
-Replace with your actual Client ID.
+Replace `null` with your actual Client ID in quotes.
 
 ### 4. Install Dependencies
 
@@ -71,10 +71,10 @@ Visit `http://localhost:8000/app` and click "Sign in with Google"
 
 ## Troubleshooting
 
-**"Invalid client ID"**
-- Check GOOGLE_CLIENT_ID in .env
-- Update client_id in index.html
-- Verify domain in Google Console
+**"Invalid client ID"** or **Error 400**
+- Check GOOGLE_CLIENT_ID in static/js/config.js
+- Make sure it's not null and has your actual Client ID
+- Verify domain in Google Console authorized origins
 
 **"Redirect URI mismatch"**
 - Add your domain to Authorized redirect URIs
@@ -89,7 +89,7 @@ Visit `http://localhost:8000/app` and click "Sign in with Google"
 
 - [ ] Add production domain to Authorized origins
 - [ ] Add production domain to Redirect URIs
-- [ ] Update client_id in index.html
+- [ ] Update GOOGLE_CLIENT_ID in static/js/config.js
 - [ ] Set GOOGLE_CLIENT_ID in production .env
 - [ ] Enable HTTPS
 - [ ] Publish OAuth consent screen
