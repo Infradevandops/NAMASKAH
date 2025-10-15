@@ -111,6 +111,17 @@
                 </div>
             </div>
 
+            <div id="forgot-password-modal" class="modal hidden">
+                <div class="modal-content">
+                    <span class="close" onclick="closeForgotPassword()">&times;</span>
+                    <h2>🔑 Reset Password</h2>
+                    <p style="color: #6b7280; margin-bottom: 20px;">Enter your email to receive a password reset link</p>
+                    
+                    <input type="email" id="forgot-email" placeholder="Email" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; margin-bottom: 15px;">
+                    <button onclick="sendResetEmail()" style="width: 100%;">Send Reset Link</button>
+                </div>
+            </div>
+
             <div id="fund-wallet-modal" class="modal hidden">
                 <div class="modal-content">
                     <span class="close" onclick="closeFundWallet()">&times;</span>

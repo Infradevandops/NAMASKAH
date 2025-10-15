@@ -847,6 +847,39 @@ function closeFundWallet() {
     document.getElementById('fund-wallet-modal').classList.add('hidden');
 }
 
+function showForgotPassword() {
+    document.getElementById('forgot-password-modal').style.display = 'block';
+}
+
+function closeForgotPassword() {
+    document.getElementById('forgot-password-modal').style.display = 'none';
+    document.getElementById('reset-email').value = '';
+}
+
+async function sendResetEmail() {
+    const email = document.getElementById('reset-email').value;
+    if (!email) {
+        showNotification('Please enter your email', 'error');
+        return;
+    }
+    try {
+        const response = await fetch('/auth/forgot-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            showNotification('Password reset link sent to your email', 'success');
+            closeForgotPassword();
+        } else {
+            showNotification(data.detail || 'Failed to send reset link', 'error');
+        }
+    } catch (error) {
+        showNotification('Network error', 'error');
+    }
+}
+
 function showCryptoPayment(data, method, amount) {
     const modal = document.getElementById('fund-wallet-modal');
     const content = modal.querySelector('.modal-content');

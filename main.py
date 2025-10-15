@@ -269,7 +269,67 @@ class TextVerifiedClient:
 tv_client = TextVerifiedClient()
 
 # FastAPI App
-app = FastAPI(title="Namaskah SMS", version="2.0.0")
+app = FastAPI(
+    title="Namaskah SMS API",
+    version="2.0.0",
+    description="""🚀 **Simple SMS Verification Service**
+
+Namaskah SMS provides temporary phone numbers for SMS verification across 1,807+ services.
+
+## Features
+- 📱 1,807+ supported services (WhatsApp, Telegram, Google, etc.)
+- 🔐 JWT & Google OAuth authentication
+- 💰 Credit-based pricing (₵0.50-0.75 per verification)
+- 🎯 Real-time SMS retrieval
+- 🔔 Webhook notifications
+- 📊 Analytics & usage tracking
+
+## Rate Limits
+- **100 requests per minute** per user
+- Persistent rate limiting via Redis
+- Returns 429 when exceeded
+
+## Authentication
+All endpoints (except `/auth/*` and `/health`) require JWT token:
+```
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+Get token via `/auth/login` or `/auth/register`.
+
+## Pricing
+- **Categorized services**: ₵0.50 per verification
+- **Uncategorized services**: ₵0.75 per verification
+- **New users**: ₵5.00 free credits
+- **Referral bonus**: ₵1.00 for referrer, ₵2.00 for referred
+
+## Support
+- API Docs: `/docs`
+- Health Check: `/health`
+- Status: https://status.namaskah.app
+    """,
+    contact={
+        "name": "Namaskah Support",
+        "email": "support@namaskah.app",
+        "url": "https://namaskah.app"
+    },
+    license_info={
+        "name": "MIT",
+        "url": "https://opensource.org/licenses/MIT"
+    },
+    openapi_tags=[
+        {"name": "Authentication", "description": "User registration, login, and OAuth"},
+        {"name": "Verification", "description": "Create and manage SMS verifications"},
+        {"name": "Wallet", "description": "Fund wallet and manage credits"},
+        {"name": "Admin", "description": "Admin-only endpoints (requires admin role)"},
+        {"name": "API Keys", "description": "Manage API keys for programmatic access"},
+        {"name": "Webhooks", "description": "Configure webhook notifications"},
+        {"name": "Analytics", "description": "Usage statistics and insights"},
+        {"name": "Notifications", "description": "Email notification settings"},
+        {"name": "Referrals", "description": "Referral program and earnings"},
+        {"name": "System", "description": "Health checks and service info"}
+    ]
+)
 
 # Mount static files and templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -299,7 +359,7 @@ async def reviews_page(request: Request):
 async def admin_panel(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request})
 
-@app.get("/health")
+@app.get("/health", tags=["System"], summary="Health Check")
 def health():
     return {
         "status": "healthy",
@@ -309,9 +369,15 @@ def health():
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
-@app.get("/services/list")
+@app.get("/services/list", tags=["System"], summary="List All Services")
 def get_services_list():
-    """Get categorized services"""
+    """Get complete list of supported services with categories and pricing
+    
+    Returns:
+    - categories: Services grouped by category
+    - uncategorized: Services without category
+    - pricing: Cost per verification type
+    """
     try:
         import json
         with open('services_categorized.json', 'r') as f:
@@ -320,8 +386,16 @@ def get_services_list():
     except:
         return {"categories": {}, "uncategorized": [], "pricing": {"categorized": 0.50, "uncategorized": 0.75}}
 
-@app.post("/auth/register")
+@app.post("/auth/register", tags=["Authentication"], summary="Register New User")
 def register(req: RegisterRequest, referral_code: str = None, db: Session = Depends(get_db)):
+    """Register a new user account
+    
+    - **email**: Valid email address
+    - **password**: Minimum 6 characters
+    - **referral_code**: Optional referral code for bonus credits
+    
+    Returns JWT token and user details. New users get ₵5.00 free credits.
+    """
     if db.query(User).filter(User.email == req.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
     
@@ -391,14 +465,14 @@ def register(req: RegisterRequest, referral_code: str = None, db: Session = Depe
     token = jwt.encode({"user_id": user.id, "exp": datetime.now(timezone.utc) + timedelta(days=30)}, JWT_SECRET)
     return {"token": token, "user_id": user.id, "credits": user.credits, "referral_code": user.referral_code, "email_verified": False}
 
-@app.get("/auth/google/config")
+@app.get("/auth/google/config", tags=["Authentication"], summary="Get Google OAuth Config")
 def get_google_config():
     """Get Google OAuth configuration"""
     return {
         "client_id": GOOGLE_CLIENT_ID if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_ID != "your-google-client-id.apps.googleusercontent.com" else None
     }
 
-@app.post("/auth/google")
+@app.post("/auth/google", tags=["Authentication"], summary="Google OAuth Login")
 def google_auth(req: GoogleAuthRequest, db: Session = Depends(get_db)):
     """Authenticate with Google OAuth"""
     try:
@@ -444,8 +518,12 @@ def google_auth(req: GoogleAuthRequest, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Google authentication failed: {str(e)}")
 
-@app.post("/auth/login")
+@app.post("/auth/login", tags=["Authentication"], summary="Login User")
 def login(req: LoginRequest, db: Session = Depends(get_db)):
+    """Login with email and password
+    
+    Returns JWT token valid for 30 days.
+    """
     user = db.query(User).filter(User.email == req.email).first()
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -463,8 +541,9 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     token = jwt.encode({"user_id": user.id, "exp": datetime.now(timezone.utc) + timedelta(days=30)}, JWT_SECRET)
     return {"token": token, "user_id": user.id, "credits": user.credits, "is_admin": user.is_admin}
 
-@app.get("/auth/verify")
+@app.get("/auth/verify", tags=["Authentication"], summary="Verify Email")
 def verify_email(token: str, db: Session = Depends(get_db)):
+    """Verify email address using token from registration email"""
     user = db.query(User).filter(User.verification_token == token).first()
     if not user:
         raise HTTPException(status_code=400, detail="Invalid verification token")
@@ -475,8 +554,9 @@ def verify_email(token: str, db: Session = Depends(get_db)):
     
     return {"message": "Email verified successfully"}
 
-@app.post("/auth/resend-verification")
+@app.post("/auth/resend-verification", tags=["Authentication"], summary="Resend Verification Email")
 def resend_verification(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Resend email verification link"""
     if user.email_verified:
         raise HTTPException(status_code=400, detail="Email already verified")
     
@@ -496,8 +576,9 @@ def resend_verification(user: User = Depends(get_current_user), db: Session = De
     
     return {"message": "Verification email sent"}
 
-@app.post("/auth/forgot-password")
+@app.post("/auth/forgot-password", tags=["Authentication"], summary="Request Password Reset")
 def forgot_password(req: PasswordResetRequest, db: Session = Depends(get_db)):
+    """Request password reset link via email. Link expires in 1 hour."""
     user = db.query(User).filter(User.email == req.email).first()
     if not user:
         return {"message": "If email exists, reset link sent"}
@@ -520,8 +601,9 @@ def forgot_password(req: PasswordResetRequest, db: Session = Depends(get_db)):
     
     return {"message": "If email exists, reset link sent"}
 
-@app.post("/auth/reset-password")
+@app.post("/auth/reset-password", tags=["Authentication"], summary="Reset Password")
 def reset_password(req: PasswordResetConfirm, db: Session = Depends(get_db)):
+    """Reset password using token from reset email"""
     user = db.query(User).filter(User.reset_token == req.token).first()
     if not user or not user.reset_token_expires or user.reset_token_expires < datetime.now(timezone.utc):
         raise HTTPException(status_code=400, detail="Invalid or expired reset token")
@@ -533,8 +615,9 @@ def reset_password(req: PasswordResetConfirm, db: Session = Depends(get_db)):
     
     return {"message": "Password reset successfully"}
 
-@app.get("/auth/me")
+@app.get("/auth/me", tags=["Authentication"], summary="Get Current User")
 def get_me(user: User = Depends(get_current_user)):
+    """Get authenticated user information and credit balance"""
     credits = user.credits
     
     # If admin, show real TextVerified balance
@@ -557,8 +640,9 @@ def get_me(user: User = Depends(get_current_user)):
         "created_at": user.created_at
     }
 
-@app.get("/verifications/history")
+@app.get("/verifications/history", tags=["Verification"], summary="Get Verification History")
 def get_history(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get last 20 verifications for current user"""
     verifications = db.query(Verification).filter(
         Verification.user_id == user.id
     ).order_by(Verification.created_at.desc()).limit(20).all()
@@ -577,8 +661,9 @@ def get_history(user: User = Depends(get_current_user), db: Session = Depends(ge
         ]
     }
 
-@app.get("/transactions/history")
+@app.get("/transactions/history", tags=["Wallet"], summary="Get Transaction History")
 def get_transactions(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get last 50 transactions (credits/debits) for current user"""
     transactions = db.query(Transaction).filter(
         Transaction.user_id == user.id
     ).order_by(Transaction.created_at.desc()).limit(50).all()
@@ -596,8 +681,15 @@ def get_transactions(user: User = Depends(get_current_user), db: Session = Depen
         ]
     }
 
-@app.post("/verify/create")
+@app.post("/verify/create", tags=["Verification"], summary="Create SMS Verification")
 def create_verification(req: CreateVerificationRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Create new SMS verification
+    
+    - **service_name**: Service identifier (e.g., 'whatsapp', 'telegram')
+    - **capability**: Verification type (default: 'sms')
+    
+    Deducts ₵0.50-0.75 from wallet. Returns phone number to use.
+    """
     # Determine cost based on category
     import json
     try:
@@ -669,8 +761,9 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
         "remaining_credits": user.credits
     }
 
-@app.get("/verify/{verification_id}")
+@app.get("/verify/{verification_id}", tags=["Verification"], summary="Get Verification Status")
 def get_verification(verification_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get verification details and current status"""
     verification = db.query(Verification).filter(
         Verification.id == verification_id,
         Verification.user_id == user.id
@@ -692,8 +785,9 @@ def get_verification(verification_id: str, user: User = Depends(get_current_user
         "created_at": verification.created_at
     }
 
-@app.get("/verify/{verification_id}/messages")
+@app.get("/verify/{verification_id}/messages", tags=["Verification"], summary="Get SMS Messages")
 async def get_messages(verification_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Retrieve SMS messages for verification. Triggers webhooks if configured."""
     verification = db.query(Verification).filter(
         Verification.id == verification_id,
         Verification.user_id == user.id
@@ -723,8 +817,9 @@ async def get_messages(verification_id: str, user: User = Depends(get_current_us
     
     return {"verification_id": verification_id, "messages": messages}
 
-@app.delete("/verify/{verification_id}")
+@app.delete("/verify/{verification_id}", tags=["Verification"], summary="Cancel Verification")
 def cancel_verification(verification_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Cancel active verification and refund credits to wallet"""
     # Strict user ownership check
     verification = db.query(Verification).filter(
         Verification.id == verification_id,
@@ -767,8 +862,9 @@ def cancel_verification(verification_id: str, user: User = Depends(get_current_u
     return {"message": "Verification cancelled and refunded", "refunded": verification.cost, "new_balance": user.credits}
 
 # Admin Endpoints
-@app.get("/admin/users")
+@app.get("/admin/users", tags=["Admin"], summary="List All Users")
 def get_all_users(admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Get all registered users (admin only)"""
     users = db.query(User).all()
     return {
         "users": [
@@ -783,8 +879,9 @@ def get_all_users(admin: User = Depends(get_admin_user), db: Session = Depends(g
         ]
     }
 
-@app.post("/admin/credits/add")
+@app.post("/admin/credits/add", tags=["Admin"], summary="Add Credits to User")
 def add_credits(req: AddCreditsRequest, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Manually add credits to user wallet (admin only)"""
     user = db.query(User).filter(User.id == req.user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -803,8 +900,9 @@ def add_credits(req: AddCreditsRequest, admin: User = Depends(get_admin_user), d
     
     return {"message": f"Added ${req.amount} credits", "new_balance": user.credits}
 
-@app.get("/admin/stats")
+@app.get("/admin/stats", tags=["Admin"], summary="Get Platform Statistics")
 def get_stats(admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Get platform-wide statistics (admin only)"""
     total_users = db.query(User).count()
     total_verifications = db.query(Verification).count()
     total_revenue = db.query(Transaction).filter(Transaction.type == "debit").count() * VERIFICATION_COST
@@ -817,8 +915,9 @@ def get_stats(admin: User = Depends(get_admin_user), db: Session = Depends(get_d
     }
 
 # Payment Endpoints
-@app.post("/wallet/fund")
+@app.post("/wallet/fund", tags=["Wallet"], summary="Fund Wallet")
 def fund_wallet(req: FundWalletRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Add credits to wallet. Minimum ₵5.00. Supports Paystack, Bitcoin, Ethereum, Solana, USDT."""
     if req.amount < 5:
         raise HTTPException(status_code=400, detail="Minimum funding amount is $5.00")
     
@@ -855,7 +954,7 @@ def fund_wallet(req: FundWalletRequest, user: User = Depends(get_current_user), 
         "message": f"Successfully added ₵{req.amount:.2f} to your wallet"
     }
 
-@app.post("/wallet/paystack/initialize")
+@app.post("/wallet/paystack/initialize", tags=["Wallet"], summary="Initialize Paystack Payment")
 def initialize_paystack(req: FundWalletRequest, user: User = Depends(get_current_user)):
     """Initialize Paystack payment"""
     if req.amount < 5:
@@ -903,7 +1002,7 @@ def initialize_paystack(req: FundWalletRequest, user: User = Depends(get_current
         "demo": True
     }
 
-@app.post("/wallet/crypto/address")
+@app.post("/wallet/crypto/address", tags=["Wallet"], summary="Get Crypto Payment Address")
 def get_crypto_address(req: FundWalletRequest, user: User = Depends(get_current_user)):
     """Get crypto payment address"""
     if req.amount < 5:
@@ -942,8 +1041,9 @@ def get_explorer_url(crypto: str, address: str) -> str:
     return explorers.get(crypto, '')
 
 # API Key Endpoints
-@app.post("/api-keys/create")
+@app.post("/api-keys/create", tags=["API Keys"], summary="Create API Key")
 def create_api_key(req: CreateAPIKeyRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Generate new API key for programmatic access"""
     import secrets
     key = f"nsk_{secrets.token_urlsafe(32)}"
     
@@ -958,8 +1058,9 @@ def create_api_key(req: CreateAPIKeyRequest, user: User = Depends(get_current_us
     
     return {"key": key, "name": req.name, "created_at": api_key.created_at}
 
-@app.get("/api-keys/list")
+@app.get("/api-keys/list", tags=["API Keys"], summary="List API Keys")
 def list_api_keys(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get all API keys for current user"""
     keys = db.query(APIKey).filter(APIKey.user_id == user.id).all()
     return {
         "keys": [
@@ -974,8 +1075,9 @@ def list_api_keys(user: User = Depends(get_current_user), db: Session = Depends(
         ]
     }
 
-@app.delete("/api-keys/{key_id}")
+@app.delete("/api-keys/{key_id}", tags=["API Keys"], summary="Delete API Key")
 def delete_api_key(key_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Revoke API key permanently"""
     key = db.query(APIKey).filter(APIKey.id == key_id, APIKey.user_id == user.id).first()
     if not key:
         raise HTTPException(status_code=404, detail="API key not found")
@@ -985,8 +1087,9 @@ def delete_api_key(key_id: str, user: User = Depends(get_current_user), db: Sess
     return {"message": "API key deleted"}
 
 # Webhook Endpoints
-@app.post("/webhooks/create")
+@app.post("/webhooks/create", tags=["Webhooks"], summary="Create Webhook")
 def create_webhook(req: CreateWebhookRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Register webhook URL for SMS notifications"""
     webhook = Webhook(
         id=f"webhook_{datetime.now(timezone.utc).timestamp()}",
         user_id=user.id,
@@ -997,8 +1100,9 @@ def create_webhook(req: CreateWebhookRequest, user: User = Depends(get_current_u
     
     return {"id": webhook.id, "url": webhook.url, "is_active": webhook.is_active}
 
-@app.get("/webhooks/list")
+@app.get("/webhooks/list", tags=["Webhooks"], summary="List Webhooks")
 def list_webhooks(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get all configured webhooks"""
     webhooks = db.query(Webhook).filter(Webhook.user_id == user.id).all()
     return {
         "webhooks": [
@@ -1012,8 +1116,9 @@ def list_webhooks(user: User = Depends(get_current_user), db: Session = Depends(
         ]
     }
 
-@app.delete("/webhooks/{webhook_id}")
+@app.delete("/webhooks/{webhook_id}", tags=["Webhooks"], summary="Delete Webhook")
 def delete_webhook(webhook_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Remove webhook configuration"""
     webhook = db.query(Webhook).filter(Webhook.id == webhook_id, Webhook.user_id == user.id).first()
     if not webhook:
         raise HTTPException(status_code=404, detail="Webhook not found")
@@ -1038,8 +1143,9 @@ async def send_webhook(user_id: str, verification_id: str, messages: list, db: S
             pass
 
 # Analytics Endpoints
-@app.get("/analytics/dashboard")
+@app.get("/analytics/dashboard", tags=["Analytics"], summary="Get Analytics Dashboard")
 def get_analytics(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get usage analytics: total verifications, spending, success rate, popular services, daily usage"""
     from sqlalchemy import func
     
     # Total verifications
@@ -1101,8 +1207,9 @@ def get_analytics(user: User = Depends(get_current_user), db: Session = Depends(
     }
 
 # Notification Settings Endpoints
-@app.get("/notifications/settings")
+@app.get("/notifications/settings", tags=["Notifications"], summary="Get Notification Settings")
 def get_notification_settings(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get email notification preferences"""
     settings = db.query(NotificationSettings).filter(NotificationSettings.user_id == user.id).first()
     
     if not settings:
@@ -1119,10 +1226,11 @@ def get_notification_settings(user: User = Depends(get_current_user), db: Sessio
         "low_balance_threshold": settings.low_balance_threshold
     }
 
-@app.post("/notifications/settings")
+@app.post("/notifications/settings", tags=["Notifications"], summary="Update Notification Settings")
 def update_notification_settings(email_on_sms: bool = True, email_on_low_balance: bool = True, 
                                 low_balance_threshold: float = 1.0,
                                 user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Configure email notification preferences"""
     settings = db.query(NotificationSettings).filter(NotificationSettings.user_id == user.id).first()
     
     if not settings:
@@ -1140,8 +1248,9 @@ def update_notification_settings(email_on_sms: bool = True, email_on_low_balance
     return {"message": "Settings updated"}
 
 # Referral Endpoints
-@app.get("/referrals/stats")
+@app.get("/referrals/stats", tags=["Referrals"], summary="Get Referral Statistics")
 def get_referral_stats(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get referral code, earnings, and referred users list"""
     referrals = db.query(Referral).filter(Referral.referrer_id == user.id).all()
     
     referred_users = []
@@ -1177,25 +1286,46 @@ app.add_middleware(
     expose_headers=["X-Request-ID"],
 )
 
-# Rate Limiting
-from collections import defaultdict
+# Rate Limiting with Redis
+import redis
 from time import time
 
-rate_limit_store = defaultdict(list)
+# Initialize Redis connection
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+try:
+    redis_client = redis.from_url(REDIS_URL, decode_responses=True)
+    redis_client.ping()
+    REDIS_AVAILABLE = True
+except:
+    redis_client = None
+    REDIS_AVAILABLE = False
+    print("Redis not available, using in-memory rate limiting")
 
 def check_rate_limit(user_id: str, limit: int = 100, window: int = 60):
     """Check if user exceeded rate limit (100 req/min)"""
-    now = time()
-    requests = rate_limit_store[user_id]
+    if not REDIS_AVAILABLE:
+        return True  # Skip rate limiting if Redis unavailable
     
-    # Remove old requests outside window
-    rate_limit_store[user_id] = [req_time for req_time in requests if now - req_time < window]
-    
-    if len(rate_limit_store[user_id]) >= limit:
-        return False
-    
-    rate_limit_store[user_id].append(now)
-    return True
+    try:
+        key = f"rate_limit:{user_id}"
+        now = time()
+        
+        # Remove old requests outside window
+        redis_client.zremrangebyscore(key, 0, now - window)
+        
+        # Count requests in current window
+        request_count = redis_client.zcard(key)
+        
+        if request_count >= limit:
+            return False
+        
+        # Add current request
+        redis_client.zadd(key, {str(now): now})
+        redis_client.expire(key, window)
+        
+        return True
+    except:
+        return True  # Allow request if Redis fails
 
 @app.middleware("http")
 async def https_redirect_middleware(request: Request, call_next):
