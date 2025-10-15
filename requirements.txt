@@ -16,3 +16,7 @@ google-auth==2.23.4
 google-auth-oauthlib==1.1.0
 sentry-sdk[fastapi]==1.39.1
 redis==5.0.1
+pytest==7.4.3
+pytest-cov==4.1.0
+pytest-asyncio==0.21.1
+httpx==0.25.2
