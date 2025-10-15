@@ -966,6 +966,35 @@ async function releaseRental(rentalId) {
     }
 }
 
+// Payment Verification
+async function verifyPayment(reference) {
+    try {
+        const response = await fetch(`/wallet/paystack/verify/${reference}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const data = await response.json();
+        if (response.ok && data.status === 'success') {
+            showNotification(`✅ Payment successful! Added ₵${data.amount} to wallet`, 'success');
+            loadUserInfo();
+        } else {
+            showNotification(data.message || 'Payment verification failed', 'error');
+        }
+    } catch (error) {
+        showNotification('Failed to verify payment', 'error');
+    }
+}
+
+// Check for payment callback on page load
+window.addEventListener('load', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const reference = urlParams.get('reference');
+    if (reference && localStorage.getItem('token')) {
+        verifyPayment(reference);
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+})
+
 // Voice Verification Functions
 async function getVoiceCall(verificationId) {
     try {
