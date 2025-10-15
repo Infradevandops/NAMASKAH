@@ -27,22 +27,23 @@
 
                 <div id="login-form" class="form-container">
                     <h2>Login</h2>
-                    <div id="google-signin-btn" style="margin-bottom: 15px;"></div>
-                    <div style="text-align: center; color: #6b7280; margin: 15px 0; font-size: 14px;">or</div>
                     <input type="email" id="login-email" placeholder="Email" required onkeypress="if(event.key==='Enter')login()">
                     <input type="password" id="login-password" placeholder="Password" required onkeypress="if(event.key==='Enter')login()">
-                    <button onclick="login()">Login</button>
-                    <p style="font-size: 12px; color: #6b7280; margin-top: 10px;">💡 Press Enter to login</p>
+                    <a href="#" onclick="showForgotPassword(); return false;" style="font-size: 12px; color: #667eea; text-decoration: none; display: block; text-align: right; margin-top: 5px;">Forgot Password?</a>
+                    <button onclick="login()" style="margin-top: 15px;">Login</button>
+                    <div style="text-align: center; color: #6b7280; margin: 15px 0; font-size: 14px;">or</div>
+                    <div id="google-signin-btn" style="display: flex; justify-content: center;"></div>
+                    <p style="font-size: 12px; color: #6b7280; margin-top: 10px; text-align: center;">💡 Press Enter to login</p>
                 </div>
 
                 <div id="register-form" class="form-container hidden">
                     <h2>Register</h2>
-                    <div id="google-signup-btn" style="margin-bottom: 15px;"></div>
-                    <div style="text-align: center; color: #6b7280; margin: 15px 0; font-size: 14px;">or</div>
                     <input type="email" id="register-email" placeholder="Email" required onkeypress="if(event.key==='Enter')register()">
                     <input type="password" id="register-password" placeholder="Password (min 6 chars)" required onkeypress="if(event.key==='Enter')register()">
-                    <button onclick="register()">Register</button>
-                    <p style="font-size: 12px; color: #6b7280; margin-top: 10px;">🎁 Get $5.00 free credits on signup</p>
+                    <button onclick="register()" style="margin-top: 15px;">Register</button>
+                    <div style="text-align: center; color: #6b7280; margin: 15px 0; font-size: 14px;">or</div>
+                    <div id="google-signup-btn" style="display: flex; justify-content: center;"></div>
+                    <p style="font-size: 12px; color: #6b7280; margin-top: 10px; text-align: center;">🎁 Get $5.00 free credits on signup</p>
                 </div>
             </div>
         </div>
