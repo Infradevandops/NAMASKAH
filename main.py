@@ -247,8 +247,13 @@ tv_client = TextVerifiedClient()
 app = FastAPI(title="Namaskah SMS", version="2.0.0")
 
 # Mount static files and templates
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+import os
+if os.path.exists("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+if os.path.exists("templates"):
+    templates = Jinja2Templates(directory="templates")
+else:
+    templates = None
 
 @app.get("/")
 async def root(request: Request):
