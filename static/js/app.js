@@ -311,6 +311,10 @@ function selectService(service) {
     document.getElementById('service-info').innerHTML = `✅ Selected: <strong>${formatServiceName(service)}</strong>`;
     document.getElementById('service-info').style.color = '#10b981';
     
+    // Show capability selection and create button
+    document.getElementById('capability-selection').classList.remove('hidden');
+    document.getElementById('create-verification-btn').classList.remove('hidden');
+    
     // Highlight selected
     document.querySelectorAll('#categories-container > div > div[onclick]').forEach(el => {
         el.style.fontWeight = 'normal';
