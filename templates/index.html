@@ -316,15 +316,15 @@
                 <h2>🔔 Notification Settings</h2>
                 <p style="color: #6b7280; margin-bottom: 15px;">Configure email notifications</p>
                 
-                <div style="background: #f9fafb; padding: 20px; border-radius: 8px;">
-                    <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; cursor: pointer;">
-                        <input type="checkbox" id="email-on-sms" onchange="updateNotificationSettings()">
-                        <span>📧 Email me when SMS is received</span>
+                <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border);">
+                    <label style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 15px; cursor: pointer;">
+                        <input type="checkbox" id="email-on-sms" onchange="updateNotificationSettings()" style="margin-top: 2px; flex-shrink: 0;">
+                        <span style="flex: 1; color: var(--text-primary);">📧 Email me when SMS is received</span>
                     </label>
                     
-                    <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; cursor: pointer;">
-                        <input type="checkbox" id="email-on-low-balance" onchange="updateNotificationSettings()">
-                        <span>⚠️ Email me when balance is low</span>
+                    <label style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 15px; cursor: pointer;">
+                        <input type="checkbox" id="email-on-low-balance" onchange="updateNotificationSettings()" style="margin-top: 2px; flex-shrink: 0;">
+                        <span style="flex: 1; color: var(--text-primary);">⚠️ Email me when balance is low</span>
                     </label>
                     
                     <div style="margin-top: 15px;">
