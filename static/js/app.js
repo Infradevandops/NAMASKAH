@@ -966,6 +966,23 @@ async function releaseRental(rentalId) {
     }
 }
 
+// Voice Verification Functions
+async function getVoiceCall(verificationId) {
+    try {
+        const response = await fetch(`/verify/${verificationId}/voice`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const data = await response.json();
+        if (response.ok) {
+            return data;
+        } else {
+            showNotification(data.detail || 'Failed to get voice call', 'error');
+        }
+    } catch (error) {
+        showNotification('Network error', 'error');
+    }
+}
+
 function showCryptoPayment(data, method, amount) {
     const modal = document.getElementById('fund-wallet-modal');
     const content = modal.querySelector('.modal-content');

@@ -84,9 +84,13 @@ class Verification(Base):
     user_id = Column(String, nullable=False)
     service_name = Column(String, nullable=False)
     phone_number = Column(String)
+    capability = Column(String, default="sms")  # sms or voice
     status = Column(String, default="pending")
     verification_code = Column(String)
     cost = Column(Float, default=VERIFICATION_COST)
+    call_duration = Column(Float)  # seconds
+    transcription = Column(String)
+    audio_url = Column(String)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     completed_at = Column(DateTime)
 
@@ -706,16 +710,16 @@ def get_transactions(user: User = Depends(get_current_user), db: Session = Depen
         ]
     }
 
-@app.post("/verify/create", tags=["Verification"], summary="Create SMS Verification")
+@app.post("/verify/create", tags=["Verification"], summary="Create SMS/Voice Verification")
 def create_verification(req: CreateVerificationRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Create new SMS verification
+    """Create new SMS or voice verification
     
     - **service_name**: Service identifier (e.g., 'whatsapp', 'telegram')
-    - **capability**: Verification type (default: 'sms')
+    - **capability**: 'sms' (₵0.50) or 'voice' (₵0.75)
     
-    Deducts ₵0.50-0.75 from wallet. Returns phone number to use.
+    Voice calls cost 50% more due to higher provider costs.
     """
-    # Determine cost based on category
+    # Determine base cost
     import json
     try:
         with open('services_categorized.json', 'r') as f:
@@ -730,6 +734,10 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
         cost = data['pricing']['categorized'] if is_categorized else data['pricing']['uncategorized']
     except:
         cost = VERIFICATION_COST
+    
+    # Apply voice premium (50% more)
+    if req.capability == "voice":
+        cost = round(cost * 1.5, 2)
     
     # Check credits
     if user.credits < cost:
@@ -771,6 +779,7 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
         user_id=user.id,
         service_name=req.service_name,
         phone_number=details.get("number"),
+        capability=req.capability,
         status="pending",
         cost=cost
     )
@@ -781,6 +790,7 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
         "id": verification.id,
         "service_name": verification.service_name,
         "phone_number": verification.phone_number,
+        "capability": verification.capability,
         "status": verification.status,
         "cost": verification.cost,
         "remaining_credits": user.credits
@@ -841,6 +851,31 @@ async def get_messages(verification_id: str, user: User = Depends(get_current_us
             )
     
     return {"verification_id": verification_id, "messages": messages}
+
+@app.get("/verify/{verification_id}/voice", tags=["Verification"], summary="Get Voice Call Details")
+def get_voice_call(verification_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Retrieve voice call details including transcription and audio URL"""
+    verification = db.query(Verification).filter(
+        Verification.id == verification_id,
+        Verification.user_id == user.id,
+        Verification.capability == "voice"
+    ).first()
+    
+    if not verification:
+        raise HTTPException(status_code=404, detail="Voice verification not found")
+    
+    # Get voice data from TextVerified (placeholder - would use actual API)
+    # For now, return stored data or empty
+    return {
+        "verification_id": verification.id,
+        "phone_number": verification.phone_number,
+        "capability": "voice",
+        "call_status": verification.status,
+        "call_duration": verification.call_duration,
+        "transcription": verification.transcription,
+        "audio_url": verification.audio_url,
+        "received_at": verification.completed_at.isoformat() if verification.completed_at else None
+    }
 
 @app.delete("/verify/{verification_id}", tags=["Verification"], summary="Cancel Verification")
 def cancel_verification(verification_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
