@@ -32,7 +32,7 @@
                     <a href="#" onclick="showForgotPassword(); return false;" style="font-size: 12px; color: #667eea; text-decoration: none; display: block; text-align: right; margin-top: 5px;">Forgot Password?</a>
                     <button onclick="login()" style="margin-top: 15px;">Login</button>
                     <div style="text-align: center; color: #6b7280; margin: 15px 0; font-size: 14px;">or</div>
-                    <div id="google-signin-btn" style="display: flex; justify-content: center;"></div>
+                    <div id="google-signin-btn" style="display: flex; justify-content: center; min-height: 40px;"></div>
                     <p style="font-size: 12px; color: #6b7280; margin-top: 10px; text-align: center;">💡 Press Enter to login</p>
                 </div>
 
@@ -42,7 +42,7 @@
                     <input type="password" id="register-password" placeholder="Password (min 6 chars)" required onkeypress="if(event.key==='Enter')register()">
                     <button onclick="register()" style="margin-top: 15px;">Register</button>
                     <div style="text-align: center; color: #6b7280; margin: 15px 0; font-size: 14px;">or</div>
-                    <div id="google-signup-btn" style="display: flex; justify-content: center;"></div>
+                    <div id="google-signup-btn" style="display: flex; justify-content: center; min-height: 40px;"></div>
                     <p style="font-size: 12px; color: #6b7280; margin-top: 10px; text-align: center;">🎁 Get $5.00 free credits on signup</p>
                 </div>
             </div>
@@ -407,12 +407,13 @@
         window.renderGoogleButtons = function() {
             if (!GOOGLE_CLIENT_ID || !googleInitialized) return;
             
-            // Clear existing buttons
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
             const signinBtn = document.getElementById('google-signin-btn');
             const signupBtn = document.getElementById('google-signup-btn');
             
-            if (signinBtn) {
-                signinBtn.innerHTML = '';
+            // Only render button for visible form
+            if (!loginForm.classList.contains('hidden') && signinBtn && signinBtn.children.length === 0) {
                 try {
                     google.accounts.id.renderButton(signinBtn, { 
                         theme: 'outline', 
@@ -426,8 +427,7 @@
                 }
             }
             
-            if (signupBtn) {
-                signupBtn.innerHTML = '';
+            if (!registerForm.classList.contains('hidden') && signupBtn && signupBtn.children.length === 0) {
                 try {
                     google.accounts.id.renderButton(signupBtn, { 
                         theme: 'outline', 
@@ -481,7 +481,7 @@
             }
         });
         
-        // Re-render Google buttons when switching tabs
+        // Switch tabs and render appropriate Google button
         window.showTab = function(tab) {
             const loginForm = document.getElementById('login-form');
             const registerForm = document.getElementById('register-form');
@@ -499,12 +499,8 @@
                 tabs[1].classList.add('active');
             }
             
-            // Re-render Google buttons after tab switch
-            setTimeout(() => {
-                if (typeof renderGoogleButtons === 'function') {
-                    renderGoogleButtons();
-                }
-            }, 150);
+            // Render button for newly visible form
+            setTimeout(renderGoogleButtons, 50);
         }
     </script>
 </body>
