@@ -182,6 +182,7 @@ async function checkAuth() {
             const user = await res.json();
             document.getElementById('user-email').textContent = user.email;
             document.getElementById('user-credits').textContent = user.credits.toFixed(2);
+            document.getElementById('free-verifications').textContent = Math.floor(user.free_verifications || 0);
             showApp();
         } else {
             logout();

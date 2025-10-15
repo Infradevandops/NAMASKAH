@@ -67,7 +67,8 @@ class User(Base):
     id = Column(String, primary_key=True)
     email = Column(String, unique=True, nullable=False)
     password_hash = Column(String, nullable=False)
-    credits = Column(Float, default=5.0)  # Free credits
+    credits = Column(Float, default=0.0)
+    free_verifications = Column(Float, default=1.0)  # 1 free verification for new users
     is_admin = Column(Boolean, default=False)
     email_verified = Column(Boolean, default=False)
     verification_token = Column(String)
@@ -436,7 +437,8 @@ def register(req: RegisterRequest, referral_code: str = None, db: Session = Depe
         id=f"user_{datetime.now(timezone.utc).timestamp()}",
         email=req.email,
         password_hash=bcrypt.hash(req.password),
-        credits=5.0,
+        credits=0.0,
+        free_verifications=1.0,
         referral_code=user_referral_code,
         email_verified=False,
         verification_token=verification_token
@@ -447,9 +449,9 @@ def register(req: RegisterRequest, referral_code: str = None, db: Session = Depe
         referrer = db.query(User).filter(User.referral_code == referral_code).first()
         if referrer:
             user.referred_by = referrer.id
-            user.credits += 2.0  # Bonus for being referred
-            referrer.credits += 1.0  # Reward referrer
-            referrer.referral_earnings += 1.0
+            user.free_verifications += 1.0  # Bonus for being referred
+            # Referrer gets 1 free verification when referred user funds $5+
+            referrer.referral_earnings += 0.0  # Track pending
             
             # Create referral record
             referral = Referral(
@@ -460,21 +462,7 @@ def register(req: RegisterRequest, referral_code: str = None, db: Session = Depe
             )
             db.add(referral)
             
-            # Create transactions
-            db.add(Transaction(
-                id=f"txn_{datetime.now(timezone.utc).timestamp()}",
-                user_id=referrer.id,
-                amount=1.0,
-                type="credit",
-                description=f"Referral bonus from {user.email}"
-            ))
-            db.add(Transaction(
-                id=f"txn_{datetime.now(timezone.utc).timestamp() + 0.001}",
-                user_id=user.id,
-                amount=2.0,
-                type="credit",
-                description="Referral signup bonus"
-            ))
+            # Transactions will be created when referred user funds wallet
     
     db.add(user)
     db.commit()
@@ -492,7 +480,7 @@ def register(req: RegisterRequest, referral_code: str = None, db: Session = Depe
     )
     
     token = jwt.encode({"user_id": user.id, "exp": datetime.now(timezone.utc) + timedelta(days=30)}, JWT_SECRET)
-    return {"token": token, "user_id": user.id, "credits": user.credits, "referral_code": user.referral_code, "email_verified": False}
+    return {"token": token, "user_id": user.id, "credits": user.credits, "free_verifications": user.free_verifications, "referral_code": user.referral_code, "email_verified": False}
 
 @app.get("/auth/google/config", tags=["Authentication"], summary="Get Google OAuth Config")
 def get_google_config():
@@ -526,7 +514,8 @@ def google_auth(req: GoogleAuthRequest, db: Session = Depends(get_db)):
                 id=f"user_{datetime.now(timezone.utc).timestamp()}",
                 email=email,
                 password_hash=bcrypt.hash(google_id),  # Use Google ID as password
-                credits=5.0,
+                credits=0.0,
+                free_verifications=1.0,
                 referral_code=secrets.token_urlsafe(6)
             )
             db.add(user)
@@ -665,6 +654,7 @@ def get_me(user: User = Depends(get_current_user)):
         "id": user.id,
         "email": user.email,
         "credits": credits,
+        "free_verifications": user.free_verifications,
         "is_admin": user.is_admin,
         "created_at": user.created_at
     }
@@ -739,12 +729,14 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
     if req.capability == "voice":
         cost = round(cost * 1.5, 2)
     
-    # Check credits
-    if user.credits < cost:
+    # Check if user has free verifications or credits
+    if user.free_verifications >= 1:
+        user.free_verifications -= 1
+        cost = 0  # Free verification
+    elif user.credits < cost:
         raise HTTPException(status_code=402, detail=f"Insufficient credits. Need ₵{cost}, have ₵{user.credits}")
-    
-    # Deduct credits
-    user.credits -= cost
+    else:
+        user.credits -= cost
     
     # Check low balance and send notification
     settings = db.query(NotificationSettings).filter(NotificationSettings.user_id == user.id).first()
@@ -1004,6 +996,28 @@ def fund_wallet(req: FundWalletRequest, user: User = Depends(get_current_user), 
         description=f"Wallet funded via {payment_methods[req.payment_method]}"
     )
     db.add(transaction)
+    
+    # Check if user was referred and this is their first funding of $5+
+    if req.amount >= 5 and user.referred_by:
+        referrer = db.query(User).filter(User.id == user.referred_by).first()
+        if referrer:
+            # Check if referrer already got reward
+            existing_reward = db.query(Transaction).filter(
+                Transaction.user_id == referrer.id,
+                Transaction.description.contains(f"Referral reward from {user.email}")
+            ).first()
+            
+            if not existing_reward:
+                referrer.free_verifications += 1
+                referrer.referral_earnings += 1.0
+                db.add(Transaction(
+                    id=f"txn_{datetime.now(timezone.utc).timestamp() + 0.001}",
+                    user_id=referrer.id,
+                    amount=1.0,
+                    type="credit",
+                    description=f"Referral reward from {user.email} (1 free verification)"
+                ))
+    
     db.commit()
     
     return {
