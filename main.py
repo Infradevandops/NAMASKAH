@@ -69,6 +69,10 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     credits = Column(Float, default=5.0)  # Free credits
     is_admin = Column(Boolean, default=False)
+    email_verified = Column(Boolean, default=False)
+    verification_token = Column(String)
+    reset_token = Column(String)
+    reset_token_expires = Column(DateTime)
     referral_code = Column(String, unique=True)
     referred_by = Column(String)
     referral_earnings = Column(Float, default=0.0)
@@ -166,6 +170,13 @@ class LoginRequest(BaseModel):
 
 class GoogleAuthRequest(BaseModel):
     token: str
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+class PasswordResetConfirm(BaseModel):
+    token: str
+    new_password: str
 
 class CreateVerificationRequest(BaseModel):
     service_name: str
@@ -316,13 +327,16 @@ def register(req: RegisterRequest, referral_code: str = None, db: Session = Depe
     
     import secrets
     user_referral_code = secrets.token_urlsafe(6)
+    verification_token = secrets.token_urlsafe(32)
     
     user = User(
         id=f"user_{datetime.now(timezone.utc).timestamp()}",
         email=req.email,
         password_hash=bcrypt.hash(req.password),
         credits=5.0,
-        referral_code=user_referral_code
+        referral_code=user_referral_code,
+        email_verified=False,
+        verification_token=verification_token
     )
     
     # Handle referral
@@ -362,8 +376,20 @@ def register(req: RegisterRequest, referral_code: str = None, db: Session = Depe
     db.add(user)
     db.commit()
     
+    # Send verification email
+    verification_url = f"http://localhost:8000/auth/verify?token={verification_token}"
+    send_email(
+        user.email,
+        "Verify Your Email - Namaskah SMS",
+        f"""<h2>Welcome to Namaskah SMS!</h2>
+        <p>Click the link below to verify your email:</p>
+        <p><a href="{verification_url}">Verify Email</a></p>
+        <p>Or copy this link: {verification_url}</p>
+        <p>This link expires in 24 hours.</p>"""
+    )
+    
     token = jwt.encode({"user_id": user.id, "exp": datetime.now(timezone.utc) + timedelta(days=30)}, JWT_SECRET)
-    return {"token": token, "user_id": user.id, "credits": user.credits, "referral_code": user.referral_code}
+    return {"token": token, "user_id": user.id, "credits": user.credits, "referral_code": user.referral_code, "email_verified": False}
 
 @app.get("/auth/google/config")
 def get_google_config():
@@ -436,6 +462,76 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     
     token = jwt.encode({"user_id": user.id, "exp": datetime.now(timezone.utc) + timedelta(days=30)}, JWT_SECRET)
     return {"token": token, "user_id": user.id, "credits": user.credits, "is_admin": user.is_admin}
+
+@app.get("/auth/verify")
+def verify_email(token: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.verification_token == token).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid verification token")
+    
+    user.email_verified = True
+    user.verification_token = None
+    db.commit()
+    
+    return {"message": "Email verified successfully"}
+
+@app.post("/auth/resend-verification")
+def resend_verification(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if user.email_verified:
+        raise HTTPException(status_code=400, detail="Email already verified")
+    
+    import secrets
+    verification_token = secrets.token_urlsafe(32)
+    user.verification_token = verification_token
+    db.commit()
+    
+    verification_url = f"http://localhost:8000/auth/verify?token={verification_token}"
+    send_email(
+        user.email,
+        "Verify Your Email - Namaskah SMS",
+        f"""<h2>Verify Your Email</h2>
+        <p>Click the link below to verify your email:</p>
+        <p><a href="{verification_url}">Verify Email</a></p>"""
+    )
+    
+    return {"message": "Verification email sent"}
+
+@app.post("/auth/forgot-password")
+def forgot_password(req: PasswordResetRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == req.email).first()
+    if not user:
+        return {"message": "If email exists, reset link sent"}
+    
+    import secrets
+    reset_token = secrets.token_urlsafe(32)
+    user.reset_token = reset_token
+    user.reset_token_expires = datetime.now(timezone.utc) + timedelta(hours=1)
+    db.commit()
+    
+    reset_url = f"http://localhost:8000/auth/reset-password?token={reset_token}"
+    send_email(
+        user.email,
+        "Reset Your Password - Namaskah SMS",
+        f"""<h2>Reset Your Password</h2>
+        <p>Click the link below to reset your password:</p>
+        <p><a href="{reset_url}">Reset Password</a></p>
+        <p>This link expires in 1 hour.</p>"""
+    )
+    
+    return {"message": "If email exists, reset link sent"}
+
+@app.post("/auth/reset-password")
+def reset_password(req: PasswordResetConfirm, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.reset_token == req.token).first()
+    if not user or not user.reset_token_expires or user.reset_token_expires < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    
+    user.password_hash = bcrypt.hash(req.new_password)
+    user.reset_token = None
+    user.reset_token_expires = None
+    db.commit()
+    
+    return {"message": "Password reset successfully"}
 
 @app.get("/auth/me")
 def get_me(user: User = Depends(get_current_user)):
