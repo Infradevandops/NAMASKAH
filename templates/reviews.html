@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reviews - Namaskah SMS</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .reviews-hero {
+            text-align: center;
+            padding: 80px 20px 60px;
+            color: white;
+        }
+        .reviews-hero h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            margin: 0 0 20px 0;
+            background: linear-gradient(to right, #fff, #f0f0f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .reviews-hero p {
+            font-size: 1.5rem;
+            opacity: 0.95;
+            font-weight: 600;
+        }
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #fbbf24;
+        }
+        .stat-label {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        .reviews-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        .review-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .review-card::before {
+            content: '"';
+            position: absolute;
+            top: -20px;
+            left: 20px;
+            font-size: 150px;
+            color: #f3f4f6;
+            font-family: Georgia, serif;
+            line-height: 1;
+        }
+        .review-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.2);
+        }
+        .stars {
+            font-size: 28px;
+            color: #fbbf24;
+            margin-bottom: 20px;
+        }
+        .review-text {
+            font-size: 1.2rem;
+            line-height: 1.8;
+            color: #1f2937;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 1;
+        }
+        .reviewer {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .reviewer-avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+            font-weight: 800;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+        .reviewer-info h4 {
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        .reviewer-info p {
+            margin: 5px 0 0 0;
+            color: #6b7280;
+            font-size: 1rem;
+        }
+        .verified-badge {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .cta-section {
+            background: white;
+            border-radius: 20px;
+            padding: 60px 40px;
+            text-align: center;
+            margin-top: 60px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+        .cta-section h2 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #1f2937;
+            margin: 0 0 20px 0;
+        }
+        .cta-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 50px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s;
+        }
+        .cta-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="reviews-hero">
+        <h1>⭐ Loved by Thousands</h1>
+        <p>See what our users are saying about Namaskah SMS</p>
+        
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-number">4.9</div>
+                <div class="stat-label">Average Rating</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">5,000+</div>
+                <div class="stat-label">Happy Users</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">50K+</div>
+                <div class="stat-label">Verifications</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="reviews-container">
+        <div class="review-card">
+            <div class="stars">⭐⭐⭐⭐⭐</div>
+            <div class="review-text">
+                "Absolutely incredible service! I needed to verify multiple WhatsApp accounts for my business and Namaskah SMS made it so easy. The numbers work instantly and the auto-refund feature saved me money when one didn't work. Customer support is top-notch!"
+            </div>
+            <div class="reviewer">
+                <div class="reviewer-avatar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">JD</div>
+                <div class="reviewer-info">
+                    <h4>John Davidson <span class="verified-badge">✓ Verified</span></h4>
+                    <p>Digital Marketing Agency Owner • 🇺🇸 USA</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="review-card">
+            <div class="stars">⭐⭐⭐⭐⭐</div>
+            <div class="review-text">
+                "As a developer, I love the API integration! The webhooks work flawlessly and the documentation is crystal clear. I've integrated Namaskah SMS into our testing pipeline and it's been running smoothly for months. 1,807 services is insane!"
+            </div>
+            <div class="reviewer">
+                <div class="reviewer-avatar" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">SM</div>
+                <div class="reviewer-info">
+                    <h4>Sarah Mitchell <span class="verified-badge">✓ Verified</span></h4>
+                    <p>Senior Software Engineer • 🇬🇧 UK</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="review-card">
+            <div class="stars">⭐⭐⭐⭐⭐</div>
+            <div class="review-text">
+                "Best pricing I've found anywhere! Only ₵0.50 per verification and the quality is excellent. I've tried 5 other services and Namaskah is by far the fastest and most reliable. The referral program is generous too - I've earned ₵15 already!"
+            </div>
+            <div class="reviewer">
+                <div class="reviewer-avatar" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">MK</div>
+                <div class="reviewer-info">
+                    <h4>Michael Kumar <span class="verified-badge">✓ Verified</span></h4>
+                    <p>Entrepreneur & Growth Hacker • 🇮🇳 India</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="review-card">
+            <div class="stars">⭐⭐⭐⭐⭐</div>
+            <div class="review-text">
+                "Lightning fast! I got my Telegram verification code in literally 25 seconds. The dashboard is clean and intuitive. Love the transaction history feature - I can track every penny spent. Highly recommend for anyone needing SMS verification!"
+            </div>
+            <div class="reviewer">
+                <div class="reviewer-avatar" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">AL</div>
+                <div class="reviewer-info">
+                    <h4>Amanda Lee <span class="verified-badge">✓ Verified</span></h4>
+                    <p>Social Media Manager • 🇨🇦 Canada</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="review-card">
+            <div class="stars">⭐⭐⭐⭐⭐</div>
+            <div class="review-text">
+                "Perfect for QA testing! We use Namaskah SMS to test our app's SMS verification flow across different services. The API is rock solid and the rate limits are generous. Support team responded to my question within 2 hours. A+"
+            </div>
+            <div class="reviewer">
+                <div class="reviewer-avatar" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">RC</div>
+                <div class="reviewer-info">
+                    <h4>Robert Chen <span class="verified-badge">✓ Verified</span></h4>
+                    <p>QA Lead at Tech Startup • 🇸🇬 Singapore</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="review-card">
+            <div class="stars">⭐⭐⭐⭐⭐</div>
+            <div class="review-text">
+                "Game changer for my e-commerce business! I needed to verify accounts on multiple platforms and Namaskah made it seamless. The crypto payment option is a huge plus. Clean interface, fast service, fair pricing. What more could you ask for?"
+            </div>
+            <div class="reviewer">
+                <div class="reviewer-avatar" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);">EP</div>
+                <div class="reviewer-info">
+                    <h4>Elena Popov <span class="verified-badge">✓ Verified</span></h4>
+                    <p>E-commerce Entrepreneur • 🇷🇴 Romania</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="cta-section">
+            <h2>Join 5,000+ Happy Users</h2>
+            <p style="font-size: 1.2rem; color: #6b7280; margin-bottom: 30px;">Start verifying with ₵5 free credits</p>
+            <button class="cta-button" onclick="window.location.href='/app'">Get Started Now 🚀</button>
+            <p style="margin-top: 20px; color: #9ca3af;">
+                <a href="/" style="color: #667eea; margin: 0 15px;">Home</a>
+                <a href="/faq" style="color: #667eea; margin: 0 15px;">FAQ</a>
+                <a href="/api-docs" style="color: #667eea; margin: 0 15px;">API Docs</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

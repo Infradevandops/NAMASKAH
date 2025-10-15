@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ - Namaskah SMS</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .faq-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .faq-item { background: white; padding: 20px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid #667eea; cursor: pointer; }
+        .faq-question { font-weight: bold; font-size: 18px; color: #1f2937; display: flex; justify-content: space-between; align-items: center; }
+        .faq-answer { margin-top: 15px; color: #6b7280; line-height: 1.6; display: none; }
+        .faq-item.active .faq-answer { display: block; }
+        .faq-icon { font-size: 24px; transition: transform 0.3s; }
+        .faq-item.active .faq-icon { transform: rotate(45deg); }
+    </style>
+</head>
+<body>
+    <div class="faq-container">
+        <header style="text-align: center; margin-bottom: 40px;">
+            <h1>❓ Frequently Asked Questions</h1>
+            <p>Everything you need to know about Namaskah SMS</p>
+            <button onclick="window.location.href='/'" style="margin-top: 20px;">🏠 Home</button>
+        </header>
+
+        <div class="card" style="margin-bottom: 30px;">
+            <h2>Quick Links</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                <a href="#general" style="padding: 10px; background: #f9fafb; border-radius: 6px; text-decoration: none; color: #667eea;">📋 General</a>
+                <a href="#pricing" style="padding: 10px; background: #f9fafb; border-radius: 6px; text-decoration: none; color: #667eea;">💰 Pricing</a>
+                <a href="#technical" style="padding: 10px; background: #f9fafb; border-radius: 6px; text-decoration: none; color: #667eea;">🔧 Technical</a>
+                <a href="#support" style="padding: 10px; background: #f9fafb; border-radius: 6px; text-decoration: none; color: #667eea;">🆘 Support</a>
+            </div>
+        </div>
+
+        <h2 id="general" style="margin: 30px 0 20px 0;">📋 General Questions</h2>
+
+        <div class="faq-item" onclick="this.classList.toggle('active')">
+            <div class="faq-question">
+                What is Namaskah SMS?
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                Namaskah SMS is a temporary phone number service that allows you to receive SMS verification codes for 1,807+ services including WhatsApp, Telegram, Google, Discord, Instagram, Facebook, and more. Perfect for account verification, privacy protection, and testing.
+            </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('active')">
+            <div class="faq-question">
+                How does it work?
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                <ol>
+                    <li>Select the service you want to verify (e.g., WhatsApp)</li>
+                    <li>Get a temporary phone number instantly</li>
+                    <li>Use the number for verification on your chosen service</li>
+                    <li>Receive SMS codes in your dashboard within 60-120 seconds</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('active')">
+            <div class="faq-question">
+                Which services are supported?
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                We support 1,807+ services including:
+                <ul>
+                    <li>Social Media: WhatsApp, Telegram, Instagram, Facebook, X (Twitter), TikTok, Snapchat</li>
+                    <li>Tech: Google, Discord, Microsoft, Apple, GitHub</li>
+                    <li>Ride-sharing: Uber, Lyft, Bolt</li>
+                    <li>Streaming: Netflix, Spotify, YouTube</li>
+                    <li>And 1,800+ more services</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('active')">
+            <div class="faq-question">
+                Is it legal to use?
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                Yes! Namaskah SMS is completely legal. We provide legitimate temporary phone numbers for verification purposes. However, users are responsible for complying with the terms of service of the platforms they're verifying on.
+            </div>
+        </div>
+
+        <h2 id="pricing" style="margin: 30px 0 20px 0;">💰 Pricing & Credits</h2>
+
+        <div class="faq-item" onclick="this.classList.toggle('active')">
+            <div class="faq-question">
+                How much does it cost?
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                Each verification costs ₵0.50 (Namaskah Coins). There are no subscriptions or hidden fees. You only pay for what you use.
+            </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('active')">
+            <div class="faq-question">
+                What are Namaskah Coins (₵)?
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                Namaskah Coins (₵) are our platform currency. 1 USD = 1 ₵. When you fund your wallet, your money is instantly converted to Namaskah Coins which you can use for verifications.
+            </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('active')">
+            <div class="faq-question">
+                How do I add funds to my wallet?
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                Click the "💰 Fund Wallet" button and choose your payment method:
+                <ul>
+                    <li>🏦 Paystack (Bank Transfer, Card, USSD)</li>
+                    <li>₿ Bitcoin</li>
+                    <li>Ξ Ethereum</li>
+                    <li>◎ Solana</li>
+                    <li>₮ USDT</li>
+                </ul>
+                Minimum funding amount is $5.00.
+            </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('active')">
+            <div class="faq-question">
+                Do I get a refund if SMS doesn't arrive?
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                Yes! If no SMS arrives within the service-specific timeout (60-120 seconds), your verification is automatically cancelled and you receive a full refund of ₵0.50.
+            </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('active')">
+            <div class="faq-question">
+                How does the referral program work?
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                Earn ₵1.00 for each friend you refer! Your friend gets ₵2.00 bonus on signup. Share your unique referral link found in the Referral Program section of your dashboard.
+            </div>
+        </div>
+
+        <h2 id="technical" style="margin: 30px 0 20px 0;">🔧 Technical Questions</h2>
+
+        <div class="faq-item" onclick="this.classList.toggle('active')">
+            <div class="faq-question">
+                How long does it take to receive SMS?
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                SMS delivery time varies by service:
+                <ul>
+                    <li>⚡ Fast services (Google, Discord): 60 seconds</li>
+                    <li>⏱️ Standard services (WhatsApp, Telegram, Facebook): 90 seconds</li>
+                    <li>🐌 Slow services (Instagram): 120 seconds</li>
+                </ul>
+                Most SMS arrive within 30-60 seconds.
+            </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('active')">
+            <div class="faq-question">
+                Can I use the API programmatically?
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                Yes! Generate API keys in your dashboard and use our RESTful API. Check our <a href="/api-docs" style="color: #667eea;">API Documentation</a> for complete reference with code examples.
+            </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('active')">
+            <div class="faq-question">
+                What are webhooks and how do I use them?
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                Webhooks allow you to receive SMS notifications automatically at your server URL. When an SMS arrives, we send a POST request to your webhook URL with the message content. Perfect for automation!
+            </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('active')">
+            <div class="faq-question">
+                Are there rate limits?
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                Yes, to ensure fair usage:
+                <ul>
+                    <li>100 requests per minute per user</li>
+                    <li>1,000 requests per hour per user</li>
+                </ul>
+                Exceeding limits returns a 429 error. Contact us for higher limits.
+            </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('active')">
+            <div class="faq-question">
+                Can I receive multiple SMS on the same number?
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                Yes! All SMS sent to your temporary number during the active verification period will appear in your dashboard. The number remains active until you cancel or it times out.
+            </div>
+        </div>
+
+        <h2 id="support" style="margin: 30px 0 20px 0;">🆘 Support & Troubleshooting</h2>
+
+        <div class="faq-item" onclick="this.classList.toggle('active')">
+            <div class="faq-question">
+                What if I don't receive the SMS?
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                <ol>
+                    <li>Wait for the full timeout period (60-120s depending on service)</li>
+                    <li>The system will automatically cancel and refund if no SMS arrives</li>
+                    <li>Click "Retry with New Number" to try again with a different number</li>
+                    <li>If issues persist, try a different service or contact support</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('active')">
+            <div class="faq-question">
+                My balance is low, how do I get notified?
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                Enable email notifications in the Notification Settings section. You can set a custom threshold (default: ₵1.00) and receive email alerts when your balance drops below it.
+            </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('active')">
+            <div class="faq-question">
+                How do I cancel a verification?
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                Click the "Cancel" button in the verification details. You'll receive a full refund of ₵0.50 immediately. The refund appears in your transaction history.
+            </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('active')">
+            <div class="faq-question">
+                Is my data secure?
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                Yes! We use:
+                <ul>
+                    <li>JWT token authentication</li>
+                    <li>Bcrypt password hashing</li>
+                    <li>Secure API communication</li>
+                    <li>User isolation (strict data separation)</li>
+                    <li>Environment-based secrets</li>
+                </ul>
+                We never store sensitive payment information.
+            </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('active')">
+            <div class="faq-question">
+                Can I get a receipt for my payments?
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                Yes! All transactions are recorded in your Transaction History with timestamps, amounts, and descriptions. You can view your complete payment history anytime.
+            </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('active')">
+            <div class="faq-question">
+                How do I contact support?
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                For support inquiries:
+                <ul>
+                    <li>📧 Email: support@namaskah.app</li>
+                    <li>📚 Check our <a href="/api-docs" style="color: #667eea;">API Documentation</a></li>
+                    <li>🏠 Visit our <a href="/" style="color: #667eea;">Homepage</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center; margin-top: 40px;">
+            <h3 style="margin: 0 0 15px 0;">Still have questions?</h3>
+            <p style="margin: 0 0 20px 0; opacity: 0.9;">We're here to help!</p>
+            <button onclick="window.location.href='/app'" style="background: white; color: #667eea;">Get Started Now</button>
+        </div>
+
+        <footer style="text-align: center; margin-top: 40px; padding: 20px; color: #6b7280;">
+            <p>📱 Namaskah SMS - Simple. Fast. Focused.</p>
+            <p><a href="/">Home</a> • <a href="/app">Dashboard</a> • <a href="/reviews">Reviews</a> • <a href="/api-docs">API Docs</a> • <a href="/faq">FAQ</a></p>
+        </footer>
+    </div>
+</body>
+</html>

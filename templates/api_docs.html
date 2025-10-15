@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation - Namaskah SMS</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .docs-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .endpoint { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; border-left: 4px solid #667eea; }
+        .method { display: inline-block; padding: 4px 12px; border-radius: 4px; font-weight: bold; color: white; margin-right: 10px; }
+        .method.post { background: #10b981; }
+        .method.get { background: #3b82f6; }
+        .method.delete { background: #ef4444; }
+        .code-block { background: #1f2937; color: #f3f4f6; padding: 15px; border-radius: 6px; overflow-x: auto; font-family: monospace; font-size: 14px; }
+        .param { background: #f9fafb; padding: 10px; margin: 5px 0; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="docs-container">
+        <header style="text-align: center; margin-bottom: 40px;">
+            <h1>📚 Namaskah SMS API Documentation</h1>
+            <p>Complete API reference for developers</p>
+            <button onclick="window.location.href='/'" style="margin-top: 20px;">🏠 Home</button>
+        </header>
+
+        <div class="card">
+            <h2>🔐 Authentication</h2>
+            <p>All API requests require a Bearer token in the Authorization header.</p>
+            <div class="code-block">Authorization: Bearer YOUR_JWT_TOKEN</div>
+        </div>
+
+        <div class="endpoint">
+            <h3><span class="method post">POST</span>/auth/register</h3>
+            <p>Register a new user account</p>
+            <div class="param"><strong>Body:</strong> { "email": "user@example.com", "password": "password123" }</div>
+            <div class="param"><strong>Response:</strong> { "token": "jwt_token", "user_id": "user_xxx", "credits": 5.0 }</div>
+            <div class="code-block">curl -X POST http://localhost:8000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"password123"}'</div>
+        </div>
+
+        <div class="endpoint">
+            <h3><span class="method post">POST</span>/auth/login</h3>
+            <p>Login to existing account</p>
+            <div class="param"><strong>Body:</strong> { "email": "user@example.com", "password": "password123" }</div>
+            <div class="param"><strong>Response:</strong> { "token": "jwt_token", "user_id": "user_xxx", "credits": 5.0 }</div>
+        </div>
+
+        <div class="endpoint">
+            <h3><span class="method get">GET</span>/auth/me</h3>
+            <p>Get current user information</p>
+            <div class="param"><strong>Headers:</strong> Authorization: Bearer TOKEN</div>
+            <div class="param"><strong>Response:</strong> { "id": "user_xxx", "email": "user@example.com", "credits": 5.0 }</div>
+        </div>
+
+        <div class="card">
+            <h2>📱 Verifications</h2>
+        </div>
+
+        <div class="endpoint">
+            <h3><span class="method post">POST</span>/verify/create</h3>
+            <p>Create a new SMS verification</p>
+            <div class="param"><strong>Body:</strong> { "service_name": "whatsapp" }</div>
+            <div class="param"><strong>Response:</strong> { "id": "xxx", "phone_number": "+1-555-123-4567", "status": "pending", "cost": 0.5 }</div>
+            <div class="code-block">curl -X POST http://localhost:8000/verify/create \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"service_name":"whatsapp"}'</div>
+        </div>
+
+        <div class="endpoint">
+            <h3><span class="method get">GET</span>/verify/{id}/messages</h3>
+            <p>Get SMS messages for verification</p>
+            <div class="param"><strong>Response:</strong> { "verification_id": "xxx", "messages": ["Your code is 123456"] }</div>
+        </div>
+
+        <div class="endpoint">
+            <h3><span class="method delete">DELETE</span>/verify/{id}</h3>
+            <p>Cancel verification and get refund</p>
+            <div class="param"><strong>Response:</strong> { "message": "Cancelled", "refunded": 0.5, "new_balance": 5.5 }</div>
+        </div>
+
+        <div class="card">
+            <h2>💰 Wallet & Payments</h2>
+        </div>
+
+        <div class="endpoint">
+            <h3><span class="method post">POST</span>/wallet/fund</h3>
+            <p>Fund wallet with payment method</p>
+            <div class="param"><strong>Body:</strong> { "amount": 10.0, "payment_method": "paystack" }</div>
+            <div class="param"><strong>Methods:</strong> paystack, bitcoin, ethereum, solana, usdt</div>
+        </div>
+
+        <div class="endpoint">
+            <h3><span class="method get">GET</span>/transactions/history</h3>
+            <p>Get transaction history</p>
+            <div class="param"><strong>Response:</strong> { "transactions": [{ "amount": 0.5, "type": "debit", "description": "..." }] }</div>
+        </div>
+
+        <div class="card">
+            <h2>🔑 API Keys</h2>
+        </div>
+
+        <div class="endpoint">
+            <h3><span class="method post">POST</span>/api-keys/create</h3>
+            <p>Generate new API key</p>
+            <div class="param"><strong>Body:</strong> { "name": "Production Key" }</div>
+            <div class="param"><strong>Response:</strong> { "key": "nsk_xxxxx", "name": "Production Key" }</div>
+        </div>
+
+        <div class="endpoint">
+            <h3><span class="method get">GET</span>/api-keys/list</h3>
+            <p>List all API keys</p>
+        </div>
+
+        <div class="card">
+            <h2>🔔 Webhooks</h2>
+        </div>
+
+        <div class="endpoint">
+            <h3><span class="method post">POST</span>/webhooks/create</h3>
+            <p>Add webhook URL</p>
+            <div class="param"><strong>Body:</strong> { "url": "https://your-domain.com/webhook" }</div>
+            <div class="param"><strong>Webhook Payload:</strong> { "verification_id": "xxx", "messages": ["..."], "timestamp": "..." }</div>
+        </div>
+
+        <div class="card">
+            <h2>📊 Analytics</h2>
+        </div>
+
+        <div class="endpoint">
+            <h3><span class="method get">GET</span>/analytics/dashboard</h3>
+            <p>Get complete analytics data</p>
+            <div class="param"><strong>Response:</strong> { "total_verifications": 10, "success_rate": 95.5, "popular_services": [...] }</div>
+        </div>
+
+        <div class="card">
+            <h2>📋 Rate Limits</h2>
+            <p>• 100 requests per minute per user</p>
+            <p>• 1000 requests per hour per user</p>
+            <p>• Exceeding limits returns 429 Too Many Requests</p>
+        </div>
+
+        <div class="card">
+            <h2>🎯 Example: Complete Flow</h2>
+            <div class="code-block">
+# 1. Register
+curl -X POST http://localhost:8000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"dev@example.com","password":"secure123"}'
+
+# 2. Create Verification
+curl -X POST http://localhost:8000/verify/create \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"service_name":"telegram"}'
+
+# 3. Check Messages
+curl http://localhost:8000/verify/VERIFICATION_ID/messages \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# 4. Fund Wallet
+curl -X POST http://localhost:8000/wallet/fund \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"amount":10,"payment_method":"paystack"}'
+            </div>
+        </div>
+
+        <footer style="text-align: center; margin-top: 40px; padding: 20px; color: #6b7280;">
+            <p>📱 Namaskah SMS - Simple. Fast. Focused.</p>
+            <p><a href="/">Home</a> • <a href="/app">Dashboard</a> • <a href="/docs">Interactive Docs</a></p>
+        </footer>
+    </div>
+</body>
+</html>

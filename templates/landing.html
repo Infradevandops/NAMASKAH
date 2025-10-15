@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Namaskah SMS - SMS Verification for 1,807+ Services</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body { padding: 0; }
+        .landing-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: var(--bg-secondary);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .landing-nav .logo {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+        .landing-nav button {
+            padding: 8px 16px;
+            font-size: 14px;
+            width: auto;
+        }
+        .hero {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .hero h1 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+        .hero p {
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+        @media (min-width: 768px) {
+            .hero { padding: 80px 20px; }
+            .hero h1 { font-size: 3rem; }
+            .hero p { font-size: 1.5rem; }
+        }
+        .cta-button {
+            background: white;
+            color: #0077B5;
+            padding: 12px 24px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: inline-block;
+            margin: 5px;
+        }
+        .cta-button.secondary {
+            background: transparent;
+            border: 2px solid white;
+            color: white;
+        }
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+        @media (min-width: 768px) {
+            .cta-button { padding: 15px 40px; font-size: 1.2rem; }
+        }
+        .features {
+            padding: 30px 15px;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--bg-primary);
+        }
+        .features h2 {
+            text-align: center;
+            font-size: 1.8rem;
+            margin-bottom: 30px;
+            color: var(--text-primary);
+        }
+        @media (min-width: 768px) {
+            .features { padding: 60px 20px; }
+            .features h2 { font-size: 2.5rem; margin-bottom: 50px; }
+        }
+        .feature-grid {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .feature-card {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            border: 1px solid var(--border);
+            transition: transform 0.3s;
+            width: 100%;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        .feature-card h3 {
+            font-size: 1.2rem;
+            margin: 10px 0;
+            color: var(--text-primary);
+        }
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        @media (min-width: 768px) {
+            .feature-card { padding: 30px; max-width: 600px; }
+            .feature-card h3 { font-size: 1.5rem; }
+            .feature-card p { font-size: 1rem; }
+        }
+        .pricing {
+            background: var(--bg-secondary);
+            padding: 30px 15px;
+            text-align: center;
+        }
+        .pricing h2 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+        @media (min-width: 768px) {
+            .pricing { padding: 60px 20px; }
+            .pricing h2 { font-size: 2.5rem; }
+        }
+        .price-box {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            max-width: 400px;
+            margin: 30px auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .price {
+            font-size: 3rem;
+            color: #667eea;
+            font-weight: bold;
+        }
+        footer {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            padding: 30px 15px;
+            text-align: center;
+            border-top: 1px solid var(--border);
+        }
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        @media (min-width: 768px) {
+            footer { padding: 40px 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="landing-nav">
+        <div class="logo">📱 Namaskah</div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button onclick="window.location.href='/app'" style="background: var(--accent);">Login</button>
+            <div class="theme-toggle" onclick="toggleTheme()"></div>
+        </div>
+    </div>
+    <div class="hero">
+        <h1>📱 Namaskah SMS</h1>
+        <p>Instant SMS Verification for 1,807+ Services</p>
+        <p style="font-size: 0.85rem; margin-bottom: 30px;">WhatsApp • Telegram • Google • Discord • Instagram • Facebook • 1,800+ more</p>
+        <button class="cta-button" onclick="window.location.href='/app'">Get Started - ₵5 Free</button>
+        <button class="cta-button secondary" onclick="window.location.href='/app'">Login</button>
+    </div>
+
+    <div class="features">
+        <h2>Why Choose Namaskah?</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div style="font-size: 3rem;">⚡</div>
+                <h3>Lightning Fast</h3>
+                <p>Get SMS codes in 60-120 seconds. Service-specific timers ensure optimal delivery.</p>
+            </div>
+            <div class="feature-card">
+                <div style="font-size: 3rem;">📱</div>
+                <h3>1,807 Services</h3>
+                <p>Verify any service: WhatsApp, Telegram, Google, Discord, Instagram, and 1,800+ more.</p>
+            </div>
+            <div class="feature-card">
+                <div style="font-size: 3rem;">💰</div>
+                <h3>Pay As You Go</h3>
+                <p>Only ₵0.50 per verification. No subscriptions. No hidden fees.</p>
+            </div>
+            <div class="feature-card">
+                <div style="font-size: 3rem;">🔒</div>
+                <h3>Secure & Private</h3>
+                <p>Your data is encrypted. Numbers are temporary and disposable.</p>
+            </div>
+            <div class="feature-card">
+                <div style="font-size: 3rem;">🔄</div>
+                <h3>Auto-Refund</h3>
+                <p>No SMS? Get automatic refund. Risk-free verification.</p>
+            </div>
+            <div class="feature-card">
+                <div style="font-size: 3rem;">🌍</div>
+                <h3>Global Coverage</h3>
+                <p>International numbers. Works worldwide. Multiple payment methods.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="pricing" style="position: relative; overflow: hidden;">
+        <h2>💎 Simple Pricing</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 30px; font-size: 0.95rem;">Choose the plan that fits your needs • Save up to 30%</p>
+            
+        <div style="max-width: 1200px; margin: 0 auto; padding: 0 15px; display: grid; grid-template-columns: 1fr; gap: 15px;">
+            <style>
+                @media (min-width: 768px) {
+                    .pricing > div { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important; gap: 30px !important; }
+                }
+            </style>
+            <!-- Pay-as-You-Use -->
+            <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; transition: all 0.3s; display: flex; flex-direction: column;">
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 10px;">🎯</div>
+                    <h3 style="font-size: 1.3rem; color: var(--text-primary); margin: 0 0 8px 0; font-weight: 700;">Pay-as-You-Use</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 15px;">Perfect for individuals</p>
+                    <div style="font-size: 2.5rem; font-weight: 900; color: var(--accent); margin: 15px 0;">₵0.50</div>
+                    <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.85rem;">per verification</p>
+                </div>
+                <ul style="text-align: left; margin: 20px 0; list-style: none; padding: 0; font-size: 0.85rem; flex-grow: 1;">
+                    <li style="padding: 8px 0; color: var(--text-primary);">✓ 1,807 services</li>
+                    <li style="padding: 8px 0; color: var(--text-primary);">✓ Instant SMS delivery</li>
+                    <li style="padding: 8px 0; color: var(--text-primary);">✓ Auto-refund guarantee</li>
+                    <li style="padding: 8px 0; color: var(--text-primary);">✓ Multiple payments</li>
+                    <li style="padding: 8px 0; color: var(--text-primary);">✓ 24/7 availability</li>
+                </ul>
+                <button onclick="window.location.href='/app'" style="width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: auto;">Get Started</button>
+            </div>
+
+            <!-- Developer Plan -->
+            <div style="background: linear-gradient(135deg, var(--accent), var(--accent-hover)); border: 2px solid #fbbf24; border-radius: 16px; padding: 20px; position: relative; color: white; display: flex; flex-direction: column;">
+                <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #fbbf24; color: #1f2937; padding: 6px 16px; border-radius: 20px; font-weight: 700; font-size: 0.75rem;">🔥 POPULAR</div>
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 10px;">🚀</div>
+                    <h3 style="font-size: 1.3rem; margin: 0 0 8px 0; font-weight: 700;">Developer Plan</h3>
+                    <p style="opacity: 0.95; font-size: 0.85rem; margin-bottom: 15px;">Best for developers</p>
+                    <div style="font-size: 2.5rem; font-weight: 900; margin: 15px 0;">₵0.40</div>
+                    <div style="background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 15px; display: inline-block; margin-bottom: 15px; font-size: 0.75rem; font-weight: 700;">💰 SAVE 20%</div>
+                    <p style="opacity: 0.95; margin-bottom: 20px; font-size: 0.85rem;">per verification</p>
+                </div>
+                <ul style="text-align: left; margin: 20px 0; list-style: none; padding: 0; font-size: 0.85rem; flex-grow: 1;">
+                    <li style="padding: 8px 0;">✓ Everything in Pay-as-You-Use</li>
+                    <li style="padding: 8px 0;">✓ <strong>20% discount</strong></li>
+                    <li style="padding: 8px 0;">✓ API keys & webhooks</li>
+                    <li style="padding: 8px 0;">✓ Priority support</li>
+                    <li style="padding: 8px 0;">✓ Min. ₵50 purchase</li>
+                </ul>
+                <button onclick="window.location.href='/app'" style="width: 100%; padding: 12px; background: white; color: var(--accent); border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: auto;">Start Building</button>
+            </div>
+
+            <!-- Enterprise Plan -->
+            <div style="background: var(--bg-card); border: 2px solid var(--success); border-radius: 16px; padding: 20px; transition: all 0.3s; display: flex; flex-direction: column;">
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 10px;">⚡</div>
+                    <h3 style="font-size: 1.3rem; color: var(--text-primary); margin: 0 0 8px 0; font-weight: 700;">Enterprise Plan</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 15px;">For high-volume</p>
+                    <div style="font-size: 2.5rem; font-weight: 900; color: var(--success); margin: 15px 0;">₵0.35</div>
+                    <div style="background: rgba(16,185,129,0.1); padding: 6px 12px; border-radius: 15px; display: inline-block; margin-bottom: 15px; font-size: 0.75rem; font-weight: 700; color: var(--success);">💎 SAVE 30%</div>
+                    <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.85rem;">per verification</p>
+                </div>
+                <ul style="text-align: left; margin: 20px 0; list-style: none; padding: 0; font-size: 0.85rem; flex-grow: 1;">
+                    <li style="padding: 8px 0; color: var(--text-primary);">✓ Everything in Developer</li>
+                    <li style="padding: 8px 0; color: var(--text-primary);">✓ <strong>30% discount</strong></li>
+                    <li style="padding: 8px 0; color: var(--text-primary);">✓ Dedicated support</li>
+                    <li style="padding: 8px 0; color: var(--text-primary);">✓ Custom integrations</li>
+                    <li style="padding: 8px 0; color: var(--text-primary);">✓ Min. ₵200 purchase</li>
+                </ul>
+                <button onclick="window.location.href='/app'" style="width: 100%; padding: 12px; background: var(--success); color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: auto;">Go Enterprise</button>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; padding: 15px; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border);">
+            <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 600; margin-bottom: 8px;">💰 1 USD = 1 Namaskah Coin (₵)</p>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">All plans include ₵5 free credits • No hidden fees</p>
+        </div>
+    </div>
+
+    <div style="background: var(--bg-primary); padding: 40px 15px;">
+        <h2 style="text-align: center; font-size: 1.8rem; margin-bottom: 30px; color: var(--text-primary);">📂 Categories</h2>
+        <style>
+            @media (min-width: 768px) {
+                .categories-section h2 { font-size: 2.5rem !important; }
+            }
+        </style>
+        <div style="max-width: 1400px; margin: 0 auto; padding: 0 15px;">
+            <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center;">
+                <span style="background: var(--accent); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">📱 Social</span>
+                <span style="background: var(--accent); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">💬 Messaging</span>
+                <span style="background: var(--accent); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">💕 Dating</span>
+                <span style="background: var(--accent); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">💰 Finance</span>
+                <span style="background: var(--accent); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">🛒 Shopping</span>
+                <span style="background: var(--accent); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">🍔 Food</span>
+                <span style="background: var(--accent); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">🎮 Gaming</span>
+                <span style="background: var(--accent); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">₿ Crypto</span>
+            </div>
+            <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px;">
+                    <div>
+                        <h4 style="color: var(--accent); font-size: 0.9rem; margin: 0 0 10px 0;">📱 Social</h4>
+                        <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.75rem; color: var(--text-secondary);">
+                            <li style="padding: 3px 0;">Instagram</li>
+                            <li style="padding: 3px 0;">Facebook</li>
+                            <li style="padding: 3px 0;">Twitter/X</li>
+                            <li style="padding: 3px 0;">TikTok</li>
+                            <li style="padding: 3px 0;">Snapchat</li>
+                            <li style="padding: 3px 0;">+ 28 more</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--accent); font-size: 0.9rem; margin: 0 0 10px 0;">💬 Messaging</h4>
+                        <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.75rem; color: var(--text-secondary);">
+                            <li style="padding: 3px 0;">WhatsApp</li>
+                            <li style="padding: 3px 0;">Telegram</li>
+                            <li style="padding: 3px 0;">Discord</li>
+                            <li style="padding: 3px 0;">Signal</li>
+                            <li style="padding: 3px 0;">WeChat</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--accent); font-size: 0.9rem; margin: 0 0 10px 0;">💕 Dating</h4>
+                        <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.75rem; color: var(--text-secondary);">
+                            <li style="padding: 3px 0;">Tinder</li>
+                            <li style="padding: 3px 0;">Bumble</li>
+                            <li style="padding: 3px 0;">Hinge</li>
+                            <li style="padding: 3px 0;">OkCupid</li>
+                            <li style="padding: 3px 0;">Match</li>
+                            <li style="padding: 3px 0;">+ 58 more</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--accent); font-size: 0.9rem; margin: 0 0 10px 0;">💰 Finance</h4>
+                        <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.75rem; color: var(--text-secondary);">
+                            <li style="padding: 3px 0;">PayPal</li>
+                            <li style="padding: 3px 0;">Venmo</li>
+                            <li style="padding: 3px 0;">CashApp</li>
+                            <li style="padding: 3px 0;">Revolut</li>
+                            <li style="padding: 3px 0;">Wise</li>
+                            <li style="padding: 3px 0;">+ 64 more</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--accent); font-size: 0.9rem; margin: 0 0 10px 0;">🛒 Shopping</h4>
+                        <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.75rem; color: var(--text-secondary);">
+                            <li style="padding: 3px 0;">Amazon</li>
+                            <li style="padding: 3px 0;">eBay</li>
+                            <li style="padding: 3px 0;">Alibaba</li>
+                            <li style="padding: 3px 0;">Etsy</li>
+                            <li style="padding: 3px 0;">+ 16 more</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--accent); font-size: 0.9rem; margin: 0 0 10px 0;">🍔 Food</h4>
+                        <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.75rem; color: var(--text-secondary);">
+                            <li style="padding: 3px 0;">Uber Eats</li>
+                            <li style="padding: 3px 0;">DoorDash</li>
+                            <li style="padding: 3px 0;">Grubhub</li>
+                            <li style="padding: 3px 0;">+ 7 more</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--accent); font-size: 0.9rem; margin: 0 0 10px 0;">🎮 Gaming</h4>
+                        <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.75rem; color: var(--text-secondary);">
+                            <li style="padding: 3px 0;">Steam</li>
+                            <li style="padding: 3px 0;">Roblox</li>
+                            <li style="padding: 3px 0;">Twitch</li>
+                            <li style="padding: 3px 0;">+ 2 more</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--accent); font-size: 0.9rem; margin: 0 0 10px 0;">₿ Crypto</h4>
+                        <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.75rem; color: var(--text-secondary);">
+                            <li style="padding: 3px 0;">Binance</li>
+                            <li style="padding: 3px 0;">Coinbase</li>
+                            <li style="padding: 3px 0;">Kraken</li>
+                            <li style="padding: 3px 0;">+ 4 more</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p style="text-align: center; margin-top: 30px; color: var(--text-secondary); font-size: 0.9rem;">+ 1,595 more services available</p>
+    </div>
+
+    <div class="how-it-works-section" style="background: var(--bg-secondary); padding: 40px 15px; text-align: center;">
+        <style>
+            @media (min-width: 768px) {
+                .how-it-works-section { padding: 60px 20px !important; }
+            }
+        </style>
+        <h2 style="font-size: 1.8rem; margin-bottom: 20px; color: var(--text-primary);">How It Works</h2>
+        <style>
+            @media (min-width: 768px) {
+                .how-it-works-section h2 { font-size: 2.5rem !important; margin-bottom: 30px !important; }
+            }
+        </style>
+        <div class="how-it-works-grid" style="max-width: 800px; margin: 0 auto; padding: 0 15px; display: grid; grid-template-columns: 1fr; gap: 20px;">
+            <div>
+                <div style="font-size: 3rem; color: #10b981;">1️⃣</div>
+                <h3 style="color: var(--text-primary);">Select Service</h3>
+                <p style="color: var(--text-secondary);">Choose from 1,807 services</p>
+            </div>
+            <div>
+                <div style="font-size: 3rem; color: #10b981;">2️⃣</div>
+                <h3 style="color: var(--text-primary);">Get Number</h3>
+                <p style="color: var(--text-secondary);">Receive temporary phone number</p>
+            </div>
+            <div>
+                <div style="font-size: 3rem; color: #10b981;">3️⃣</div>
+                <h3 style="color: var(--text-primary);">Receive SMS</h3>
+                <p style="color: var(--text-secondary);">Get verification code instantly</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="reviews-section" style="background: var(--bg-primary); padding: 40px 15px;">
+        <style>
+            @media (min-width: 768px) {
+                .reviews-section { padding: 60px 20px !important; }
+            }
+        </style>
+        <h2 style="text-align: center; font-size: 1.8rem; margin-bottom: 30px; color: var(--text-primary);">⭐ What Our Users Say</h2>
+        <style>
+            @media (min-width: 768px) {
+                .reviews-section h2 { font-size: 2.5rem !important; margin-bottom: 50px !important; }
+            }
+        </style>
+        <div class="reviews-grid" style="max-width: 1200px; margin: 0 auto; padding: 0 15px; display: grid; grid-template-columns: 1fr; gap: 20px;">
+            <div style="background: var(--bg-card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid var(--border);">
+                <style>
+                    @media (min-width: 768px) {
+                        .reviews-grid > div { padding: 30px !important; }
+                    }
+                </style>
+                <div style="font-weight: bold; color: var(--text-primary); font-size: 16px; margin-bottom: 5px;">John Davidson</div>
+                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">Marketing Agency Owner</div>
+                <p style="font-style: italic; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.5; font-size: 14px;">"Super fast and reliable! Got my WhatsApp verification in under 30 seconds. The auto-refund feature is a game changer."</p>
+                <div style="color: #fbbf24; font-size: 20px;">⭐⭐⭐⭐⭐</div>
+            </div>
+
+            <div style="background: var(--bg-card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid var(--border);">
+                <div style="font-weight: bold; color: var(--text-primary); font-size: 16px; margin-bottom: 5px;">Sarah Mitchell</div>
+                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">Senior Software Engineer</div>
+                <p style="font-style: italic; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.5; font-size: 14px;">"As a developer, I love the API integration! The webhooks work flawlessly and the documentation is crystal clear. 1,807 services is insane!"</p>
+                <div style="color: #fbbf24; font-size: 20px;">⭐⭐⭐⭐⭐</div>
+            </div>
+
+            <div style="background: var(--bg-card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid var(--border);">
+                <div style="font-weight: bold; color: var(--text-primary); font-size: 16px; margin-bottom: 5px;">Michael Kumar</div>
+                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">Entrepreneur</div>
+                <p style="font-style: italic; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.5; font-size: 14px;">"Best pricing I've found anywhere! Only ₵0.50 per verification and the quality is excellent. The referral program is generous too!"</p>
+                <div style="color: #fbbf24; font-size: 20px;">⭐⭐⭐⭐⭐</div>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 30px;">
+            <p class="join-text" style="font-size: 1rem; color: #10b981; font-weight: bold;">Join 5,000+ Happy Users Today! 🚀</p>
+            <style>
+                @media (min-width: 768px) {
+                    .reviews-section .join-text { font-size: 1.2rem !important; }
+                }
+            </style>
+        </div>
+    </div>
+
+    <footer>
+        <p style="font-size: 1.1rem; margin-bottom: 15px;">📱 Namaskah SMS - Simple. Fast. Focused.</p>
+        <p style="opacity: 0.7; font-size: 0.9rem;">© 2024 Namaskah. All rights reserved.</p>
+        <p style="margin-top: 15px; display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; font-size: 0.85rem;">
+            <a href="/app">Login</a> •
+            <a href="/app">Register</a> •
+            <a href="/reviews">Reviews</a> •
+            <a href="/faq">FAQ</a> •
+            <a href="/api-docs">API Docs</a>
+        </p>
+    </footer>
+    
+    <script>
+        const theme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Namaskah SMS</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔧 Admin Panel</h1>
+            <p>Manage Users & Credits</p>
+        </header>
+
+        <div id="auth-section">
+            <div class="card">
+                <h2>Admin Login</h2>
+                <input type="email" id="admin-email" placeholder="Admin Email" required>
+                <input type="password" id="admin-password" placeholder="Password" required>
+                <button onclick="adminLogin()">Login</button>
+            </div>
+        </div>
+
+        <div id="admin-section" class="hidden">
+            <div class="user-info">
+                <span id="admin-email-display"></span>
+                <button onclick="logout()">Logout</button>
+            </div>
+
+            <div class="card">
+                <h2>📊 Statistics</h2>
+                <div id="stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div style="background: #f3f4f6; padding: 15px; border-radius: 8px;">
+                        <div style="font-size: 24px; font-weight: bold;" id="total-users">0</div>
+                        <div style="color: #6b7280;">Total Users</div>
+                    </div>
+                    <div style="background: #f3f4f6; padding: 15px; border-radius: 8px;">
+                        <div style="font-size: 24px; font-weight: bold;" id="total-verifications">0</div>
+                        <div style="color: #6b7280;">Total Verifications</div>
+                    </div>
+                    <div style="background: #f3f4f6; padding: 15px; border-radius: 8px;">
+                        <div style="font-size: 24px; font-weight: bold;" id="total-revenue">$0</div>
+                        <div style="color: #6b7280;">Total Revenue</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>👥 Users</h2>
+                <button onclick="loadUsers()" class="btn-small" style="margin-bottom: 15px;">Refresh</button>
+                <div id="users-list"></div>
+            </div>
+
+            <div id="add-credits-modal" class="card hidden">
+                <h2>Add Credits</h2>
+                <p><strong>User:</strong> <span id="selected-user-email"></span></p>
+                <input type="number" id="credits-amount" placeholder="Amount" step="0.50" min="0.50">
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button onclick="addCredits()">Add Credits</button>
+                    <button onclick="closeModal()" class="btn-danger">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="notification" class="notification hidden"></div>
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '';
+        let token = localStorage.getItem('admin_token');
+        let selectedUserId = null;
+
+        if (token) {
+            checkAuth();
+        }
+
+        async function adminLogin() {
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+            
+            try {
+                const res = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email, password})
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok && data.is_admin) {
+                    token = data.token;
+                    localStorage.setItem('admin_token', token);
+                    showNotification('Admin login successful!', 'success');
+                    showAdmin();
+                } else if (res.ok && !data.is_admin) {
+                    showNotification('Not an admin account', 'error');
+                } else {
+                    showNotification(data.detail || 'Login failed', 'error');
+                }
+            } catch (err) {
+                showNotification('Network error', 'error');
+            }
+        }
+
+        async function checkAuth() {
+            try {
+                const res = await fetch(`${API_BASE}/auth/me`, {
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                
+                if (res.ok) {
+                    const user = await res.json();
+                    if (user.is_admin) {
+                        document.getElementById('admin-email-display').textContent = user.email;
+                        showAdmin();
+                    } else {
+                        logout();
+                    }
+                } else {
+                    logout();
+                }
+            } catch (err) {
+                logout();
+            }
+        }
+
+        function showAdmin() {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('admin-section').classList.remove('hidden');
+            loadStats();
+            loadUsers();
+        }
+
+        function logout() {
+            token = null;
+            localStorage.removeItem('admin_token');
+            document.getElementById('auth-section').classList.remove('hidden');
+            document.getElementById('admin-section').classList.add('hidden');
+        }
+
+        async function loadStats() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/stats`, {
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('total-users').textContent = data.total_users;
+                    document.getElementById('total-verifications').textContent = data.total_verifications;
+                    document.getElementById('total-revenue').textContent = `$${data.total_revenue.toFixed(2)}`;
+                }
+            } catch (err) {
+                showNotification('Failed to load stats', 'error');
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/users`, {
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    const list = document.getElementById('users-list');
+                    
+                    list.innerHTML = data.users.map(u => `
+                        <div class="verification-item" style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>${u.email}</strong>
+                                <div style="font-size: 14px; color: #6b7280;">
+                                    Credits: $${u.credits.toFixed(2)} ${u.is_admin ? '| Admin' : ''}
+                                </div>
+                                <div style="font-size: 12px; color: #9ca3af;">
+                                    Joined: ${new Date(u.created_at).toLocaleDateString()}
+                                </div>
+                            </div>
+                            <button onclick="openAddCredits('${u.id}', '${u.email}')" class="btn-small">
+                                Add Credits
+                            </button>
+                        </div>
+                    `).join('');
+                    
+                    showNotification('Users loaded', 'success');
+                }
+            } catch (err) {
+                showNotification('Failed to load users', 'error');
+            }
+        }
+
+        function openAddCredits(userId, email) {
+            selectedUserId = userId;
+            document.getElementById('selected-user-email').textContent = email;
+            document.getElementById('add-credits-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('add-credits-modal').classList.add('hidden');
+            selectedUserId = null;
+        }
+
+        async function addCredits() {
+            const amount = parseFloat(document.getElementById('credits-amount').value);
+            
+            if (!amount || amount <= 0) {
+                showNotification('Invalid amount', 'error');
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API_BASE}/admin/credits/add`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({user_id: selectedUserId, amount})
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    showNotification(data.message, 'success');
+                    closeModal();
+                    loadUsers();
+                    loadStats();
+                } else {
+                    showNotification('Failed to add credits', 'error');
+                }
+            } catch (err) {
+                showNotification('Network error', 'error');
+            }
+        }
+
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.remove('hidden');
+            
+            setTimeout(() => {
+                notification.classList.add('hidden');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
