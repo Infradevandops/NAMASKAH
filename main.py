@@ -2,13 +2,16 @@
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+import uuid
 
 import jwt
 from dotenv import load_dotenv
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import create_engine, Column, String, DateTime, Boolean, Float
@@ -18,6 +21,16 @@ from passlib.hash import bcrypt
 import requests
 
 load_dotenv()
+
+# Initialize Sentry for error tracking
+SENTRY_DSN = os.getenv("SENTRY_DSN")
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[FastApiIntegration()],
+        traces_sample_rate=0.1,
+        environment=os.getenv("ENVIRONMENT", "production"),
+    )
 
 # Config
 JWT_SECRET = os.getenv("JWT_SECRET_KEY", "change-me-in-production")
@@ -277,7 +290,13 @@ async def admin_panel(request: Request):
 
 @app.get("/health")
 def health():
-    return {"status": "healthy", "service": "namaskah-sms"}
+    return {
+        "status": "healthy",
+        "service": "namaskah-sms",
+        "version": "2.0.0",
+        "database": "connected",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
 
 @app.get("/services/list")
 def get_services_list():
@@ -1049,12 +1068,17 @@ def get_referral_stats(user: User = Depends(get_current_user), db: Session = Dep
 
 # CORS for frontend
 from fastapi.middleware.cors import CORSMiddleware
+
+# Get allowed origins from environment
+allowed_origins = os.getenv("CORS_ORIGINS", "http://localhost:8000").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
+    expose_headers=["X-Request-ID"],
 )
 
 # Rate Limiting
@@ -1076,6 +1100,30 @@ def check_rate_limit(user_id: str, limit: int = 100, window: int = 60):
     
     rate_limit_store[user_id].append(now)
     return True
+
+@app.middleware("http")
+async def https_redirect_middleware(request: Request, call_next):
+    # Force HTTPS in production
+    if request.url.scheme == "http" and request.url.hostname not in ["localhost", "127.0.0.1"]:
+        url = request.url.replace(scheme="https")
+        return RedirectResponse(url, status_code=301)
+    return await call_next(request)
+
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
+@app.middleware("http")
+async def request_id_middleware(request: Request, call_next):
+    request_id = str(uuid.uuid4())
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = request_id
+    return response
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
