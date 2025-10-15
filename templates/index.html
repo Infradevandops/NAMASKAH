@@ -180,6 +180,16 @@
 
             <div class="card">
                 <h2>Create Verification</h2>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; background: #f9fafb; padding: 10px; border-radius: 8px;">
+                    <label style="flex: 1; cursor: pointer;">
+                        <input type="radio" name="capability" value="sms" checked onchange="updateCapability()">
+                        <span style="margin-left: 5px;">📱 SMS (₵0.50)</span>
+                    </label>
+                    <label style="flex: 1; cursor: pointer;">
+                        <input type="radio" name="capability" value="voice" onchange="updateCapability()">
+                        <span style="margin-left: 5px;">📞 Voice Call (₵0.75)</span>
+                    </label>
+                </div>
                 <input type="text" id="service-search" placeholder="🔍 Search 1,807 services..." 
                        oninput="filterServices()" style="margin-bottom: 15px;">
                 <div id="services-grid" style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 15px; max-height: 400px; overflow-y: auto;">
@@ -217,7 +227,8 @@
                     </div>
                 </div>
                 <div class="actions">
-                    <button onclick="checkMessages()">Check Messages</button>
+                    <button onclick="checkMessages()" id="check-messages-btn">Check Messages</button>
+                    <button onclick="checkVoiceCall()" id="check-voice-btn" class="hidden">📞 Get Voice Call</button>
                     <button onclick="cancelVerification()" class="btn-danger">Cancel</button>
                     <button onclick="retryVerification()" id="retry-btn" class="hidden">Retry with New Number</button>
                 </div>

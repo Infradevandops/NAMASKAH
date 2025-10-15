@@ -340,8 +340,16 @@ function stopHistoryRefresh() {
     }
 }
 
+function updateCapability() {
+    const capability = document.querySelector('input[name="capability"]:checked').value;
+    const info = document.getElementById('service-info');
+    const price = capability === 'voice' ? '₵0.75' : '₵0.50';
+    info.innerHTML = `⚡ Click a service to select • ${capability === 'voice' ? '📞' : '📱'} ${capability.toUpperCase()} (${price})`;
+}
+
 async function createVerification() {
     const service = document.getElementById('service-select').value;
+    const capability = document.querySelector('input[name="capability"]:checked').value;
     
     if (!service) {
         showNotification('⚠️ Please select a service', 'error');
@@ -357,7 +365,7 @@ async function createVerification() {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({service_name: service})
+            body: JSON.stringify({service_name: service, capability: capability})
         });
         
         const data = await res.json();
@@ -407,6 +415,11 @@ function displayVerification(data) {
     document.getElementById('verification-details').classList.remove('hidden');
     document.getElementById('messages-section').classList.add('hidden');
     document.getElementById('retry-btn').classList.add('hidden');
+    
+    // Show appropriate button based on capability
+    const isVoice = data.capability === 'voice';
+    document.getElementById('check-messages-btn').classList.toggle('hidden', isVoice);
+    document.getElementById('check-voice-btn').classList.toggle('hidden', !isVoice);
     
     // Start countdown timer with service-specific duration
     if (data.status === 'pending') {
@@ -996,18 +1009,44 @@ window.addEventListener('load', () => {
 })
 
 // Voice Verification Functions
-async function getVoiceCall(verificationId) {
+async function checkVoiceCall() {
+    if (!currentVerificationId) return;
+    
+    showLoading(true);
+    
     try {
-        const response = await fetch(`/verify/${verificationId}/voice`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        const res = await fetch(`${API_BASE}/verify/${currentVerificationId}/voice`, {
+            headers: { 'Authorization': `Bearer ${token}` }
         });
-        const data = await response.json();
-        if (response.ok) {
-            return data;
+        
+        showLoading(false);
+        
+        if (res.ok) {
+            const data = await res.json();
+            const messagesList = document.getElementById('messages-list');
+            
+            messagesList.innerHTML = `
+                <div style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); padding: 25px; border-radius: 12px; margin-bottom: 20px; border: 3px solid #10b981;">
+                    <h2 style="color: #065f46; margin: 0 0 12px 0; font-size: 24px; text-align: center;">📞 Voice Call Details</h2>
+                </div>
+                <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; border-left: 4px solid #22c55e; margin-bottom: 15px;">
+                    <div style="margin-bottom: 10px;"><strong>Phone:</strong> ${formatPhoneNumber(data.phone_number)}</div>
+                    <div style="margin-bottom: 10px;"><strong>Duration:</strong> ${data.call_duration || 'N/A'}</div>
+                    ${data.transcription ? `<div style="margin-bottom: 10px;"><strong>Transcription:</strong> ${data.transcription}</div>` : ''}
+                    ${data.audio_url ? `<div><audio controls src="${data.audio_url}" style="width: 100%;"></audio></div>` : ''}
+                </div>
+            `;
+            
+            document.getElementById('messages-section').classList.remove('hidden');
+            stopAutoRefresh();
+            stopCountdown();
+            showNotification('📞 Voice call retrieved!', 'success');
         } else {
+            const data = await res.json();
             showNotification(data.detail || 'Failed to get voice call', 'error');
         }
     } catch (error) {
+        showLoading(false);
         showNotification('Network error', 'error');
     }
 }
