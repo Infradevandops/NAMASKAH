@@ -378,6 +378,8 @@
         }
 
         // Google Sign-In initialization
+        let googleInitialized = false;
+        
         function initGoogleSignIn() {
             if (!GOOGLE_CLIENT_ID) {
                 // Hide Google buttons if not configured
@@ -390,35 +392,46 @@
                 return;
             }
 
-            // Initialize Google Sign-In
-            google.accounts.id.initialize({
-                client_id: GOOGLE_CLIENT_ID,
-                callback: handleGoogleSignIn
-            });
+            if (!googleInitialized) {
+                // Initialize Google Sign-In once
+                google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: handleGoogleSignIn
+                });
+                googleInitialized = true;
+            }
             
-            // Render Sign In button
-            google.accounts.id.renderButton(
-                document.getElementById('google-signin-btn'),
-                { 
+            renderGoogleButtons();
+        }
+        
+        function renderGoogleButtons() {
+            if (!GOOGLE_CLIENT_ID || !googleInitialized) return;
+            
+            // Clear existing buttons
+            const signinBtn = document.getElementById('google-signin-btn');
+            const signupBtn = document.getElementById('google-signup-btn');
+            
+            if (signinBtn) {
+                signinBtn.innerHTML = '';
+                google.accounts.id.renderButton(signinBtn, { 
                     theme: 'outline', 
                     size: 'large', 
                     width: '100%',
                     text: 'signin_with',
                     shape: 'rectangular'
-                }
-            );
+                });
+            }
             
-            // Render Sign Up button
-            google.accounts.id.renderButton(
-                document.getElementById('google-signup-btn'),
-                { 
+            if (signupBtn) {
+                signupBtn.innerHTML = '';
+                google.accounts.id.renderButton(signupBtn, { 
                     theme: 'outline', 
                     size: 'large', 
                     width: '100%',
                     text: 'signup_with',
                     shape: 'rectangular'
-                }
-            );
+                });
+            }
         }
 
         // Handle Google Sign-In response
@@ -459,6 +472,28 @@
                 setTimeout(initGoogleSignIn, 1000);
             }
         });
+        
+        // Re-render Google buttons when switching tabs
+        window.showTab = function(tab) {
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const tabs = document.querySelectorAll('.tab');
+            
+            tabs.forEach(t => t.classList.remove('active'));
+            
+            if (tab === 'login') {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                tabs[0].classList.add('active');
+            } else {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                tabs[1].classList.add('active');
+            }
+            
+            // Re-render Google buttons after tab switch
+            setTimeout(renderGoogleButtons, 100);
+        }
     </script>
 </body>
 </html>
