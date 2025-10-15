@@ -404,7 +404,7 @@
             renderGoogleButtons();
         }
         
-        function renderGoogleButtons() {
+        window.renderGoogleButtons = function() {
             if (!GOOGLE_CLIENT_ID || !googleInitialized) return;
             
             // Clear existing buttons
@@ -413,24 +413,32 @@
             
             if (signinBtn) {
                 signinBtn.innerHTML = '';
-                google.accounts.id.renderButton(signinBtn, { 
-                    theme: 'outline', 
-                    size: 'large', 
-                    width: '100%',
-                    text: 'signin_with',
-                    shape: 'rectangular'
-                });
+                try {
+                    google.accounts.id.renderButton(signinBtn, { 
+                        theme: 'outline', 
+                        size: 'large', 
+                        width: '100%',
+                        text: 'signin_with',
+                        shape: 'rectangular'
+                    });
+                } catch(e) {
+                    console.error('Failed to render signin button:', e);
+                }
             }
             
             if (signupBtn) {
                 signupBtn.innerHTML = '';
-                google.accounts.id.renderButton(signupBtn, { 
-                    theme: 'outline', 
-                    size: 'large', 
-                    width: '100%',
-                    text: 'signup_with',
-                    shape: 'rectangular'
-                });
+                try {
+                    google.accounts.id.renderButton(signupBtn, { 
+                        theme: 'outline', 
+                        size: 'large', 
+                        width: '100%',
+                        text: 'signup_with',
+                        shape: 'rectangular'
+                    });
+                } catch(e) {
+                    console.error('Failed to render signup button:', e);
+                }
             }
         }
 
@@ -492,7 +500,11 @@
             }
             
             // Re-render Google buttons after tab switch
-            setTimeout(renderGoogleButtons, 100);
+            setTimeout(() => {
+                if (typeof renderGoogleButtons === 'function') {
+                    renderGoogleButtons();
+                }
+            }, 150);
         }
     </script>
 </body>

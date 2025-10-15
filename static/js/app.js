@@ -847,16 +847,16 @@ function closeFundWallet() {
     document.getElementById('fund-wallet-modal').classList.add('hidden');
 }
 
-function showForgotPassword() {
+window.showForgotPassword = function() {
     document.getElementById('forgot-password-modal').style.display = 'block';
 }
 
-function closeForgotPassword() {
+window.closeForgotPassword = function() {
     document.getElementById('forgot-password-modal').style.display = 'none';
     document.getElementById('reset-email').value = '';
 }
 
-async function sendResetEmail() {
+window.sendResetEmail = async function() {
     const email = document.getElementById('reset-email').value;
     if (!email) {
         showNotification('Please enter your email', 'error');
