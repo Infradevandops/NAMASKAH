@@ -12,7 +12,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import create_engine, Column, String, DateTime, Boolean, Float
-from sqlalchemy.ext.declarative import declarative_base
+
 from sqlalchemy.orm import sessionmaker, Session
 from passlib.hash import bcrypt
 import requests
@@ -45,7 +45,8 @@ FROM_EMAIL = os.getenv("FROM_EMAIL", "noreply@namaskah.app")
 # Database
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {})
 SessionLocal = sessionmaker(bind=engine)
-Base = declarative_base()
+from sqlalchemy.orm import declarative_base as new_declarative_base
+Base = new_declarative_base()
 
 # Models
 class User(Base):
@@ -247,13 +248,8 @@ tv_client = TextVerifiedClient()
 app = FastAPI(title="Namaskah SMS", version="2.0.0")
 
 # Mount static files and templates
-import os
-if os.path.exists("static"):
-    app.mount("/static", StaticFiles(directory="static"), name="static")
-if os.path.exists("templates"):
-    templates = Jinja2Templates(directory="templates")
-else:
-    templates = None
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
 @app.get("/")
 async def root(request: Request):
