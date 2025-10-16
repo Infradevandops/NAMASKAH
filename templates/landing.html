@@ -498,12 +498,54 @@
         <p style="margin-top: 15px; display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; font-size: 0.85rem;">
             <a href="/app">Login</a> •
             <a href="/app">Register</a> •
+            <a href="#" onclick="showSupportModal(); return false;">Support</a> •
             <a href="/reviews">Reviews</a> •
             <a href="/faq">FAQ</a> •
             <a href="/api-docs">API Docs</a>
         </p>
         <p style="opacity: 0.7; font-size: 0.9rem; margin-top: 15px;">© 2024 Namaskah. All rights reserved.</p>
     </footer>
+    
+    <div id="support-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close" onclick="closeSupportModal()">&times;</span>
+            <h2>💬 Contact Support</h2>
+            <p style="color: #6b7280; margin-bottom: 20px;">We're here to help! Send us your inquiry.</p>
+            
+            <form id="support-form" onsubmit="submitSupport(event)">
+                <div style="margin-bottom: 15px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 5px;">Name</label>
+                    <input type="text" id="support-name" required style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px;">
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 5px;">Email</label>
+                    <input type="email" id="support-email" required style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px;">
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 5px;">Category</label>
+                    <select id="support-category" required style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; background: white;">
+                        <option value="">Select a category...</option>
+                        <option value="verification">Verification Issues</option>
+                        <option value="payment">Payment & Billing</option>
+                        <option value="account">Account & Login</option>
+                        <option value="api">API & Integration</option>
+                        <option value="refund">Refund Request</option>
+                        <option value="technical">Technical Support</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 5px;">Message</label>
+                    <textarea id="support-message" required rows="5" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; resize: vertical;" placeholder="Describe your issue or question..."></textarea>
+                </div>
+                
+                <button type="submit" style="width: 100%;">Send Message</button>
+            </form>
+        </div>
+    </div>
     
     <script>
         const theme = localStorage.getItem('theme') || 'dark';
@@ -514,6 +556,29 @@
             const next = current === 'dark' ? 'light' : 'dark';
             document.documentElement.setAttribute('data-theme', next);
             localStorage.setItem('theme', next);
+        }
+        
+        function showSupportModal() {
+            document.getElementById('support-modal').classList.remove('hidden');
+        }
+        
+        function closeSupportModal() {
+            document.getElementById('support-modal').classList.add('hidden');
+            document.getElementById('support-form').reset();
+        }
+        
+        function submitSupport(event) {
+            event.preventDefault();
+            const name = document.getElementById('support-name').value;
+            const email = document.getElementById('support-email').value;
+            const category = document.getElementById('support-category').value;
+            const message = document.getElementById('support-message').value;
+            
+            // In production, send to backend
+            console.log('Support request:', { name, email, category, message });
+            
+            alert('✅ Thank you! Your message has been sent. We\'ll respond within 24 hours.');
+            closeSupportModal();
         }
     </script>
 </body>

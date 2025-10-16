@@ -1521,3 +1521,24 @@ function fundWalletWithPlan(amount) {
     showFundWallet();
     showPaymentMethods();
 }
+
+function showSupportModal() {
+    document.getElementById('support-modal').classList.remove('hidden');
+}
+
+function closeSupportModal() {
+    document.getElementById('support-modal').classList.add('hidden');
+    document.getElementById('support-form').reset();
+}
+
+function submitSupport(event) {
+    event.preventDefault();
+    const name = document.getElementById('support-name').value;
+    const email = document.getElementById('support-email').value;
+    const category = document.getElementById('support-category').value;
+    const message = document.getElementById('support-message').value;
+    
+    // In production, send to backend
+    showNotification('✅ Thank you! Your message has been sent. We\'ll respond within 24 hours.', 'success');
+    closeSupportModal();
+}

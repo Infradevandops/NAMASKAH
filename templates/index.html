@@ -342,6 +342,12 @@
             </div>
 
             <div class="card">
+                <h2>💬 Support</h2>
+                <p style="color: #6b7280; margin-bottom: 15px;">Need help? Contact our support team</p>
+                <button onclick="showSupportModal()" style="width: 100%; background: #667eea;">📧 Contact Support</button>
+            </div>
+
+            <div class="card">
                 <h2>📊 Analytics Dashboard</h2>
                 <button onclick="loadAnalytics()" class="btn-small" style="margin-bottom: 15px;">Refresh Stats</button>
                 
@@ -379,6 +385,47 @@
         <div id="notification" class="notification hidden"></div>
         <div id="loading" class="loading hidden">
             <div class="spinner"></div>
+        </div>
+    </div>
+    
+    <div id="support-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close" onclick="closeSupportModal()">&times;</span>
+            <h2>💬 Contact Support</h2>
+            <p style="color: #6b7280; margin-bottom: 20px;">We're here to help! Send us your inquiry.</p>
+            
+            <form id="support-form" onsubmit="submitSupport(event)">
+                <div style="margin-bottom: 15px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 5px; color: var(--text-primary);">Name</label>
+                    <input type="text" id="support-name" required style="width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);">
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 5px; color: var(--text-primary);">Email</label>
+                    <input type="email" id="support-email" required style="width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);">
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 5px; color: var(--text-primary);">Category</label>
+                    <select id="support-category" required style="width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);">
+                        <option value="">Select a category...</option>
+                        <option value="verification">Verification Issues</option>
+                        <option value="payment">Payment & Billing</option>
+                        <option value="account">Account & Login</option>
+                        <option value="api">API & Integration</option>
+                        <option value="refund">Refund Request</option>
+                        <option value="technical">Technical Support</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 5px; color: var(--text-primary);">Message</label>
+                    <textarea id="support-message" required rows="5" style="width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; resize: vertical; background: var(--bg-secondary); color: var(--text-primary);" placeholder="Describe your issue or question..."></textarea>
+                </div>
+                
+                <button type="submit" style="width: 100%;">Send Message</button>
+            </form>
         </div>
     </div>
 
