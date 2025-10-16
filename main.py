@@ -1124,6 +1124,11 @@ def get_stats(period: str = "30", admin: User = Depends(get_admin_user), db: Ses
     # New users in period
     new_users = db.query(User).filter(User.created_at >= start_date).count()
     
+    # Active users (created verification in period)
+    active_users = db.query(Verification.user_id).filter(
+        Verification.created_at >= start_date
+    ).distinct().count()
+    
     # Verifications in period
     total_verifications = db.query(Verification).filter(
         Verification.created_at >= start_date
@@ -1135,6 +1140,30 @@ def get_stats(period: str = "30", admin: User = Depends(get_admin_user), db: Ses
         Transaction.created_at >= start_date
     ).scalar() or 0
     total_revenue = abs(total_revenue)
+    
+    # Plan distribution (based on total funded amount)
+    users_with_funding = db.query(
+        User.id,
+        func.sum(Transaction.amount).label('total_funded')
+    ).join(Transaction, User.id == Transaction.user_id).filter(
+        Transaction.type == "credit",
+        Transaction.description.contains("funded")
+    ).group_by(User.id).all()
+    
+    pay_as_you_go = 0
+    developer = 0
+    enterprise = 0
+    
+    for user_funding in users_with_funding:
+        if user_funding.total_funded >= 100:
+            enterprise += 1
+        elif user_funding.total_funded >= 25:
+            developer += 1
+        else:
+            pay_as_you_go += 1
+    
+    # Users with no funding are pay-as-you-go
+    pay_as_you_go += total_users - len(users_with_funding)
     
     # Popular services in period
     popular_services = db.query(
@@ -1152,8 +1181,14 @@ def get_stats(period: str = "30", admin: User = Depends(get_admin_user), db: Ses
     return {
         "total_users": total_users,
         "new_users": new_users,
+        "active_users": active_users,
         "total_verifications": total_verifications,
         "total_revenue": total_revenue,
+        "plan_distribution": {
+            "pay_as_you_go": pay_as_you_go,
+            "developer": developer,
+            "enterprise": enterprise
+        },
         "popular_services": [
             {
                 "service": s[0],
