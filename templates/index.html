@@ -370,23 +370,56 @@
 
 
             <div class="card">
-                <h2>🔑 API Keys</h2>
-                <p style="color: #6b7280; margin-bottom: 15px;">Generate API keys for programmatic access</p>
-                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                    <input type="text" id="api-key-name" placeholder="Key name (e.g., Production)" style="flex: 1;">
-                    <button onclick="createAPIKey()">Generate Key</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0;">⚙️ Advanced Settings</h2>
+                    <button onclick="toggleAdvanced()" id="advanced-toggle-btn" style="background: #6b7280; padding: 10px 20px;">🔒 Show Advanced</button>
                 </div>
-                <div id="api-keys-list"></div>
-            </div>
+                <p style="color: #6b7280; margin-bottom: 20px;">Developer features: API keys, webhooks, and notification settings</p>
+                
+                <div id="advanced-section" class="hidden">
+                    <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border);">
+                        <h3 style="margin: 0 0 15px 0;">🔑 API Keys</h3>
+                        <p style="color: #6b7280; margin-bottom: 15px; font-size: 14px;">Generate API keys for programmatic access</p>
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <input type="text" id="api-key-name" placeholder="Key name (e.g., Production)" style="flex: 1;">
+                            <button onclick="createAPIKey()">Generate Key</button>
+                        </div>
+                        <div id="api-keys-list"></div>
+                    </div>
 
-            <div class="card">
-                <h2>🔔 Webhooks</h2>
-                <p style="color: #6b7280; margin-bottom: 15px;">Receive SMS notifications via webhook</p>
-                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                    <input type="url" id="webhook-url" placeholder="https://your-domain.com/webhook" style="flex: 1;">
-                    <button onclick="createWebhook()">Add Webhook</button>
+                    <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border);">
+                        <h3 style="margin: 0 0 15px 0;">🔔 Webhooks</h3>
+                        <p style="color: #6b7280; margin-bottom: 15px; font-size: 14px;">Receive SMS notifications via webhook</p>
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <input type="url" id="webhook-url" placeholder="https://your-domain.com/webhook" style="flex: 1;">
+                            <button onclick="createWebhook()">Add Webhook</button>
+                        </div>
+                        <div id="webhooks-list"></div>
+                    </div>
+
+                    <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border);">
+                        <h3 style="margin: 0 0 15px 0;">🔔 Notification Settings</h3>
+                        <p style="color: #6b7280; margin-bottom: 15px; font-size: 14px;">Configure email notifications</p>
+                        <div style="margin-bottom: 15px;">
+                            <label style="cursor: pointer; color: var(--text-primary); display: inline-flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" id="email-on-sms" onchange="updateNotificationSettings()">
+                                <span>📧 Email me when SMS is received</span>
+                            </label>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="cursor: pointer; color: var(--text-primary); display: inline-flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" id="email-on-low-balance" onchange="updateNotificationSettings()">
+                                <span>⚠️ Email me when balance is low</span>
+                            </label>
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <label style="font-weight: bold; display: block; margin-bottom: 5px;">Low Balance Threshold (₵)</label>
+                            <input type="number" id="low-balance-threshold" min="0.5" step="0.5" value="1.0" 
+                                   onchange="updateNotificationSettings()" 
+                                   style="width: 150px; padding: 8px; border: 2px solid #e5e7eb; border-radius: 6px;">
+                        </div>
+                    </div>
                 </div>
-                <div id="webhooks-list"></div>
             </div>
 
             <div class="card">
@@ -421,33 +454,7 @@
                 <div id="referred-users"></div>
             </div>
 
-            <div class="card">
-                <h2>🔔 Notification Settings</h2>
-                <p style="color: #6b7280; margin-bottom: 15px;">Configure email notifications</p>
-                
-                <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border);">
-                    <div style="margin-bottom: 15px;">
-                        <label style="cursor: pointer; color: var(--text-primary); display: inline-flex; align-items: center; gap: 10px;">
-                            <input type="checkbox" id="email-on-sms" onchange="updateNotificationSettings()">
-                            <span>📧 Email me when SMS is received</span>
-                        </label>
-                    </div>
-                    
-                    <div style="margin-bottom: 15px;">
-                        <label style="cursor: pointer; color: var(--text-primary); display: inline-flex; align-items: center; gap: 10px;">
-                            <input type="checkbox" id="email-on-low-balance" onchange="updateNotificationSettings()">
-                            <span>⚠️ Email me when balance is low</span>
-                        </label>
-                    </div>
-                    
-                    <div style="margin-top: 15px;">
-                        <label style="font-weight: bold; display: block; margin-bottom: 5px;">Low Balance Threshold (₵)</label>
-                        <input type="number" id="low-balance-threshold" min="0.5" step="0.5" value="1.0" 
-                               onchange="updateNotificationSettings()" 
-                               style="width: 150px; padding: 8px; border: 2px solid #e5e7eb; border-radius: 6px;">
-                    </div>
-                </div>
-            </div>
+
 
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">

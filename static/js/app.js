@@ -1776,6 +1776,22 @@ async function submitSupport(event) {
     }
 }
 
+// Advanced settings toggle
+function toggleAdvanced() {
+    const section = document.getElementById('advanced-section');
+    const btn = document.getElementById('advanced-toggle-btn');
+    
+    if (section.classList.contains('hidden')) {
+        section.classList.remove('hidden');
+        btn.textContent = '🔓 Hide Advanced';
+        btn.style.background = '#667eea';
+    } else {
+        section.classList.add('hidden');
+        btn.textContent = '🔒 Show Advanced';
+        btn.style.background = '#6b7280';
+    }
+}
+
 // Button selection handlers
 function selectMode(mode) {
     document.getElementById('mode-always').checked = (mode === 'always');
