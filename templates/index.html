@@ -193,7 +193,10 @@
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2 style="margin: 0;">Create Verification</h2>
-                    <button onclick="showRentalModal()" style="background: #8b5cf6; padding: 10px 20px;">🏠 Rent Number</button>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="selectService('general')" style="background: #f59e0b; padding: 10px 20px;">🌐 Unlisted Services</button>
+                        <button onclick="showRentalModal()" style="background: #8b5cf6; padding: 10px 20px;">🏠 Rent Number</button>
+                    </div>
                 </div>
                 <input type="text" id="service-search" placeholder="🔍 Search 1,807 services..." 
                        oninput="filterServices()" style="margin-bottom: 15px;">

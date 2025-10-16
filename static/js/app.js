@@ -312,11 +312,11 @@ function renderServices() {
         }
     });
     
-    // Add General Use as last option
+    // Add Unlisted Services as last option
     if (!search || 'general'.includes(search) || 'unlisted'.includes(search)) {
         html += `<div style="min-width: 100px;">`;
-        html += `<div style="font-weight: bold; font-size: 0.75rem; color: #f59e0b; margin-bottom: 8px; border-bottom: 2px solid #f59e0b; padding-bottom: 4px;">General</div>`;
-        html += `<div onclick="selectService('general')" style="font-size: 0.65rem; padding: 3px; cursor: pointer; border-radius: 4px; transition: all 0.2s; background: rgba(245, 158, 11, 0.1); font-weight: 600; color: #f59e0b;" onmouseover="this.style.background='#f59e0b'; this.style.color='white'" onmouseout="this.style.background='rgba(245, 158, 11, 0.1)'; this.style.color='#f59e0b'">🌐 Unlisted</div>`;
+        html += `<div style="font-weight: bold; font-size: 0.75rem; color: #f59e0b; margin-bottom: 8px; border-bottom: 2px solid #f59e0b; padding-bottom: 4px;">Unlisted Services</div>`;
+        html += `<div onclick="selectService('general')" style="font-size: 0.65rem; padding: 3px; cursor: pointer; border-radius: 4px; transition: all 0.2s; background: rgba(245, 158, 11, 0.1); font-weight: 600; color: #f59e0b;" onmouseover="this.style.background='#f59e0b'; this.style.color='white'" onmouseout="this.style.background='rgba(245, 158, 11, 0.1)'; this.style.color='#f59e0b'">Any Service</div>`;
         html += `</div>`;
     }
     
@@ -1548,21 +1548,24 @@ function closeSupportModal() {
     document.getElementById('support-form').reset();
 }
 
-const RENTAL_BASE_PRICES = {
-    168: 50.0,
-    336: 90.0,
-    720: 180.0,
-    1440: 340.0,
-    2160: 480.0
+// Service-Specific Rentals (for single service)
+const RENTAL_SERVICE_SPECIFIC = {
+    168: 5.0,      // 7 days
+    336: 9.0,      // 14 days
+    720: 16.0,     // 30 days
+    1440: 28.0,    // 60 days
+    2160: 38.0,    // 90 days
+    8760: 50.0     // 365 days
 };
 
-const RENTAL_SERVICE_MULTIPLIERS = {
-    'general': 1.0,
-    'telegram': 1.3,
-    'instagram': 1.4,
-    'facebook': 1.4,
-    'whatsapp': 1.5,
-    'google': 1.6
+// General Use Rentals (any service - costs MORE)
+const RENTAL_GENERAL_USE = {
+    168: 6.0,      // 7 days
+    336: 11.0,     // 14 days
+    720: 20.0,     // 30 days
+    1440: 35.0,    // 60 days
+    2160: 48.0,    // 90 days
+    8760: 80.0     // 365 days
 };
 
 function showRentalModal() {
@@ -1579,20 +1582,26 @@ function updateRentalPrice() {
     const mode = document.querySelector('input[name="rental-mode"]:checked').value;
     const duration = parseInt(document.querySelector('input[name="rental-duration"]:checked').value);
     
-    const basePrice = RENTAL_BASE_PRICES[duration];
-    const serviceMultiplier = RENTAL_SERVICE_MULTIPLIERS[service];
+    // Determine if general use or service-specific
+    const isGeneral = service.toLowerCase() === 'general';
+    const pricingTable = isGeneral ? RENTAL_GENERAL_USE : RENTAL_SERVICE_SPECIFIC;
+    
+    const basePrice = pricingTable[duration];
     const modeMultiplier = mode === 'manual' ? 0.7 : 1.0;
     
-    const totalPrice = basePrice * serviceMultiplier * modeMultiplier;
+    const totalPrice = basePrice * modeMultiplier;
     
     // Update all duration prices
-    Object.keys(RENTAL_BASE_PRICES).forEach(hours => {
-        const price = RENTAL_BASE_PRICES[hours] * serviceMultiplier * modeMultiplier;
+    Object.keys(pricingTable).forEach(hours => {
+        const price = pricingTable[hours] * modeMultiplier;
         const days = hours / 24;
-        document.getElementById(`price-${days}`).textContent = `$${price.toFixed(2)}`;
+        const priceElement = document.getElementById(`price-${days}`);
+        if (priceElement) {
+            priceElement.textContent = `N${price.toFixed(2)}`;
+        }
     });
     
-    document.getElementById('rental-total').textContent = `$${totalPrice.toFixed(2)}`;
+    document.getElementById('rental-total').textContent = `N${totalPrice.toFixed(2)}`;
     
     const days = duration / 24;
     const expiryDate = new Date();
