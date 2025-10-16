@@ -44,6 +44,13 @@ body {
     margin: 0;
     transition: background 0.3s, color 0.3s;
     overflow-x: hidden;
+    text-align: left;
+}
+
+label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .container {
@@ -197,6 +204,7 @@ header p {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    align-items: stretch;
 }
 
 input, select {
@@ -208,6 +216,13 @@ input, select {
     font-size: 14px;
     transition: all 0.3s;
     width: 100%;
+    vertical-align: middle;
+}
+
+input[type="checkbox"] {
+    width: auto;
+    vertical-align: middle;
+    margin: 0;
 }
 
 select optgroup {
@@ -245,6 +260,8 @@ button {
     cursor: pointer;
     transition: all 0.3s;
     width: 100%;
+    text-align: center;
+    vertical-align: middle;
 }
 
 button:hover {
@@ -322,6 +339,7 @@ button:active {
     padding: 10px 0;
     border-bottom: 1px solid var(--border);
     font-size: 14px;
+    align-items: flex-start;
 }
 
 .detail-row:last-child {

@@ -322,15 +322,19 @@
                 <p style="color: #6b7280; margin-bottom: 15px;">Configure email notifications</p>
                 
                 <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border);">
-                    <label style="display: block; margin-bottom: 15px; cursor: pointer; color: var(--text-primary);">
-                        <input type="checkbox" id="email-on-sms" onchange="updateNotificationSettings()" style="margin-right: 10px;">
-                        📧 Email me when SMS is received
-                    </label>
+                    <div style="margin-bottom: 15px;">
+                        <label style="cursor: pointer; color: var(--text-primary); display: inline-flex; align-items: center; gap: 10px;">
+                            <input type="checkbox" id="email-on-sms" onchange="updateNotificationSettings()">
+                            <span>📧 Email me when SMS is received</span>
+                        </label>
+                    </div>
                     
-                    <label style="display: block; margin-bottom: 15px; cursor: pointer; color: var(--text-primary);">
-                        <input type="checkbox" id="email-on-low-balance" onchange="updateNotificationSettings()" style="margin-right: 10px;">
-                        ⚠️ Email me when balance is low
-                    </label>
+                    <div style="margin-bottom: 15px;">
+                        <label style="cursor: pointer; color: var(--text-primary); display: inline-flex; align-items: center; gap: 10px;">
+                            <input type="checkbox" id="email-on-low-balance" onchange="updateNotificationSettings()">
+                            <span>⚠️ Email me when balance is low</span>
+                        </label>
+                    </div>
                     
                     <div style="margin-top: 15px;">
                         <label style="font-weight: bold; display: block; margin-bottom: 5px;">Low Balance Threshold (₵)</label>
