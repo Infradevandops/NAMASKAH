@@ -154,6 +154,19 @@ class NumberRental(Base):
     warning_sent = Column(Boolean, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
+class SupportTicket(Base):
+    __tablename__ = "support_tickets"
+    id = Column(String, primary_key=True)
+    user_id = Column(String)  # nullable for non-logged-in users
+    name = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    category = Column(String, nullable=False)
+    message = Column(String, nullable=False)
+    status = Column(String, default="open")  # open, in_progress, resolved, closed
+    admin_response = Column(String)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime)
+
 Base.metadata.create_all(bind=engine)
 
 # Email Helper
@@ -224,6 +237,15 @@ class CreateRentalRequest(BaseModel):
 
 class ExtendRentalRequest(BaseModel):
     additional_hours: float
+
+class SupportRequest(BaseModel):
+    name: str
+    email: EmailStr
+    category: str
+    message: str
+
+class AdminResponseRequest(BaseModel):
+    response: str
 
 # Dependencies
 security = HTTPBearer()
@@ -1445,6 +1467,112 @@ def get_referral_stats(user: User = Depends(get_current_user), db: Session = Dep
         "referral_link": f"http://localhost:8000/app?ref={user.referral_code}",
         "referred_users": referred_users
     }
+
+# Support Endpoints
+@app.post("/support/submit", tags=["System"], summary="Submit Support Request")
+def submit_support(req: SupportRequest, db: Session = Depends(get_db)):
+    """Submit support/contact request. Available to all users (logged in or not)."""
+    ticket = SupportTicket(
+        id=f"ticket_{int(datetime.now(timezone.utc).timestamp() * 1000)}",
+        name=req.name,
+        email=req.email,
+        category=req.category,
+        message=req.message,
+        status="open"
+    )
+    db.add(ticket)
+    db.commit()
+    
+    # Send confirmation email to user
+    send_email(
+        req.email,
+        "Support Request Received - Namaskah SMS",
+        f"""<h2>Thank You for Contacting Us!</h2>
+        <p>We've received your support request and will respond within 24 hours.</p>
+        <p><strong>Ticket ID:</strong> {ticket.id}</p>
+        <p><strong>Category:</strong> {req.category}</p>
+        <p><strong>Your Message:</strong></p>
+        <p>{req.message}</p>
+        <p>You'll receive a response at this email address.</p>"""
+    )
+    
+    return {
+        "success": True,
+        "ticket_id": ticket.id,
+        "message": "Support request submitted successfully. We'll respond within 24 hours."
+    }
+
+@app.get("/admin/support/tickets", tags=["Admin"], summary="Get All Support Tickets")
+def get_support_tickets(status: str = None, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Get all support tickets (admin only). Filter by status if provided."""
+    query = db.query(SupportTicket)
+    if status:
+        query = query.filter(SupportTicket.status == status)
+    
+    tickets = query.order_by(SupportTicket.created_at.desc()).all()
+    
+    return {
+        "tickets": [
+            {
+                "id": t.id,
+                "name": t.name,
+                "email": t.email,
+                "category": t.category,
+                "message": t.message,
+                "status": t.status,
+                "admin_response": t.admin_response,
+                "created_at": t.created_at,
+                "updated_at": t.updated_at
+            }
+            for t in tickets
+        ]
+    }
+
+@app.post("/admin/support/{ticket_id}/respond", tags=["Admin"], summary="Respond to Support Ticket")
+def respond_to_ticket(ticket_id: str, req: AdminResponseRequest, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Send response to support ticket and notify user via email (admin only)."""
+    ticket = db.query(SupportTicket).filter(SupportTicket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    
+    ticket.admin_response = req.response
+    ticket.status = "resolved"
+    ticket.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    
+    # Send response email to user
+    send_email(
+        ticket.email,
+        f"Re: Support Request #{ticket.id} - Namaskah SMS",
+        f"""<h2>Support Response</h2>
+        <p>Hi {ticket.name},</p>
+        <p>We've reviewed your support request regarding <strong>{ticket.category}</strong>.</p>
+        <p><strong>Your Message:</strong></p>
+        <p>{ticket.message}</p>
+        <p><strong>Our Response:</strong></p>
+        <p>{req.response}</p>
+        <p>If you need further assistance, please reply to this email.</p>
+        <p>Best regards,<br>Namaskah Support Team</p>"""
+    )
+    
+    return {"message": "Response sent successfully", "ticket_id": ticket.id}
+
+@app.patch("/admin/support/{ticket_id}/status", tags=["Admin"], summary="Update Ticket Status")
+def update_ticket_status(ticket_id: str, status: str, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Update support ticket status (admin only)."""
+    valid_statuses = ["open", "in_progress", "resolved", "closed"]
+    if status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}")
+    
+    ticket = db.query(SupportTicket).filter(SupportTicket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    
+    ticket.status = status
+    ticket.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    
+    return {"message": "Status updated", "ticket_id": ticket.id, "new_status": status}
 
 # Rental Pricing
 RENTAL_PRICING = {

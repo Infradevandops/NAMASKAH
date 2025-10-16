@@ -1531,14 +1531,33 @@ function closeSupportModal() {
     document.getElementById('support-form').reset();
 }
 
-function submitSupport(event) {
+async function submitSupport(event) {
     event.preventDefault();
     const name = document.getElementById('support-name').value;
     const email = document.getElementById('support-email').value;
     const category = document.getElementById('support-category').value;
     const message = document.getElementById('support-message').value;
     
-    // In production, send to backend
-    showNotification('✅ Thank you! Your message has been sent. We\'ll respond within 24 hours.', 'success');
-    closeSupportModal();
+    showLoading(true);
+    
+    try {
+        const res = await fetch(`${API_BASE}/support/submit`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ name, email, category, message })
+        });
+        
+        showLoading(false);
+        
+        if (res.ok) {
+            const data = await res.json();
+            showNotification(`✅ Support request submitted! Ticket ID: ${data.ticket_id}`, 'success');
+            closeSupportModal();
+        } else {
+            showNotification('❌ Failed to submit request', 'error');
+        }
+    } catch (error) {
+        showLoading(false);
+        showNotification('❌ Network error', 'error');
+    }
 }

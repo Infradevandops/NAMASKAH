@@ -567,18 +567,30 @@
             document.getElementById('support-form').reset();
         }
         
-        function submitSupport(event) {
+        async function submitSupport(event) {
             event.preventDefault();
             const name = document.getElementById('support-name').value;
             const email = document.getElementById('support-email').value;
             const category = document.getElementById('support-category').value;
             const message = document.getElementById('support-message').value;
             
-            // In production, send to backend
-            console.log('Support request:', { name, email, category, message });
-            
-            alert('✅ Thank you! Your message has been sent. We\'ll respond within 24 hours.');
-            closeSupportModal();
+            try {
+                const res = await fetch('/support/submit', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ name, email, category, message })
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    alert(`✅ Thank you! Your message has been sent.\n\nTicket ID: ${data.ticket_id}\n\nWe'll respond within 24 hours.`);
+                    closeSupportModal();
+                } else {
+                    alert('❌ Failed to submit request. Please try again.');
+                }
+            } catch (error) {
+                alert('❌ Network error. Please try again.');
+            }
         }
     </script>
 </body>
