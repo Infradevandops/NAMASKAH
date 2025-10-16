@@ -27,52 +27,76 @@ Voice call verification with transcription and audio recording for services requ
 ### Number Rentals
 Long-term phone number rentals (minimum 7 days) for sustained verification needs:
 
+**Rental Types:**
+- **Service-Specific**: Dedicated to one service (e.g., WhatsApp only)
+- **General Use**: Can receive messages from any service
+
 **Rental Modes:**
-- **Always Ready**: Number remains active 24/7 for instant SMS reception
+- **Always Active**: Number remains active 24/7 for instant SMS reception
 - **Manual Mode**: 30% discount, requires manual activation before use
 
 **Duration Options:**
-- 7 days
-- 14 days
-- 30 days
-- Custom durations available
+- 7, 14, 30, 60, 90, 365 days
 
 ---
 
 ## Pricing
 
-### Verification Services
+### Currency
+- **Symbol**: N (Namaskah Coin)
+- **Exchange Rate**: 1N = $2 USD
 
-| Plan | Price per Verification | Discount | Minimum Purchase |
-|------|----------------------|----------|------------------|
-| **Pay-as-You-Go** | 85¢ | — | None |
-| **Developer** | 65¢ | 24% | $50 total funded |
-| **Enterprise** | 55¢ | 35% | $200 total funded |
+### SMS Verification
 
-*All prices in USD cents. 1 USD = 1 Namaskah Coin (₵)*
+| Service Type | Price | USD Equivalent |
+|-------------|-------|----------------|
+| **Popular Services** (WhatsApp, Instagram, Facebook, Telegram, etc.) | N1 | $2.00 |
+| **General Purpose** (Unlisted Services) | N1.25 | $2.50 |
+
+### Voice Verification
+- **Formula**: SMS Price + N0.25
+- **Popular Services**: N1.25 ($2.50)
+- **General Purpose**: N1.50 ($3.00)
+
+### Pricing Tiers
+
+| Plan | Discount | Minimum Funded | Example: Popular SMS |
+|------|----------|----------------|----------------------|
+| **Pay-as-You-Go** | — | None | N1.00 ($2.00) |
+| **Developer** | 20% | N25 ($50) | N0.80 ($1.60) |
+| **Enterprise** | 35% | N100 ($200) | N0.65 ($1.30) |
 
 ### Number Rentals
 
-**Base Pricing (General Use - Always Ready Mode):**
+**Service-Specific Rentals** (for single service like WhatsApp):
 
-| Duration | Price |
-|----------|-------|
-| 7 days | $50.00 |
-| 14 days | $90.00 |
-| 30 days | $180.00 |
+| Duration | Always Active | Manual Mode (30% off) |
+|----------|--------------|----------------------|
+| 7 days | N5 ($10) | N3.50 ($7) |
+| 14 days | N9 ($18) | N6.30 ($12.60) |
+| 30 days | N16 ($32) | N11.20 ($22.40) |
+| 60 days | N28 ($56) | N19.60 ($39.20) |
+| 90 days | N38 ($76) | N26.60 ($53.20) |
+| 365 days | N50 ($100) | N35 ($70) |
 
-**Service-Specific Pricing Multipliers:**
+**General Use Rentals** (can receive from any service):
 
-| Service | Multiplier | 7-Day Price |
-|---------|-----------|-------------|
-| WhatsApp | 0.6× | $30.00 |
-| Telegram | 0.7× | $35.00 |
-| Instagram | 0.75× | $37.50 |
-| Facebook | 0.75× | $37.50 |
-| Google | 0.8× | $40.00 |
-| General Use | 1.0× | $50.00 |
+| Duration | Always Active | Manual Mode (30% off) |
+|----------|--------------|----------------------|
+| 7 days | N6 ($12) | N4.20 ($8.40) |
+| 14 days | N11 ($22) | N7.70 ($15.40) |
+| 30 days | N20 ($40) | N14 ($28) |
+| 60 days | N35 ($70) | N24.50 ($49) |
+| 90 days | N48 ($96) | N33.60 ($67.20) |
+| 365 days | N80 ($160) | N56 ($112) |
 
-*Manual Mode: Apply 30% discount to all rental prices*
+**Rental Modes:**
+- **Always Active**: Number remains active 24/7 for instant SMS reception
+- **Manual Mode**: 30% discount, requires manual activation before use
+
+**Rental Requirements:**
+- Payment method (debit card/BTC wallet) must be added for auto-billing
+- Minimum rental period: 7 days
 
 ---
 
@@ -169,7 +193,7 @@ GET  /wallet/paystack/verify/{ref}   - Verify payment
 ## Getting Started
 
 1. **Create Account**: Register at the platform
-2. **Fund Wallet**: Minimum $5 deposit
+2. **Fund Wallet**: Minimum N2.50 ($5 USD) deposit
 3. **Select Service**: Choose from 1,807+ services
 4. **Receive Number**: Get temporary phone number instantly
 5. **Get Code**: SMS delivered within 60-120 seconds
@@ -236,4 +260,4 @@ SOFTWARE.
 
 ---
 
-**Namaskah SMS** • Enterprise-Grade Verification Platform • Version 2.0.0
+**Namaskah SMS** • Enterprise-Grade Verification Platform • Version 2.1.0

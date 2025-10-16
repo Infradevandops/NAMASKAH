@@ -38,20 +38,33 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./sms.db")
 TEXTVERIFIED_API_KEY = os.getenv("TEXTVERIFIED_API_KEY")
 TEXTVERIFIED_EMAIL = os.getenv("TEXTVERIFIED_EMAIL")
 
-# Pricing tiers
+# Currency: 1N = $2 USD
+USD_TO_NAMASKAH = 0.5  # 1 USD = 0.5N
+NAMASKAH_TO_USD = 2.0  # 1N = 2 USD
+
+# SMS Verification Pricing (in Namaskah coins N)
+SMS_PRICING = {
+    'popular': 1.0,        # WhatsApp, Instagram, Facebook, Telegram, etc.
+    'general': 1.25        # Unlisted services
+}
+
+# Voice adds N0.25 to SMS price
+VOICE_PREMIUM = 0.25
+
+# Pricing tiers (discounts applied to base price)
 PRICING_TIERS = {
-    'pay_as_you_go': 0.85,
-    'developer': 0.65,      # 24% discount
-    'enterprise': 0.55      # 35% discount
+    'pay_as_you_go': 1.0,      # No discount
+    'developer': 0.80,         # 20% discount
+    'enterprise': 0.65         # 35% discount
 }
 
-# Minimum purchase amounts for discounted tiers
+# Minimum purchase amounts for discounted tiers (in N)
 MIN_PURCHASE = {
-    'developer': 50.0,
-    'enterprise': 200.0
+    'developer': 25.0,    # N25 ($50 USD)
+    'enterprise': 100.0   # N100 ($200 USD)
 }
 
-VERIFICATION_COST = PRICING_TIERS['pay_as_you_go']  # Default
+VERIFICATION_COST = SMS_PRICING['popular']  # Default
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 
@@ -338,7 +351,7 @@ tv_client = TextVerifiedClient()
 # FastAPI App
 app = FastAPI(
     title="Namaskah SMS API",
-    version="2.0.0",
+    version="2.1.0",
     description="""🚀 **Simple SMS Verification Service**
 
 Namaskah SMS provides temporary phone numbers for SMS verification across 1,807+ services.
@@ -364,12 +377,23 @@ Authorization: Bearer YOUR_JWT_TOKEN
 
 Get token via `/auth/login` or `/auth/register`.
 
+## Currency
+- **Symbol**: N (Namaskah Coin)
+- **Exchange Rate**: 1N = $2 USD
+
 ## Pricing
-- **Pay-as-You-Go**: ₵0.85 per verification
-- **Developer Plan**: ₵0.65 per verification (24% off, min ₵50 funded)
-- **Enterprise Plan**: ₵0.55 per verification (35% off, min ₵200 funded)
+- **SMS Verification**: N1 ($2) popular services, N1.25 ($2.50) general
+- **Voice Verification**: SMS price + N0.25
+- **Pay-as-You-Go**: No discount
+- **Developer Plan**: 20% off (min N25 funded)
+- **Enterprise Plan**: 35% off (min N100 funded)
 - **New users**: 1 free verification
-- **Referral bonus**: 1 free verification when referred user funds ₵5+
+- **Referral bonus**: 1 free verification when referred user funds N2.50+
+
+## Rentals
+- **Service-Specific**: N5 (7d) to N50 (365d)
+- **General Use**: N6 (7d) to N80 (365d)
+- **Manual Mode**: 30% discount
 
 ## Support
 - API Docs: `/docs`
@@ -467,7 +491,7 @@ def register(req: RegisterRequest, referral_code: str = None, db: Session = Depe
     - **password**: Minimum 6 characters
     - **referral_code**: Optional referral code for bonus credits
     
-    Returns JWT token and user details. New users get ₵5.00 free credits.
+    Returns JWT token and user details. New users get 1 free verification.
     """
     if db.query(User).filter(User.email == req.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -493,7 +517,7 @@ def register(req: RegisterRequest, referral_code: str = None, db: Session = Depe
         if referrer:
             user.referred_by = referrer.id
             user.free_verifications += 1.0  # Bonus for being referred
-            # Referrer gets 1 free verification when referred user funds $5+
+            # Referrer gets 1 free verification when referred user funds N2.50+
             referrer.referral_earnings += 0.0  # Track pending
             
             # Create referral record
@@ -750,32 +774,42 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
     - **service_name**: Service identifier (e.g., 'whatsapp', 'telegram')
     - **capability**: 'sms' or 'voice'
     
-    Pricing: Pay-as-You-Go ₵0.85, Developer ₵0.65 (min ₵50), Enterprise ₵0.55 (min ₵200)
+    Pricing: Popular services N1 ($2), General N1.25 ($2.50), Voice +N0.25
+    Tiers: Pay-as-You-Go (no discount), Developer (20% off, min N25), Enterprise (35% off, min N100)
     """
-    # Determine pricing tier based on user's total credits added
+    # Determine base price (popular vs general)
+    popular_services = ['whatsapp', 'instagram', 'facebook', 'telegram', 'twitter', 'tiktok', 'snapchat', 'google']
+    is_popular = req.service_name.lower() in popular_services
+    base_cost = SMS_PRICING['popular'] if is_popular else SMS_PRICING['general']
+    
+    # Add voice premium if voice verification
+    if req.capability == 'voice':
+        base_cost += VOICE_PREMIUM
+    
+    # Determine pricing tier based on user's total funded amount
     total_funded = db.query(Transaction).filter(
         Transaction.user_id == user.id,
         Transaction.type == "credit",
         Transaction.description.contains("funded")
-    ).count()
+    ).with_entities(Transaction.amount).all()
+    total_funded_amount = sum([t[0] for t in total_funded]) if total_funded else 0
     
-    # Calculate tier
-    if total_funded >= MIN_PURCHASE['enterprise']:
-        cost = PRICING_TIERS['enterprise']
-    elif total_funded >= MIN_PURCHASE['developer']:
-        cost = PRICING_TIERS['developer']
+    # Apply tier discount
+    if total_funded_amount >= MIN_PURCHASE['enterprise']:
+        tier_multiplier = PRICING_TIERS['enterprise']
+    elif total_funded_amount >= MIN_PURCHASE['developer']:
+        tier_multiplier = PRICING_TIERS['developer']
     else:
-        cost = PRICING_TIERS['pay_as_you_go']
+        tier_multiplier = PRICING_TIERS['pay_as_you_go']
     
-    # Voice calls cost same as SMS in new pricing
-    # (simplified - no premium)
+    cost = round(base_cost * tier_multiplier, 2)
     
     # Check if user has free verifications or credits
     if user.free_verifications >= 1:
         user.free_verifications -= 1
         cost = 0  # Free verification
     elif user.credits < cost:
-        raise HTTPException(status_code=402, detail=f"Insufficient credits. Need ₵{cost}, have ₵{user.credits}")
+        raise HTTPException(status_code=402, detail=f"Insufficient credits. Need N{cost}, have N{user.credits}")
     else:
         user.credits -= cost
     
@@ -788,7 +822,7 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
             user.email,
             "⚠️ Low Balance Alert - Namaskah SMS",
             f"""<h2>⚠️ Low Balance Alert</h2>
-            <p>Your wallet balance is low: <strong>₵{user.credits:.2f}</strong></p>
+            <p>Your wallet balance is low: <strong>N{user.credits:.2f}</strong></p>
             <p>Fund your wallet to continue using Namaskah SMS.</p>
             <p><a href="http://localhost:8000/app">Fund Wallet Now</a></p>"""
         )
@@ -991,7 +1025,7 @@ def add_credits(req: AddCreditsRequest, admin: User = Depends(get_admin_user), d
     db.add(transaction)
     db.commit()
     
-    return {"message": f"Added ${req.amount} credits", "new_balance": user.credits}
+    return {"message": f"Added N{req.amount} credits", "new_balance": user.credits}
 
 @app.get("/admin/stats", tags=["Admin"], summary="Get Platform Statistics")
 def get_stats(period: str = "30", admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
@@ -1057,9 +1091,9 @@ def get_stats(period: str = "30", admin: User = Depends(get_admin_user), db: Ses
 # Payment Endpoints
 @app.post("/wallet/fund", tags=["Wallet"], summary="Fund Wallet")
 def fund_wallet(req: FundWalletRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Add credits to wallet. Minimum ₵5.00. Supports Paystack, Bitcoin, Ethereum, Solana, USDT."""
-    if req.amount < 5:
-        raise HTTPException(status_code=400, detail="Minimum funding amount is $5.00")
+    """Add credits to wallet. Minimum N2.50 ($5 USD). Supports Paystack, Bitcoin, Ethereum, Solana, USDT."""
+    if req.amount < 2.5:
+        raise HTTPException(status_code=400, detail="Minimum funding amount is N2.50 ($5 USD)")
     
     payment_methods = {
         'paystack': '🏦 Paystack',
@@ -1072,7 +1106,7 @@ def fund_wallet(req: FundWalletRequest, user: User = Depends(get_current_user), 
     if req.payment_method not in payment_methods:
         raise HTTPException(status_code=400, detail="Invalid payment method")
     
-    # Add credits (1 USD = 1 Namaskah Coin)
+    # Add credits (amount is in N)
     user.credits += req.amount
     
     # Create transaction
@@ -1085,8 +1119,8 @@ def fund_wallet(req: FundWalletRequest, user: User = Depends(get_current_user), 
     )
     db.add(transaction)
     
-    # Check if user was referred and this is their first funding of $5+
-    if req.amount >= 5 and user.referred_by:
+    # Check if user was referred and this is their first funding of N2.50+
+    if req.amount >= 2.5 and user.referred_by:
         referrer = db.query(User).filter(User.id == user.referred_by).first()
         if referrer:
             # Check if referrer already got reward
@@ -1113,14 +1147,14 @@ def fund_wallet(req: FundWalletRequest, user: User = Depends(get_current_user), 
         "amount": req.amount,
         "new_balance": user.credits,
         "payment_method": payment_methods[req.payment_method],
-        "message": f"Successfully added ₵{req.amount:.2f} to your wallet"
+        "message": f"Successfully added N{req.amount:.2f} to your wallet"
     }
 
 @app.post("/wallet/paystack/initialize", tags=["Wallet"], summary="Initialize Paystack Payment")
 def initialize_paystack(req: FundWalletRequest, user: User = Depends(get_current_user)):
     """Initialize Paystack payment"""
-    if req.amount < 5:
-        raise HTTPException(status_code=400, detail="Minimum funding amount is $5.00")
+    if req.amount < 2.5:
+        raise HTTPException(status_code=400, detail="Minimum funding amount is N2.50 ($5 USD)")
     
     reference = f"namaskah_{user.id}_{int(datetime.now(timezone.utc).timestamp())}"
     
@@ -1214,8 +1248,8 @@ async def paystack_webhook(request: Request, db: Session = Depends(get_db)):
                 user.email,
                 "💰 Payment Successful - Namaskah SMS",
                 f"""<h2>Payment Confirmed!</h2>
-                <p>Your payment of <strong>₵{amount:.2f}</strong> has been received.</p>
-                <p>New balance: <strong>₵{user.credits:.2f}</strong></p>
+                <p>Your payment of <strong>N{amount:.2f}</strong> has been received.</p>
+                <p>New balance: <strong>N{user.credits:.2f}</strong></p>
                 <p>Reference: {reference}</p>
                 <p><a href="http://localhost:8000/app">Start Using Credits</a></p>"""
             )
@@ -1268,8 +1302,8 @@ def verify_payment(reference: str, user: User = Depends(get_current_user), db: S
 @app.post("/wallet/crypto/address", tags=["Wallet"], summary="Get Crypto Payment Address")
 def get_crypto_address(req: FundWalletRequest, user: User = Depends(get_current_user)):
     """Get crypto payment address"""
-    if req.amount < 5:
-        raise HTTPException(status_code=400, detail="Minimum funding amount is $5.00")
+    if req.amount < 2.5:
+        raise HTTPException(status_code=400, detail="Minimum funding amount is N2.50 ($5 USD)")
     
     addresses = {
         'bitcoin': BITCOIN_ADDRESS,
@@ -1291,7 +1325,7 @@ def get_crypto_address(req: FundWalletRequest, user: User = Depends(get_current_
         "payment_id": payment_id,
         "qr_code": f"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={address}",
         "explorer_url": get_explorer_url(req.payment_method, address),
-        "instructions": f"Send exactly ${req.amount} USD worth of {req.payment_method.upper()} to the address above"
+        "instructions": f"Send exactly N{req.amount} (${req.amount * NAMASKAH_TO_USD} USD) worth of {req.payment_method.upper()} to the address above"
     }
 
 def get_explorer_url(crypto: str, address: str) -> str:
@@ -1640,51 +1674,54 @@ def update_ticket_status(ticket_id: str, status: str, admin: User = Depends(get_
     
     return {"message": "Status updated", "ticket_id": ticket.id, "new_status": status}
 
-# Rental Pricing (minimum 7 days) - Base prices for Always Ready mode
-RENTAL_PRICING = {
-    168: 50.0,    # 7 days
-    336: 90.0,    # 14 days
-    720: 180.0,   # 30 days
-    1440: 340.0,  # 60 days
-    2160: 480.0   # 90 days
+# Rental Pricing (in Namaskah coins N)
+# Service-Specific Rentals (for single service like WhatsApp)
+RENTAL_SERVICE_SPECIFIC = {
+    168: 5.0,      # 7 days
+    336: 9.0,      # 14 days
+    720: 16.0,     # 30 days
+    1440: 28.0,    # 60 days
+    2160: 38.0,    # 90 days
+    8760: 50.0     # 365 days
+}
+
+# General Use Rentals (can receive from any service)
+RENTAL_GENERAL_USE = {
+    168: 6.0,      # 7 days
+    336: 11.0,     # 14 days
+    720: 20.0,     # 30 days
+    1440: 35.0,    # 60 days
+    2160: 48.0,    # 90 days
+    8760: 80.0     # 365 days
 }
 
 # Rental modes
 RENTAL_MODES = {
-    'always_ready': 1.0,    # Full price - always active
-    'manual': 0.7           # 30% discount - wake-up required
+    'always_active': 1.0,   # Full price - always active
+    'manual': 0.7           # 30% discount - needs activation
 }
 
-# Service-specific rental multipliers (specific services cost MORE than general)
-RENTAL_SERVICE_MULTIPLIERS = {
-    'general': 1.0,      # General use (cheapest - base price)
-    'telegram': 1.3,
-    'instagram': 1.4,
-    'facebook': 1.4,
-    'whatsapp': 1.5,     # Most expensive
-    'google': 1.6
-}
-
-def calculate_rental_cost(hours: float, service_name: str = 'general', mode: str = 'always_ready') -> float:
-    """Calculate rental cost based on duration, service, and mode"""
+def calculate_rental_cost(hours: float, service_name: str = 'general', mode: str = 'always_active') -> float:
+    """Calculate rental cost based on duration, service, and mode (in N)"""
     # Minimum 7 days (168 hours)
     if hours < 168:
         hours = 168
     
+    # Determine if service-specific or general use
+    is_general = service_name.lower() in ['general', 'unlisted', 'any']
+    pricing_table = RENTAL_GENERAL_USE if is_general else RENTAL_SERVICE_SPECIFIC
+    
     # Get base price
-    if hours in RENTAL_PRICING:
-        base_cost = RENTAL_PRICING[hours]
+    if hours in pricing_table:
+        base_cost = pricing_table[hours]
     else:
         # Calculate proportional cost based on 7-day rate
-        base_cost = round((hours / 168) * RENTAL_PRICING[168], 2)
-    
-    # Apply service multiplier
-    service_multiplier = RENTAL_SERVICE_MULTIPLIERS.get(service_name.lower(), RENTAL_SERVICE_MULTIPLIERS['general'])
+        base_cost = round((hours / 168) * pricing_table[168], 2)
     
     # Apply mode discount
-    mode_multiplier = RENTAL_MODES.get(mode, RENTAL_MODES['always_ready'])
+    mode_multiplier = RENTAL_MODES.get(mode, RENTAL_MODES['always_active'])
     
-    return round(base_cost * service_multiplier * mode_multiplier, 2)
+    return round(base_cost * mode_multiplier, 2)
 
 def calculate_refund(rental: NumberRental) -> float:
     """Calculate refund for early release (50% of unused time, min 1hr used)"""
@@ -1702,12 +1739,12 @@ def create_rental(req: CreateRentalRequest, user: User = Depends(get_current_use
     
     Minimum 7 days. Pricing varies by service and mode (Always Ready vs Manual).
     """
-    # Default to always_ready mode if not specified
-    mode = getattr(req, 'mode', 'always_ready')
+    # Default to always_active mode if not specified
+    mode = getattr(req, 'mode', 'always_active')
     cost = calculate_rental_cost(req.duration_hours, req.service_name, mode)
     
     if user.credits < cost:
-        raise HTTPException(status_code=402, detail=f"Insufficient credits. Need ₵{cost}, have ₵{user.credits}")
+        raise HTTPException(status_code=402, detail=f"Insufficient credits. Need N{cost}, have N{user.credits}")
     
     # Check active rental limit (max 5)
     active_count = db.query(NumberRental).filter(
@@ -1822,11 +1859,11 @@ def extend_rental(rental_id: str, req: ExtendRentalRequest, user: User = Depends
     if not rental:
         raise HTTPException(status_code=404, detail="Active rental not found")
     
-    mode = getattr(rental, 'mode', 'always_ready')
+    mode = getattr(rental, 'mode', 'always_active')
     cost = calculate_rental_cost(req.additional_hours, rental.service_name, mode)
     
     if user.credits < cost:
-        raise HTTPException(status_code=402, detail=f"Insufficient credits. Need ₵{cost}, have ₵{user.credits}")
+        raise HTTPException(status_code=402, detail=f"Insufficient credits. Need N{cost}, have N{user.credits}")
     
     user.credits -= cost
     rental.expires_at += timedelta(hours=req.additional_hours)
@@ -1882,7 +1919,7 @@ def release_rental(rental_id: str, user: User = Depends(get_current_user), db: S
         "status": "released",
         "refund": refund,
         "remaining_credits": user.credits,
-        "message": f"Refunded ₵{refund} for unused time"
+        "message": f"Refunded N{refund} for unused time"
     }
 
 @app.get("/rentals/{rental_id}/messages", tags=["Rentals"], summary="Get Rental Messages")
