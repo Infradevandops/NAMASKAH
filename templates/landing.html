@@ -51,8 +51,8 @@
         .cta-button {
             background: white;
             color: #0077B5;
-            padding: 12px 24px;
-            font-size: 1rem;
+            padding: 10px 20px;
+            font-size: 0.95rem;
             border: none;
             border-radius: 25px;
             cursor: pointer;
@@ -71,11 +71,11 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.2);
         }
         @media (min-width: 768px) {
-            .cta-button { padding: 15px 40px; font-size: 1.2rem; }
+            .cta-button { padding: 12px 30px; font-size: 1.05rem; }
         }
         .features {
             padding: 30px 15px;
-            max-width: 1200px;
+            max-width: 900px;
             margin: 0 auto;
             background: var(--bg-primary);
         }
@@ -128,6 +128,8 @@
             background: var(--bg-secondary);
             padding: 30px 15px;
             text-align: center;
+            max-width: 1200px;
+            margin: 0 auto;
         }
         .pricing h2 {
             font-size: 1.8rem;
@@ -389,6 +391,7 @@
     </div>
 
     <div style="background: var(--bg-primary); padding: 40px 15px;">
+        <div style="max-width: 1200px; margin: 0 auto;">
         <h2 style="text-align: center; font-size: 1.8rem; margin-bottom: 30px; color: var(--text-primary);">📂 Categories</h2>
         <style>
             @media (min-width: 768px) {
@@ -492,9 +495,10 @@
             </div>
         </div>
         <p style="text-align: center; margin-top: 30px; color: var(--text-secondary); font-size: 0.9rem;">+ 1,595 more services available</p>
+        </div>
     </div>
 
-    <div class="how-it-works-section" style="background: var(--bg-secondary); padding: 40px 15px; text-align: center;">
+    <div class="how-it-works-section" style="background: var(--bg-secondary); padding: 40px 15px; text-align: center; max-width: 1200px; margin: 0 auto;">
         <style>
             @media (min-width: 768px) {
                 .how-it-works-section { padding: 60px 20px !important; }
@@ -531,46 +535,48 @@
                 .reviews-section { padding: 60px 20px !important; }
             }
         </style>
-        <h2 style="text-align: center; font-size: 1.8rem; margin-bottom: 30px; color: var(--text-primary);">⭐ What Our Users Say</h2>
-        <style>
-            @media (min-width: 768px) {
-                .reviews-section h2 { font-size: 2.5rem !important; margin-bottom: 50px !important; }
-            }
-        </style>
-        <div class="reviews-grid" style="max-width: 1200px; margin: 0 auto; padding: 0 15px; display: grid; grid-template-columns: 1fr; gap: 20px;">
-            <div style="background: var(--bg-card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid var(--border);">
-                <style>
-                    @media (min-width: 768px) {
-                        .reviews-grid > div { padding: 30px !important; }
-                    }
-                </style>
-                <div style="font-weight: bold; color: var(--text-primary); font-size: 16px; margin-bottom: 5px;">John Davidson</div>
-                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">Marketing Agency Owner</div>
-                <p style="font-style: italic; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.5; font-size: 14px;">"Super fast and reliable! Got my WhatsApp verification in under 30 seconds. The auto-refund feature is a game changer."</p>
-                <div style="color: #fbbf24; font-size: 20px;">⭐⭐⭐⭐⭐</div>
-            </div>
-
-            <div style="background: var(--bg-card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid var(--border);">
-                <div style="font-weight: bold; color: var(--text-primary); font-size: 16px; margin-bottom: 5px;">Sarah Mitchell</div>
-                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">Senior Software Engineer</div>
-                <p style="font-style: italic; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.5; font-size: 14px;">"As a developer, I love the API integration! The webhooks work flawlessly and the documentation is crystal clear. 1,807 services is insane!"</p>
-                <div style="color: #fbbf24; font-size: 20px;">⭐⭐⭐⭐⭐</div>
-            </div>
-
-            <div style="background: var(--bg-card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid var(--border);">
-                <div style="font-weight: bold; color: var(--text-primary); font-size: 16px; margin-bottom: 5px;">Michael Kumar</div>
-                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">Entrepreneur</div>
-                <p style="font-style: italic; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.5; font-size: 14px;">"Best pricing I've found anywhere! Only ₵0.50 per verification and the quality is excellent. The referral program is generous too!"</p>
-                <div style="color: #fbbf24; font-size: 20px;">⭐⭐⭐⭐⭐</div>
-            </div>
-        </div>
-        <div style="text-align: center; margin-top: 30px;">
-            <p class="join-text" style="font-size: 1rem; color: #10b981; font-weight: bold;">Join 5,000+ Happy Users Today! 🚀</p>
+        <div style="max-width: 900px; margin: 0 auto; background: var(--bg-card); border: 2px solid var(--border); border-radius: 16px; padding: 30px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+            <h2 style="text-align: center; font-size: 1.8rem; margin-bottom: 30px; color: var(--text-primary);">What Our Users Say</h2>
             <style>
                 @media (min-width: 768px) {
-                    .reviews-section .join-text { font-size: 1.2rem !important; }
+                    .reviews-section h2 { font-size: 2.5rem !important; margin-bottom: 40px !important; }
                 }
             </style>
+            <div class="reviews-grid" style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+                <div style="background: var(--bg-secondary); padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
+                    <style>
+                        @media (min-width: 768px) {
+                            .reviews-grid > div { padding: 25px !important; }
+                        }
+                    </style>
+                    <div style="font-weight: bold; color: var(--text-primary); font-size: 16px; margin-bottom: 5px;">John Davidson</div>
+                    <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">Marketing Agency Owner</div>
+                    <p style="font-style: italic; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.5; font-size: 14px;">"Super fast and reliable! Got my WhatsApp verification in under 30 seconds. The auto-refund feature is a game changer."</p>
+                    <div style="color: #fbbf24; font-size: 20px;">⭐⭐⭐⭐⭐</div>
+                </div>
+
+                <div style="background: var(--bg-secondary); padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
+                    <div style="font-weight: bold; color: var(--text-primary); font-size: 16px; margin-bottom: 5px;">Sarah Mitchell</div>
+                    <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">Senior Software Engineer</div>
+                    <p style="font-style: italic; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.5; font-size: 14px;">"As a developer, I love the API integration! The webhooks work flawlessly and the documentation is crystal clear. 1,807 services is insane!"</p>
+                    <div style="color: #fbbf24; font-size: 20px;">⭐⭐⭐⭐⭐</div>
+                </div>
+
+                <div style="background: var(--bg-secondary); padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
+                    <div style="font-weight: bold; color: var(--text-primary); font-size: 16px; margin-bottom: 5px;">Michael Kumar</div>
+                    <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">Entrepreneur</div>
+                    <p style="font-style: italic; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.5; font-size: 14px;">"Best pricing I've found anywhere! Only ₵0.50 per verification and the quality is excellent. The referral program is generous too!"</p>
+                    <div style="color: #fbbf24; font-size: 20px;">⭐⭐⭐⭐⭐</div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 30px;">
+                <p class="join-text" style="font-size: 1rem; color: #10b981; font-weight: bold;">Join 5,000+ Happy Users Today! 🚀</p>
+                <style>
+                    @media (min-width: 768px) {
+                        .reviews-section .join-text { font-size: 1.2rem !important; }
+                    }
+                </style>
+            </div>
         </div>
     </div>
 
