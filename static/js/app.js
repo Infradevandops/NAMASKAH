@@ -72,6 +72,12 @@ function formatPhoneNumber(phone) {
 // Check auth on load
 if (token) {
     checkAuth();
+} else {
+    // If referral code in URL, show register tab
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('ref')) {
+        setTimeout(() => showTab('register'), 100);
+    }
 }
 
 function showTab(tab) {
