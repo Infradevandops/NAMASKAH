@@ -233,6 +233,7 @@ function showApp() {
     loadAnalytics();
     loadNotificationSettings();
     loadReferralStats();
+    loadActiveRentals();
     startHistoryRefresh();
 }
 
@@ -281,10 +282,13 @@ function renderServices() {
     const search = document.getElementById('service-search').value.toLowerCase();
     let html = '';
     
-    // Add General Use button first
-    html += `<div style="min-width: 100%;">`;
-    html += `<div onclick="selectService('general')" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 15px; cursor: pointer; border-radius: 8px; transition: all 0.3s; text-align: center; font-weight: bold; font-size: 1rem; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">🌐 General Use (Unlisted Services)</div>`;
-    html += `</div>`;
+    // Add General Use as first category
+    if (!search || 'general'.includes(search) || 'unlisted'.includes(search)) {
+        html += `<div style="min-width: 100px;">`;
+        html += `<div style="font-weight: bold; font-size: 0.75rem; color: #f59e0b; margin-bottom: 8px; border-bottom: 2px solid #f59e0b; padding-bottom: 4px;">General</div>`;
+        html += `<div onclick="selectService('general')" style="font-size: 0.65rem; padding: 3px; cursor: pointer; border-radius: 4px; transition: all 0.2s; background: rgba(245, 158, 11, 0.1); font-weight: 600; color: #f59e0b;" onmouseover="this.style.background='#f59e0b'; this.style.color='white'" onmouseout="this.style.background='rgba(245, 158, 11, 0.1)'; this.style.color='#f59e0b'">🌐 Unlisted</div>`;
+        html += `</div>`;
+    }
     
     const categoryOrder = ['Social', 'Messaging', 'Dating', 'Finance', 'Shopping', 'Food', 'Gaming', 'Crypto'];
     
@@ -1534,6 +1538,205 @@ function showSupportModal() {
 function closeSupportModal() {
     document.getElementById('support-modal').classList.add('hidden');
     document.getElementById('support-form').reset();
+}
+
+const RENTAL_BASE_PRICES = {
+    168: 50.0,
+    336: 90.0,
+    720: 180.0,
+    1440: 340.0,
+    2160: 480.0
+};
+
+const RENTAL_SERVICE_MULTIPLIERS = {
+    'general': 1.0,
+    'telegram': 1.3,
+    'instagram': 1.4,
+    'facebook': 1.4,
+    'whatsapp': 1.5,
+    'google': 1.6
+};
+
+function showRentalModal() {
+    document.getElementById('rental-modal').classList.remove('hidden');
+    updateRentalPrice();
+}
+
+function closeRentalModal() {
+    document.getElementById('rental-modal').classList.add('hidden');
+}
+
+function updateRentalPrice() {
+    const service = document.getElementById('rental-service').value;
+    const mode = document.querySelector('input[name="rental-mode"]:checked').value;
+    const duration = parseInt(document.querySelector('input[name="rental-duration"]:checked').value);
+    
+    const basePrice = RENTAL_BASE_PRICES[duration];
+    const serviceMultiplier = RENTAL_SERVICE_MULTIPLIERS[service];
+    const modeMultiplier = mode === 'manual' ? 0.7 : 1.0;
+    
+    const totalPrice = basePrice * serviceMultiplier * modeMultiplier;
+    
+    // Update all duration prices
+    Object.keys(RENTAL_BASE_PRICES).forEach(hours => {
+        const price = RENTAL_BASE_PRICES[hours] * serviceMultiplier * modeMultiplier;
+        const days = hours / 24;
+        document.getElementById(`price-${days}`).textContent = `$${price.toFixed(2)}`;
+    });
+    
+    document.getElementById('rental-total').textContent = `$${totalPrice.toFixed(2)}`;
+    
+    const days = duration / 24;
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + days);
+    document.getElementById('rental-expiry').textContent = expiryDate.toLocaleDateString();
+}
+
+async function createRentalNumber() {
+    const service = document.getElementById('rental-service').value;
+    const mode = document.querySelector('input[name="rental-mode"]:checked').value;
+    const duration = parseInt(document.querySelector('input[name="rental-duration"]:checked').value);
+    
+    showLoading(true);
+    
+    try {
+        const res = await fetch(`${API_BASE}/rentals/create`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                service_name: service,
+                duration_hours: duration,
+                mode: mode,
+                auto_extend: false
+            })
+        });
+        
+        const data = await res.json();
+        showLoading(false);
+        
+        if (res.ok) {
+            showNotification(`✅ Number rented! ${data.phone_number}`, 'success');
+            document.getElementById('user-credits').textContent = data.remaining_credits.toFixed(2);
+            closeRentalModal();
+            loadActiveRentals();
+            loadTransactions(true);
+        } else {
+            showNotification(`❌ ${data.detail}`, 'error');
+        }
+    } catch (err) {
+        showLoading(false);
+        showNotification('🌐 Network error', 'error');
+    }
+}
+
+async function loadActiveRentals() {
+    if (!token) return;
+    
+    try {
+        const res = await fetch(`${API_BASE}/rentals/active`, {
+            headers: {'Authorization': `Bearer ${token}`}
+        });
+        
+        if (res.ok) {
+            const data = await res.json();
+            const section = document.getElementById('active-rentals-section');
+            const list = document.getElementById('active-rentals-list');
+            
+            if (data.rentals.length === 0) {
+                section.style.display = 'none';
+            } else {
+                section.style.display = 'block';
+                list.innerHTML = data.rentals.map(r => {
+                    const timeRemaining = r.time_remaining_seconds;
+                    const days = Math.floor(timeRemaining / 86400);
+                    const hours = Math.floor((timeRemaining % 86400) / 3600);
+                    
+                    return `
+                        <div style="background: var(--bg-secondary); padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #8b5cf6;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                                <div>
+                                    <div style="font-size: 1.2rem; font-weight: bold; color: var(--text-primary);">${r.phone_number}</div>
+                                    <div style="font-size: 0.9rem; color: var(--text-secondary); text-transform: capitalize;">${r.service_name} • ${r.auto_extend ? 'Auto-extend' : 'Manual'}</div>
+                                </div>
+                                <span style="background: #10b981; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem;">Active</span>
+                            </div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 10px;">
+                                ⏰ Expires in: <strong>${days}d ${hours}h</strong>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="extendRental('${r.id}')" class="btn-small" style="flex: 1;">🔄 Extend</button>
+                                <button onclick="releaseRental('${r.id}')" class="btn-small btn-danger" style="flex: 1;">🚫 Release</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+    } catch (err) {
+        console.error('Failed to load rentals:', err);
+    }
+}
+
+async function extendRental(rentalId) {
+    const hours = prompt('How many hours to extend? (168 = 7 days)', '168');
+    if (!hours) return;
+    
+    showLoading(true);
+    
+    try {
+        const res = await fetch(`${API_BASE}/rentals/${rentalId}/extend`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ additional_hours: parseFloat(hours) })
+        });
+        
+        const data = await res.json();
+        showLoading(false);
+        
+        if (res.ok) {
+            showNotification(`✅ Extended! Cost: $${data.cost}`, 'success');
+            document.getElementById('user-credits').textContent = data.remaining_credits.toFixed(2);
+            loadActiveRentals();
+        } else {
+            showNotification(`❌ ${data.detail}`, 'error');
+        }
+    } catch (err) {
+        showLoading(false);
+        showNotification('🌐 Network error', 'error');
+    }
+}
+
+async function releaseRental(rentalId) {
+    if (!confirm('Release this rental early? You\'ll get 50% refund for unused time.')) return;
+    
+    showLoading(true);
+    
+    try {
+        const res = await fetch(`${API_BASE}/rentals/${rentalId}/release`, {
+            method: 'POST',
+            headers: {'Authorization': `Bearer ${token}`}
+        });
+        
+        const data = await res.json();
+        showLoading(false);
+        
+        if (res.ok) {
+            showNotification(`✅ ${data.message}`, 'success');
+            document.getElementById('user-credits').textContent = data.remaining_credits.toFixed(2);
+            loadActiveRentals();
+        } else {
+            showNotification(`❌ ${data.detail}`, 'error');
+        }
+    } catch (err) {
+        showLoading(false);
+        showNotification('🌐 Network error', 'error');
+    }
 }
 
 async function submitSupport(event) {

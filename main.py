@@ -1640,11 +1640,13 @@ def update_ticket_status(ticket_id: str, status: str, admin: User = Depends(get_
     
     return {"message": "Status updated", "ticket_id": ticket.id, "new_status": status}
 
-# Rental Pricing (minimum 7 days)
+# Rental Pricing (minimum 7 days) - Base prices for Always Ready mode
 RENTAL_PRICING = {
-    168: 50.0,   # 7 days (Always Ready)
-    336: 90.0,   # 14 days
-    720: 180.0,  # 30 days
+    168: 50.0,    # 7 days
+    336: 90.0,    # 14 days
+    720: 180.0,   # 30 days
+    1440: 340.0,  # 60 days
+    2160: 480.0   # 90 days
 }
 
 # Rental modes
@@ -1653,14 +1655,14 @@ RENTAL_MODES = {
     'manual': 0.7           # 30% discount - wake-up required
 }
 
-# Service-specific rental multipliers (general use costs MORE)
+# Service-specific rental multipliers (specific services cost MORE than general)
 RENTAL_SERVICE_MULTIPLIERS = {
-    'whatsapp': 0.6,
-    'telegram': 0.7,
-    'instagram': 0.75,
-    'facebook': 0.75,
-    'google': 0.8,
-    'general': 1.0      # General use (most expensive - unlisted services)
+    'general': 1.0,      # General use (cheapest - base price)
+    'telegram': 1.3,
+    'instagram': 1.4,
+    'facebook': 1.4,
+    'whatsapp': 1.5,     # Most expensive
+    'google': 1.6
 }
 
 def calculate_rental_cost(hours: float, service_name: str = 'general', mode: str = 'always_ready') -> float:
