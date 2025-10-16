@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Status - Namaskah SMS</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .status-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        .status-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .overall-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: 600;
+            margin-top: 20px;
+        }
+        .status-operational { background: #10b981; color: white; }
+        .status-degraded { background: #3b82f6; color: white; }
+        .status-down { background: #ef4444; color: white; }
+        
+        .category-section {
+            margin-bottom: 30px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border);
+        }
+        .category-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--accent);
+        }
+        .service-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        .service-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: var(--bg);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .dot-operational { background: #10b981; }
+        .dot-degraded { background: #3b82f6; }
+        .dot-down { background: #ef4444; }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 40px;
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .last-updated {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-top: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <nav style="background: var(--bg-secondary); padding: 15px 0; border-bottom: 1px solid var(--border);">
+        <div style="max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center;">
+            <a href="/" style="font-size: 24px; font-weight: bold; color: var(--accent); text-decoration: none;">Namaskah SMS</a>
+            <div style="display: flex; gap: 20px;">
+                <a href="/app" style="color: var(--text); text-decoration: none;">Dashboard</a>
+                <a href="/status" style="color: var(--accent); text-decoration: none; font-weight: 600;">Status</a>
+                <a href="/faq" style="color: var(--text); text-decoration: none;">FAQ</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="status-container">
+        <div class="status-header">
+            <h1 style="font-size: 36px; margin-bottom: 10px;">Service Status</h1>
+            <p style="color: var(--text-secondary); font-size: 16px;">Real-time status of all verification services</p>
+            <div id="overall-status" class="overall-status status-operational">
+                <span>●</span> All Systems Operational
+            </div>
+        </div>
+
+        <div id="status-content">
+            Loading service status...
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="status-dot dot-operational"></div>
+                <span>Operational</span>
+            </div>
+            <div class="legend-item">
+                <div class="status-dot dot-degraded"></div>
+                <span>Degraded Performance</span>
+            </div>
+            <div class="legend-item">
+                <div class="status-dot dot-down"></div>
+                <span>Service Down</span>
+            </div>
+        </div>
+
+        <div class="last-updated" id="last-updated">
+            Last updated: <span id="update-time">--</span>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+
+        async function loadServiceStatus() {
+            try {
+                const res = await fetch(`${API_BASE}/services/status`);
+                const data = await res.json();
+                
+                renderStatus(data);
+                updateOverallStatus(data);
+                document.getElementById('update-time').textContent = new Date().toLocaleString();
+            } catch (error) {
+                document.getElementById('status-content').innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Unable to load service status</p>';
+            }
+        }
+
+        function renderStatus(data) {
+            let html = '';
+            
+            const categoryOrder = ['Social', 'Messaging', 'Dating', 'Finance', 'Shopping', 'Food', 'Gaming', 'Crypto'];
+            
+            categoryOrder.forEach(category => {
+                if (data.categories && data.categories[category]) {
+                    const services = data.categories[category];
+                    html += `
+                        <div class="category-section">
+                            <div class="category-title">${category}</div>
+                            <div class="service-grid">
+                                ${services.map(service => {
+                                    const status = getServiceStatus(service, data.status);
+                                    return `
+                                        <div class="service-item">
+                                            <div class="status-dot dot-${status}"></div>
+                                            <span>${formatServiceName(service)}</span>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            // Add Unlisted Services
+            html += `
+                <div class="category-section">
+                    <div class="category-title">Unlisted Services</div>
+                    <div class="service-grid">
+                        <div class="service-item">
+                            <div class="status-dot dot-operational"></div>
+                            <span>Any Service</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('status-content').innerHTML = html;
+        }
+
+        function getServiceStatus(service, statusData) {
+            // Check if service has specific status
+            if (statusData && statusData[service]) {
+                return statusData[service];
+            }
+            // Default to operational
+            return 'operational';
+        }
+
+        function updateOverallStatus(data) {
+            const statusElement = document.getElementById('overall-status');
+            
+            if (data.overall_status === 'down') {
+                statusElement.className = 'overall-status status-down';
+                statusElement.innerHTML = '<span>●</span> Major Service Disruption';
+            } else if (data.overall_status === 'degraded') {
+                statusElement.className = 'overall-status status-degraded';
+                statusElement.innerHTML = '<span>●</span> Partial Service Disruption';
+            } else {
+                statusElement.className = 'overall-status status-operational';
+                statusElement.innerHTML = '<span>●</span> All Systems Operational';
+            }
+        }
+
+        function formatServiceName(service) {
+            return service.split('_').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1)
+            ).join(' ');
+        }
+
+        // Load status on page load
+        loadServiceStatus();
+        
+        // Refresh every 60 seconds
+        setInterval(loadServiceStatus, 60000);
+    </script>
+</body>
+</html>

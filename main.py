@@ -452,6 +452,10 @@ async def about_page(request: Request):
 async def reviews_page(request: Request):
     return templates.TemplateResponse("reviews.html", {"request": request})
 
+@app.get("/status")
+async def status_page(request: Request):
+    return templates.TemplateResponse("status.html", {"request": request})
+
 @app.get("/admin")
 async def admin_panel(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request})
@@ -482,6 +486,78 @@ def get_services_list():
         return data
     except:
         return {"categories": {}, "uncategorized": [], "pricing": {"categorized": 0.50, "uncategorized": 0.75}}
+
+@app.get("/services/status", tags=["System"], summary="Get Service Status")
+def get_services_status(db: Session = Depends(get_db)):
+    """Get real-time status of all services based on recent verification success rates
+    
+    Returns:
+    - categories: Services grouped by category
+    - status: Service status (operational, degraded, down)
+    - overall_status: Overall platform status
+    """
+    try:
+        import json
+        with open('services_categorized.json', 'r') as f:
+            data = json.load(f)
+        
+        # Check recent verifications (last 24 hours) for each service
+        from sqlalchemy import func
+        from datetime import timedelta
+        
+        twenty_four_hours_ago = datetime.now(timezone.utc) - timedelta(hours=24)
+        
+        # Get success rates per service
+        service_stats = db.query(
+            Verification.service_name,
+            func.count(Verification.id).label('total'),
+            func.sum(func.case((Verification.status == 'completed', 1), else_=0)).label('completed')
+        ).filter(
+            Verification.created_at >= twenty_four_hours_ago
+        ).group_by(Verification.service_name).all()
+        
+        status_map = {}
+        down_count = 0
+        degraded_count = 0
+        
+        for stat in service_stats:
+            if stat.total > 0:
+                success_rate = (stat.completed / stat.total) * 100
+                if success_rate < 50:
+                    status_map[stat.service_name] = 'down'
+                    down_count += 1
+                elif success_rate < 85:
+                    status_map[stat.service_name] = 'degraded'
+                    degraded_count += 1
+                else:
+                    status_map[stat.service_name] = 'operational'
+        
+        # Determine overall status
+        if down_count > 5:
+            overall_status = 'down'
+        elif down_count > 0 or degraded_count > 3:
+            overall_status = 'degraded'
+        else:
+            overall_status = 'operational'
+        
+        return {
+            "categories": data.get("categories", {}),
+            "status": status_map,
+            "overall_status": overall_status,
+            "stats": {
+                "down": down_count,
+                "degraded": degraded_count,
+                "operational": len(service_stats) - down_count - degraded_count
+            }
+        }
+    except Exception as e:
+        # Default to all operational if error
+        return {
+            "categories": {},
+            "status": {},
+            "overall_status": "operational",
+            "stats": {"down": 0, "degraded": 0, "operational": 0}
+        }
 
 @app.post("/auth/register", tags=["Authentication"], summary="Register New User")
 def register(req: RegisterRequest, referral_code: str = None, db: Session = Depends(get_db)):
