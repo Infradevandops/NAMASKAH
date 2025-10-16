@@ -8,7 +8,10 @@
 </head>
 <body>
     <div class="top-nav">
-        <div style="font-size: 1.2rem; font-weight: bold; color: var(--text-primary); cursor: pointer;" onclick="window.location.href='/'">Namaskah</div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div style="font-size: 1.2rem; font-weight: bold; color: var(--text-primary); cursor: pointer;" onclick="window.location.href='/'">Namaskah</div>
+            <button id="top-logout-btn" onclick="logout()" class="hidden" style="padding: 6px 12px; font-size: 13px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer;">Logout</button>
+        </div>
         <div class="theme-toggle" onclick="toggleTheme()"></div>
     </div>
     
@@ -61,7 +64,6 @@
                 <div style="display: flex; gap: 8px;">
                     <button onclick="showFundWallet()" style="background: #10b981; padding: 8px 12px; font-size: 13px;">💰 Fund</button>
                     <button onclick="clearSession()" style="padding: 8px 12px; font-size: 13px; background: #6b7280;">Clear</button>
-                    <button onclick="logout()" style="padding: 8px 12px; font-size: 13px;">Logout</button>
                 </div>
             </div>
 

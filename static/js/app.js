@@ -223,6 +223,7 @@ function logout() {
     document.getElementById('verification-details').classList.add('hidden');
     document.getElementById('messages-section').classList.add('hidden');
     document.getElementById('verifications').innerHTML = '';
+    document.getElementById('top-logout-btn').classList.add('hidden');
     
     document.getElementById('auth-section').classList.remove('hidden');
     document.getElementById('app-section').classList.add('hidden');
@@ -231,6 +232,7 @@ function logout() {
 function showApp() {
     document.getElementById('auth-section').classList.add('hidden');
     document.getElementById('app-section').classList.remove('hidden');
+    document.getElementById('top-logout-btn').classList.remove('hidden');
     loadServices();
     loadHistory();
     loadTransactions();
