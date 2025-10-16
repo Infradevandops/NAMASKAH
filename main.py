@@ -197,6 +197,33 @@ class SupportTicket(Base):
 
 Base.metadata.create_all(bind=engine)
 
+# Auto-create admin user on startup
+def create_admin_if_not_exists():
+    db = SessionLocal()
+    try:
+        admin = db.query(User).filter(User.email == "admin@namaskah.app").first()
+        if not admin:
+            import secrets
+            admin = User(
+                id=f"user_{datetime.now(timezone.utc).timestamp()}",
+                email="admin@namaskah.app",
+                password_hash=bcrypt.hash("Admin@2024!"),
+                credits=100.0,
+                free_verifications=0.0,
+                is_admin=True,
+                email_verified=True,
+                referral_code=secrets.token_urlsafe(6)
+            )
+            db.add(admin)
+            db.commit()
+            print("✅ Admin user created: admin@namaskah.app")
+    except Exception as e:
+        print(f"Admin creation skipped: {e}")
+    finally:
+        db.close()
+
+create_admin_if_not_exists()
+
 # Email Helper
 def send_email(to_email: str, subject: str, body: str):
     """Send email notification"""
@@ -2155,4 +2182,5 @@ async def rate_limit_middleware(request: Request, call_next):
 
 if __name__ == "__main__":
     import uvicorn
+    create_admin_if_not_exists()
     uvicorn.run(app, host="0.0.0.0", port=8000)
