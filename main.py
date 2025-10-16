@@ -1602,14 +1602,14 @@ RENTAL_MODES = {
     'manual': 0.7           # 30% discount - wake-up required
 }
 
-# Service-specific rental multipliers
+# Service-specific rental multipliers (specific services cost MORE than general)
 RENTAL_SERVICE_MULTIPLIERS = {
-    'whatsapp': 1.5,
+    'general': 1.0,     # General use (cheapest - base price)
     'telegram': 1.3,
     'instagram': 1.4,
     'facebook': 1.4,
-    'google': 1.6,
-    'general': 1.0  # General use numbers
+    'whatsapp': 1.5,
+    'google': 1.6
 }
 
 def calculate_rental_cost(hours: float, service_name: str = 'general', mode: str = 'always_ready') -> float:

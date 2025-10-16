@@ -324,12 +324,14 @@ pytest tests/test_auth.py -v
 - Manual: 30% discount (wake-up required)
 
 **Service-Specific Multipliers:**
-- WhatsApp: 1.5x
+- General Use: 1.0x (cheapest - base price)
 - Telegram: 1.3x
 - Instagram: 1.4x
 - Facebook: 1.4x
+- WhatsApp: 1.5x
 - Google: 1.6x
-- General Use: 1.0x
+
+*Note: Specific services cost MORE than general use numbers*
 
 ## 📝 License
 
