@@ -322,14 +322,14 @@
                 <p style="color: #6b7280; margin-bottom: 15px;">Configure email notifications</p>
                 
                 <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border);">
-                    <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; cursor: pointer;">
-                        <input type="checkbox" id="email-on-sms" onchange="updateNotificationSettings()">
-                        <span style="color: var(--text-primary);">📧 Email me when SMS is received</span>
+                    <label style="display: block; margin-bottom: 15px; cursor: pointer; color: var(--text-primary);">
+                        <input type="checkbox" id="email-on-sms" onchange="updateNotificationSettings()" style="margin-right: 10px;">
+                        📧 Email me when SMS is received
                     </label>
                     
-                    <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; cursor: pointer;">
-                        <input type="checkbox" id="email-on-low-balance" onchange="updateNotificationSettings()">
-                        <span style="color: var(--text-primary);">⚠️ Email me when balance is low</span>
+                    <label style="display: block; margin-bottom: 15px; cursor: pointer; color: var(--text-primary);">
+                        <input type="checkbox" id="email-on-low-balance" onchange="updateNotificationSettings()" style="margin-right: 10px;">
+                        ⚠️ Email me when balance is low
                     </label>
                     
                     <div style="margin-top: 15px;">
