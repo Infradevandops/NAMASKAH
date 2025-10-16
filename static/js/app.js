@@ -282,14 +282,6 @@ function renderServices() {
     const search = document.getElementById('service-search').value.toLowerCase();
     let html = '';
     
-    // Add General Use as first category
-    if (!search || 'general'.includes(search) || 'unlisted'.includes(search)) {
-        html += `<div style="min-width: 100px;">`;
-        html += `<div style="font-weight: bold; font-size: 0.75rem; color: #f59e0b; margin-bottom: 8px; border-bottom: 2px solid #f59e0b; padding-bottom: 4px;">General</div>`;
-        html += `<div onclick="selectService('general')" style="font-size: 0.65rem; padding: 3px; cursor: pointer; border-radius: 4px; transition: all 0.2s; background: rgba(245, 158, 11, 0.1); font-weight: 600; color: #f59e0b;" onmouseover="this.style.background='#f59e0b'; this.style.color='white'" onmouseout="this.style.background='rgba(245, 158, 11, 0.1)'; this.style.color='#f59e0b'">🌐 Unlisted</div>`;
-        html += `</div>`;
-    }
-    
     const categoryOrder = ['Social', 'Messaging', 'Dating', 'Finance', 'Shopping', 'Food', 'Gaming', 'Crypto'];
     
     categoryOrder.forEach(category => {
@@ -311,6 +303,14 @@ function renderServices() {
             }
         }
     });
+    
+    // Add General Use as last option
+    if (!search || 'general'.includes(search) || 'unlisted'.includes(search)) {
+        html += `<div style="min-width: 100px;">`;
+        html += `<div style="font-weight: bold; font-size: 0.75rem; color: #f59e0b; margin-bottom: 8px; border-bottom: 2px solid #f59e0b; padding-bottom: 4px;">General</div>`;
+        html += `<div onclick="selectService('general')" style="font-size: 0.65rem; padding: 3px; cursor: pointer; border-radius: 4px; transition: all 0.2s; background: rgba(245, 158, 11, 0.1); font-weight: 600; color: #f59e0b;" onmouseover="this.style.background='#f59e0b'; this.style.color='white'" onmouseout="this.style.background='rgba(245, 158, 11, 0.1)'; this.style.color='#f59e0b'">🌐 Unlisted</div>`;
+        html += `</div>`;
+    }
     
     container.innerHTML = html || 'No services found';
 }
