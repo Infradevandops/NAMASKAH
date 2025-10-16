@@ -37,7 +37,21 @@ JWT_SECRET = os.getenv("JWT_SECRET_KEY", "change-me-in-production")
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./sms.db")
 TEXTVERIFIED_API_KEY = os.getenv("TEXTVERIFIED_API_KEY")
 TEXTVERIFIED_EMAIL = os.getenv("TEXTVERIFIED_EMAIL")
-VERIFICATION_COST = 0.50  # ₵0.50 per verification
+
+# Pricing tiers
+PRICING_TIERS = {
+    'pay_as_you_go': 0.85,
+    'developer': 0.65,      # 24% discount
+    'enterprise': 0.55      # 35% discount
+}
+
+# Minimum purchase amounts for discounted tiers
+MIN_PURCHASE = {
+    'developer': 50.0,
+    'enterprise': 200.0
+}
+
+VERIFICATION_COST = PRICING_TIERS['pay_as_you_go']  # Default
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 
@@ -146,6 +160,7 @@ class NumberRental(Base):
     service_name = Column(String)
     duration_hours = Column(Float, nullable=False)
     cost = Column(Float, nullable=False)
+    mode = Column(String, default="always_ready")  # always_ready or manual
     status = Column(String, default="active")  # active, expired, released
     started_at = Column(DateTime, nullable=False)
     expires_at = Column(DateTime, nullable=False)
@@ -233,6 +248,7 @@ class CreateWebhookRequest(BaseModel):
 class CreateRentalRequest(BaseModel):
     service_name: str
     duration_hours: float
+    mode: str = "always_ready"  # always_ready or manual
     auto_extend: bool = False
 
 class ExtendRentalRequest(BaseModel):
@@ -330,7 +346,7 @@ Namaskah SMS provides temporary phone numbers for SMS verification across 1,807+
 ## Features
 - 📱 1,807+ supported services (WhatsApp, Telegram, Google, etc.)
 - 🔐 JWT & Google OAuth authentication
-- 💰 Credit-based pricing (₵0.50-0.75 per verification)
+- 💰 Tiered pricing (Pay-as-You-Go, Developer, Enterprise)
 - 🎯 Real-time SMS retrieval
 - 🔔 Webhook notifications
 - 📊 Analytics & usage tracking
@@ -349,10 +365,11 @@ Authorization: Bearer YOUR_JWT_TOKEN
 Get token via `/auth/login` or `/auth/register`.
 
 ## Pricing
-- **Categorized services**: ₵0.50 per verification
-- **Uncategorized services**: ₵0.75 per verification
-- **New users**: ₵5.00 free credits
-- **Referral bonus**: ₵1.00 for referrer, ₵2.00 for referred
+- **Pay-as-You-Go**: ₵0.85 per verification
+- **Developer Plan**: ₵0.65 per verification (24% off, min ₵50 funded)
+- **Enterprise Plan**: ₵0.55 per verification (35% off, min ₵200 funded)
+- **New users**: 1 free verification
+- **Referral bonus**: 1 free verification when referred user funds ₵5+
 
 ## Support
 - API Docs: `/docs`
@@ -727,29 +744,27 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
     """Create new SMS or voice verification
     
     - **service_name**: Service identifier (e.g., 'whatsapp', 'telegram')
-    - **capability**: 'sms' (₵0.50) or 'voice' (₵0.75)
+    - **capability**: 'sms' or 'voice'
     
-    Voice calls cost 50% more due to higher provider costs.
+    Pricing: Pay-as-You-Go ₵0.85, Developer ₵0.65 (min ₵50), Enterprise ₵0.55 (min ₵200)
     """
-    # Determine base cost
-    import json
-    try:
-        with open('services_categorized.json', 'r') as f:
-            data = json.load(f)
-        
-        is_categorized = False
-        for category_services in data['categories'].values():
-            if req.service_name in category_services:
-                is_categorized = True
-                break
-        
-        cost = data['pricing']['categorized'] if is_categorized else data['pricing']['uncategorized']
-    except:
-        cost = VERIFICATION_COST
+    # Determine pricing tier based on user's total credits added
+    total_funded = db.query(Transaction).filter(
+        Transaction.user_id == user.id,
+        Transaction.type == "credit",
+        Transaction.description.contains("funded")
+    ).count()
     
-    # Apply voice premium (50% more)
-    if req.capability == "voice":
-        cost = round(cost * 1.5, 2)
+    # Calculate tier
+    if total_funded >= MIN_PURCHASE['enterprise']:
+        cost = PRICING_TIERS['enterprise']
+    elif total_funded >= MIN_PURCHASE['developer']:
+        cost = PRICING_TIERS['developer']
+    else:
+        cost = PRICING_TIERS['pay_as_you_go']
+    
+    # Voice calls cost same as SMS in new pricing
+    # (simplified - no premium)
     
     # Check if user has free verifications or credits
     if user.free_verifications >= 1:
@@ -1574,21 +1589,49 @@ def update_ticket_status(ticket_id: str, status: str, admin: User = Depends(get_
     
     return {"message": "Status updated", "ticket_id": ticket.id, "new_status": status}
 
-# Rental Pricing
+# Rental Pricing (minimum 7 days)
 RENTAL_PRICING = {
-    1: 2.0,    # 1 hour
-    6: 8.0,    # 6 hours
-    24: 10.0,  # 24 hours (1 day)
-    168: 50.0, # 7 days
-    720: 150.0 # 30 days
+    168: 50.0,   # 7 days (Always Ready)
+    336: 90.0,   # 14 days
+    720: 180.0,  # 30 days
 }
 
-def calculate_rental_cost(hours: float) -> float:
-    """Calculate rental cost based on duration"""
+# Rental modes
+RENTAL_MODES = {
+    'always_ready': 1.0,    # Full price - always active
+    'manual': 0.7           # 30% discount - wake-up required
+}
+
+# Service-specific rental multipliers
+RENTAL_SERVICE_MULTIPLIERS = {
+    'whatsapp': 1.5,
+    'telegram': 1.3,
+    'instagram': 1.4,
+    'facebook': 1.4,
+    'google': 1.6,
+    'general': 1.0  # General use numbers
+}
+
+def calculate_rental_cost(hours: float, service_name: str = 'general', mode: str = 'always_ready') -> float:
+    """Calculate rental cost based on duration, service, and mode"""
+    # Minimum 7 days (168 hours)
+    if hours < 168:
+        hours = 168
+    
+    # Get base price
     if hours in RENTAL_PRICING:
-        return RENTAL_PRICING[hours]
-    # Custom duration: ₵2 per hour
-    return round(hours * 2.0, 2)
+        base_cost = RENTAL_PRICING[hours]
+    else:
+        # Calculate proportional cost based on 7-day rate
+        base_cost = round((hours / 168) * RENTAL_PRICING[168], 2)
+    
+    # Apply service multiplier
+    service_multiplier = RENTAL_SERVICE_MULTIPLIERS.get(service_name.lower(), RENTAL_SERVICE_MULTIPLIERS['general'])
+    
+    # Apply mode discount
+    mode_multiplier = RENTAL_MODES.get(mode, RENTAL_MODES['always_ready'])
+    
+    return round(base_cost * service_multiplier * mode_multiplier, 2)
 
 def calculate_refund(rental: NumberRental) -> float:
     """Calculate refund for early release (50% of unused time, min 1hr used)"""
@@ -1604,9 +1647,11 @@ def calculate_refund(rental: NumberRental) -> float:
 def create_rental(req: CreateRentalRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Rent a phone number for specified duration
     
-    Duration options: 1hr (₵2), 6hr (₵8), 24hr (₵10), 7days (₵50), 30days (₵150)
+    Minimum 7 days. Pricing varies by service and mode (Always Ready vs Manual).
     """
-    cost = calculate_rental_cost(req.duration_hours)
+    # Default to always_ready mode if not specified
+    mode = getattr(req, 'mode', 'always_ready')
+    cost = calculate_rental_cost(req.duration_hours, req.service_name, mode)
     
     if user.credits < cost:
         raise HTTPException(status_code=402, detail=f"Insufficient credits. Need ₵{cost}, have ₵{user.credits}")
@@ -1634,6 +1679,7 @@ def create_rental(req: CreateRentalRequest, user: User = Depends(get_current_use
         service_name=req.service_name,
         duration_hours=req.duration_hours,
         cost=cost,
+        mode=mode,
         status="active",
         started_at=now,
         expires_at=now + timedelta(hours=req.duration_hours),
@@ -1723,7 +1769,8 @@ def extend_rental(rental_id: str, req: ExtendRentalRequest, user: User = Depends
     if not rental:
         raise HTTPException(status_code=404, detail="Active rental not found")
     
-    cost = calculate_rental_cost(req.additional_hours)
+    mode = getattr(rental, 'mode', 'always_ready')
+    cost = calculate_rental_cost(req.additional_hours, rental.service_name, mode)
     
     if user.credits < cost:
         raise HTTPException(status_code=402, detail=f"Insufficient credits. Need ₵{cost}, have ₵{user.credits}")

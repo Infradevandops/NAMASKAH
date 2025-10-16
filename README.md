@@ -308,14 +308,28 @@ pytest tests/test_auth.py -v
 
 ## 📈 Pricing
 
-- **SMS Verification**: ₵0.50 (categorized) / ₵0.75 (uncategorized)
-- **Voice Verification**: ₵0.75 (categorized) / ₵1.13 (uncategorized)
-- **Number Rentals**:
-  - 1 hour: ₵2.00
-  - 6 hours: ₵8.00
-  - 24 hours: ₵10.00
-  - 7 days: ₵50.00
-  - 30 days: ₵150.00
+### Verification Plans
+- **Pay-as-You-Go**: ₵0.85 per verification
+- **Developer Plan**: ₵0.65 per verification (Save 24%, min ₵50 funded)
+- **Enterprise Plan**: ₵0.55 per verification (Save 35%, min ₵200 funded)
+
+### Number Rentals (Minimum 7 days)
+**Base Pricing (General Use):**
+- 7 days: ₵50.00
+- 14 days: ₵90.00
+- 30 days: ₵180.00
+
+**Rental Modes:**
+- Always Ready: Full price (always active)
+- Manual: 30% discount (wake-up required)
+
+**Service-Specific Multipliers:**
+- WhatsApp: 1.5x
+- Telegram: 1.3x
+- Instagram: 1.4x
+- Facebook: 1.4x
+- Google: 1.6x
+- General Use: 1.0x
 
 ## 📝 License
 
