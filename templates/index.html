@@ -346,14 +346,10 @@
             </div>
 
             <div class="card">
-                <h2>💬 Support</h2>
-                <p style="color: #6b7280; margin-bottom: 15px;">Need help? Contact our support team</p>
-                <button onclick="showSupportModal()" style="width: 100%; background: #667eea;">📧 Contact Support</button>
-            </div>
-
-            <div class="card">
-                <h2>📊 Analytics Dashboard</h2>
-                <button onclick="loadAnalytics()" class="btn-small" style="margin-bottom: 15px;">Refresh Stats</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 style="margin: 0;">📊 Analytics Dashboard</h2>
+                    <button onclick="loadAnalytics()" class="btn-small" style="margin: 0;">Refresh Stats</button>
+                </div>
                 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
                     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; text-align: center;">
