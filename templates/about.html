@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - Namaskah SMS</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .about-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+        .about-hero { text-align: center; margin-bottom: 60px; }
+        .about-section { margin-bottom: 50px; }
+        .about-section h2 { font-size: 2rem; margin-bottom: 20px; color: var(--text-primary); }
+        .about-section p { font-size: 1.1rem; line-height: 1.8; color: var(--text-secondary); margin-bottom: 15px; }
+        .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; margin-top: 40px; }
+        .feature-box { background: var(--bg-card); padding: 30px; border-radius: 12px; border: 1px solid var(--border); text-align: center; transition: transform 0.3s; }
+        .feature-box:hover { transform: translateY(-5px); }
+        .feature-icon { font-size: 3rem; margin-bottom: 15px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 40px 0; }
+        .stat-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; text-align: center; }
+        .stat-number { font-size: 2.5rem; font-weight: bold; margin-bottom: 10px; }
+        .stat-label { opacity: 0.9; }
+    </style>
+</head>
+<body>
+    <div class="about-container">
+        <div class="about-hero">
+            <h1 style="font-size: 3rem; margin-bottom: 20px; color: var(--text-primary);">About Namaskah SMS</h1>
+            <p style="font-size: 1.3rem; color: var(--text-secondary); max-width: 800px; margin: 0 auto;">Your trusted partner for secure phone verification and privacy protection</p>
+        </div>
+
+        <div class="about-section">
+            <h2>🌟 Who We Are</h2>
+            <p>Namaskah SMS is a <strong>Platform-as-a-Service (PaaS)</strong> that provides temporary phone number solutions for SMS verification and account creation across the internet. We empower users to access online services without compromising their personal phone numbers to untrusted service providers.</p>
+            <p>In today's digital landscape, phone verification has become ubiquitous—from social media platforms to financial services. However, sharing your personal number exposes you to spam, privacy breaches, and unwanted marketing. Namaskah SMS bridges this gap by offering instant, disposable phone numbers that protect your identity while enabling seamless access to 1,807+ online services.</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-number">1,807+</div>
+                <div class="stat-label">Supported Services</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number">99.9%</div>
+                <div class="stat-label">Platform Uptime</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number">95%+</div>
+                <div class="stat-label">Success Rate</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number">60-120s</div>
+                <div class="stat-label">Average Delivery</div>
+            </div>
+        </div>
+
+        <div class="about-section">
+            <h2>🎯 Our Mission</h2>
+            <p>To democratize online privacy and accessibility by providing enterprise-grade phone verification services that are affordable, reliable, and accessible to everyone—from individual users to large-scale enterprises.</p>
+            <p>We believe that privacy is a fundamental right, not a luxury. Our platform ensures that you can verify accounts, test applications, and access services without sacrificing your personal information or security.</p>
+        </div>
+
+        <div class="about-section">
+            <h2>💼 What We Offer</h2>
+            <div class="feature-grid">
+                <div class="feature-box">
+                    <div class="feature-icon">📱</div>
+                    <h3>SMS Verification</h3>
+                    <p>Instant temporary phone numbers for receiving SMS verification codes across 1,807+ platforms including WhatsApp, Telegram, Google, and more.</p>
+                </div>
+                <div class="feature-box">
+                    <div class="feature-icon">📞</div>
+                    <h3>Voice Verification</h3>
+                    <p>Voice call verification with transcription and audio recording for services requiring phone call confirmation.</p>
+                </div>
+                <div class="feature-box">
+                    <div class="feature-icon">🏠</div>
+                    <h3>Number Rentals</h3>
+                    <p>Long-term phone number rentals (minimum 7 days) for sustained verification needs with flexible pricing options.</p>
+                </div>
+                <div class="feature-box">
+                    <div class="feature-icon">🔑</div>
+                    <h3>Developer API</h3>
+                    <p>RESTful API with webhooks for seamless integration into your applications and automated workflows.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="about-section">
+            <h2>🔒 Privacy & Security</h2>
+            <p>Your privacy is our priority. We implement industry-leading security measures to protect your data:</p>
+            <ul style="font-size: 1.1rem; line-height: 1.8; color: var(--text-secondary); margin-left: 20px;">
+                <li><strong>End-to-End Encryption:</strong> All communications are encrypted using industry-standard protocols</li>
+                <li><strong>No Data Retention:</strong> Temporary numbers are automatically purged after use</li>
+                <li><strong>GDPR Compliant:</strong> We adhere to international data protection regulations</li>
+                <li><strong>Secure Authentication:</strong> JWT tokens and Google OAuth for account security</li>
+                <li><strong>Rate Limiting:</strong> Protection against abuse and unauthorized access</li>
+            </ul>
+        </div>
+
+        <div class="about-section">
+            <h2>🌍 Use Cases</h2>
+            <div class="feature-grid">
+                <div class="feature-box">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Privacy Protection</h3>
+                    <p>Keep your personal number private when signing up for new services or testing platforms.</p>
+                </div>
+                <div class="feature-box">
+                    <div class="feature-icon">🧪</div>
+                    <h3>Development & Testing</h3>
+                    <p>Test SMS functionality in your applications without using real phone numbers.</p>
+                </div>
+                <div class="feature-box">
+                    <div class="feature-icon">🌐</div>
+                    <h3>Multi-Account Management</h3>
+                    <p>Manage multiple accounts across different platforms without phone number conflicts.</p>
+                </div>
+                <div class="feature-box">
+                    <div class="feature-icon">🚀</div>
+                    <h3>Business Operations</h3>
+                    <p>Scale your operations with API access and bulk verification capabilities.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="about-section">
+            <h2>💎 Why Choose Namaskah SMS?</h2>
+            <div style="background: var(--bg-card); padding: 30px; border-radius: 12px; border-left: 4px solid #667eea;">
+                <ul style="font-size: 1.1rem; line-height: 2; color: var(--text-secondary); list-style: none; padding: 0;">
+                    <li>✅ <strong>Instant Delivery:</strong> SMS codes arrive within 60-120 seconds</li>
+                    <li>✅ <strong>Automatic Refunds:</strong> Full refund if SMS doesn't arrive</li>
+                    <li>✅ <strong>Transparent Pricing:</strong> Pay only for what you use, starting at 55¢ per verification</li>
+                    <li>✅ <strong>24/7 Availability:</strong> Access our services anytime, anywhere</li>
+                    <li>✅ <strong>Developer-Friendly:</strong> Comprehensive API documentation and code examples</li>
+                    <li>✅ <strong>Enterprise Support:</strong> Dedicated support for high-volume users</li>
+                    <li>✅ <strong>Global Coverage:</strong> International numbers for worldwide access</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="about-section">
+            <h2>🤝 Our Commitment</h2>
+            <p>We are committed to providing reliable, secure, and affordable phone verification services. Our platform is built on the principles of transparency, user privacy, and continuous improvement. We listen to our users and constantly evolve our services to meet the changing needs of the digital landscape.</p>
+            <p>Whether you're an individual protecting your privacy, a developer testing applications, or an enterprise managing large-scale operations, Namaskah SMS is your trusted partner in phone verification.</p>
+        </div>
+
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 50px; border-radius: 16px; text-align: center; margin-top: 60px;">
+            <h2 style="margin: 0 0 20px 0; font-size: 2rem;">Ready to Get Started?</h2>
+            <p style="margin: 0 0 30px 0; font-size: 1.2rem; opacity: 0.9;">Join thousands of users protecting their privacy with Namaskah SMS</p>
+            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                <button onclick="window.location.href='/app'" style="background: white; color: #667eea; padding: 15px 40px; font-size: 1.1rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Get Started Free</button>
+                <button onclick="window.location.href='/api-docs'" style="background: transparent; color: white; padding: 15px 40px; font-size: 1.1rem; border: 2px solid white; border-radius: 8px; cursor: pointer; font-weight: 600;">View API Docs</button>
+            </div>
+        </div>
+
+        <footer style="text-align: center; margin-top: 60px; padding: 40px 0; border-top: 1px solid var(--border);">
+            <p style="color: var(--text-secondary); margin-bottom: 15px;">📱 Namaskah SMS - Enterprise-Grade Verification Platform</p>
+            <p style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; color: var(--text-secondary);">
+                <a href="/" style="color: var(--accent); text-decoration: none;">Home</a>
+                <a href="/app" style="color: var(--accent); text-decoration: none;">Dashboard</a>
+                <a href="/about" style="color: var(--accent); text-decoration: none;">About</a>
+                <a href="/faq" style="color: var(--accent); text-decoration: none;">FAQ</a>
+                <a href="/api-docs" style="color: var(--accent); text-decoration: none;">API Docs</a>
+                <a href="/reviews" style="color: var(--accent); text-decoration: none;">Reviews</a>
+            </p>
+            <p style="color: #9ca3af; margin-top: 20px; font-size: 0.9rem;">© 2024 Namaskah. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script>
+        const theme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+    </script>
+</body>
+</html>

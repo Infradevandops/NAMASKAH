@@ -29,20 +29,39 @@
             </div>
 
             <div class="card">
-                <h2>📊 Statistics</h2>
-                <div id="stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                    <div style="background: #f3f4f6; padding: 15px; border-radius: 8px;">
-                        <div style="font-size: 24px; font-weight: bold;" id="total-users">0</div>
-                        <div style="color: #6b7280;">Total Users</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0;">📊 Statistics</h2>
+                    <select id="period-select" onchange="loadStats()" style="padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 6px; background: white;">
+                        <option value="7">Last 7 Days</option>
+                        <option value="14">Last 14 Days</option>
+                        <option value="30" selected>Last 30 Days</option>
+                        <option value="60">Last 60 Days</option>
+                        <option value="90">Last 90 Days</option>
+                        <option value="all">All Time</option>
+                    </select>
+                </div>
+                <div id="stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px;">
+                        <div style="font-size: 28px; font-weight: bold;" id="total-users">0</div>
+                        <div style="opacity: 0.9;">Total Users</div>
                     </div>
-                    <div style="background: #f3f4f6; padding: 15px; border-radius: 8px;">
-                        <div style="font-size: 24px; font-weight: bold;" id="total-verifications">0</div>
-                        <div style="color: #6b7280;">Total Verifications</div>
+                    <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 20px; border-radius: 8px;">
+                        <div style="font-size: 28px; font-weight: bold;" id="new-users">0</div>
+                        <div style="opacity: 0.9;">New Users</div>
                     </div>
-                    <div style="background: #f3f4f6; padding: 15px; border-radius: 8px;">
-                        <div style="font-size: 24px; font-weight: bold;" id="total-revenue">$0</div>
-                        <div style="color: #6b7280;">Total Revenue</div>
+                    <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 20px; border-radius: 8px;">
+                        <div style="font-size: 28px; font-weight: bold;" id="total-verifications">0</div>
+                        <div style="opacity: 0.9;">Verifications</div>
                     </div>
+                    <div style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; padding: 20px; border-radius: 8px;">
+                        <div style="font-size: 28px; font-weight: bold;" id="total-revenue">$0</div>
+                        <div style="opacity: 0.9;">Revenue</div>
+                    </div>
+                </div>
+                
+                <div style="background: #f9fafb; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                    <h3 style="margin: 0 0 15px 0;">🔥 Most Used Services</h3>
+                    <div id="popular-services"></div>
                 </div>
             </div>
 
@@ -144,15 +163,36 @@
 
         async function loadStats() {
             try {
-                const res = await fetch(`${API_BASE}/admin/stats`, {
+                const period = document.getElementById('period-select').value;
+                const res = await fetch(`${API_BASE}/admin/stats?period=${period}`, {
                     headers: {'Authorization': `Bearer ${token}`}
                 });
                 
                 if (res.ok) {
                     const data = await res.json();
                     document.getElementById('total-users').textContent = data.total_users;
+                    document.getElementById('new-users').textContent = data.new_users || 0;
                     document.getElementById('total-verifications').textContent = data.total_verifications;
                     document.getElementById('total-revenue').textContent = `$${data.total_revenue.toFixed(2)}`;
+                    
+                    // Popular services
+                    const servicesList = document.getElementById('popular-services');
+                    if (data.popular_services && data.popular_services.length > 0) {
+                        servicesList.innerHTML = data.popular_services.map((s, i) => `
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 6px; margin-bottom: 8px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span style="font-size: 20px;">${['🥇', '🥈', '🥉', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'][i] || '📱'}</span>
+                                    <strong style="text-transform: capitalize;">${s.service}</strong>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <span style="background: #667eea; color: white; padding: 4px 12px; border-radius: 12px; font-size: 14px; font-weight: 600;">${s.count} uses</span>
+                                    <span style="color: #10b981; font-weight: 600;">$${s.revenue.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        servicesList.innerHTML = '<p style="color: #6b7280; text-align: center;">No data available</p>';
+                    }
                 }
             } catch (err) {
                 showNotification('Failed to load stats', 'error');

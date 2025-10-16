@@ -420,6 +420,10 @@ async def api_docs_page(request: Request):
 async def faq_page(request: Request):
     return templates.TemplateResponse("faq.html", {"request": request})
 
+@app.get("/about")
+async def about_page(request: Request):
+    return templates.TemplateResponse("about.html", {"request": request})
+
 @app.get("/reviews")
 async def reviews_page(request: Request):
     return templates.TemplateResponse("reviews.html", {"request": request})
@@ -990,17 +994,64 @@ def add_credits(req: AddCreditsRequest, admin: User = Depends(get_admin_user), d
     return {"message": f"Added ${req.amount} credits", "new_balance": user.credits}
 
 @app.get("/admin/stats", tags=["Admin"], summary="Get Platform Statistics")
-def get_stats(admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
-    """Get platform-wide statistics (admin only)"""
+def get_stats(period: str = "30", admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Get platform-wide statistics (admin only)
+    
+    - **period**: Time period (7, 14, 30, 60, 90, or 'all')
+    """
+    from sqlalchemy import func
+    
+    # Calculate date range
+    if period == "all":
+        start_date = datetime(2020, 1, 1, tzinfo=timezone.utc)
+    else:
+        days = int(period)
+        start_date = datetime.now(timezone.utc) - timedelta(days=days)
+    
+    # Total users (all time)
     total_users = db.query(User).count()
-    total_verifications = db.query(Verification).count()
-    total_revenue = db.query(Transaction).filter(Transaction.type == "debit").count() * VERIFICATION_COST
+    
+    # New users in period
+    new_users = db.query(User).filter(User.created_at >= start_date).count()
+    
+    # Verifications in period
+    total_verifications = db.query(Verification).filter(
+        Verification.created_at >= start_date
+    ).count()
+    
+    # Revenue in period (sum of all debit transactions)
+    total_revenue = db.query(func.sum(Transaction.amount)).filter(
+        Transaction.type == "debit",
+        Transaction.created_at >= start_date
+    ).scalar() or 0
+    total_revenue = abs(total_revenue)
+    
+    # Popular services in period
+    popular_services = db.query(
+        Verification.service_name,
+        func.count(Verification.id).label('count'),
+        func.sum(Verification.cost).label('revenue')
+    ).filter(
+        Verification.created_at >= start_date
+    ).group_by(
+        Verification.service_name
+    ).order_by(
+        func.count(Verification.id).desc()
+    ).limit(10).all()
     
     return {
         "total_users": total_users,
+        "new_users": new_users,
         "total_verifications": total_verifications,
         "total_revenue": total_revenue,
-        "verification_cost": VERIFICATION_COST
+        "popular_services": [
+            {
+                "service": s[0],
+                "count": s[1],
+                "revenue": float(s[2] or 0)
+            }
+            for s in popular_services
+        ]
     }
 
 # Payment Endpoints
@@ -1602,14 +1653,14 @@ RENTAL_MODES = {
     'manual': 0.7           # 30% discount - wake-up required
 }
 
-# Service-specific rental multipliers (specific services cost MORE than general)
+# Service-specific rental multipliers (general use costs MORE)
 RENTAL_SERVICE_MULTIPLIERS = {
-    'general': 1.0,     # General use (cheapest - base price)
-    'telegram': 1.3,
-    'instagram': 1.4,
-    'facebook': 1.4,
-    'whatsapp': 1.5,
-    'google': 1.6
+    'whatsapp': 0.6,
+    'telegram': 0.7,
+    'instagram': 0.75,
+    'facebook': 0.75,
+    'google': 0.8,
+    'general': 1.0      # General use (most expensive - unlisted services)
 }
 
 def calculate_rental_cost(hours: float, service_name: str = 'general', mode: str = 'always_ready') -> float:

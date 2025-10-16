@@ -1,350 +1,239 @@
-# 📱 Namaskah SMS - Simple Verification Service
+# Namaskah SMS
 
-**Minimal SMS verification platform**
+**Enterprise SMS Verification Platform**
 
-## ✨ Features
-
-### Core
-- 🔐 User authentication (JWT + Google OAuth)
-- 📱 SMS & Voice verification for 1,807 services
-- 🏠 Number rentals (hourly/daily/weekly/monthly)
-- 💰 Wallet system with Paystack integration
-- 🎨 Clean web interface with dark/light theme
-- 🚀 Production-ready backend
-- 💾 PostgreSQL database (SQLite for local dev)
-- 🐳 Docker ready
-
-### Security
-- 🔒 HTTPS enforcement
-- 🛡️ Security headers (HSTS, X-Frame-Options, etc.)
-- 🚦 Redis rate limiting (100 req/min)
-- 📧 Email verification
-- 🔑 Password reset flow
-- 🐛 Sentry error tracking
-- 🔍 Request ID tracking
-
-### Advanced
-- 📞 Voice call verification (premium)
-- 🏠 Long-term number rentals with auto-extend
-- 💳 Real payment integration (Paystack webhooks)
-- 🔔 Email & webhook notifications
-- 🎁 Referral program
-- 📊 Analytics dashboard
-- 🔑 API keys for developers
-- ✅ 70%+ test coverage
-
-## 🚀 Quick Start
-
-### 1. Install
-```bash
-pip install -r requirements.txt
-```
-
-### 2. Configure
-```bash
-cp .env.example .env
-# Edit .env with your TextVerified credentials
-```
-
-### 3. Run
-```bash
-./start.sh
-```
-
-Visit: `http://localhost:8000`
-
-### 4. Login
-```
-Email:    admin@namaskah.app
-Password: admin123
-```
-
-Or create your own account using the Register tab.
-
-## 📋 Requirements
-
-- Python 3.11+
-
-## 🔧 Configuration
-
-Edit `.env`:
-```bash
-# JWT
-JWT_SECRET_KEY=your-secret-key-here
-
-# Database
-DATABASE_URL=sqlite:///./sms.db  # Local dev
-# DATABASE_URL=postgresql://user:pass@host/db  # Production
-
-# SMS Provider
-SMS_API_KEY=your-api-key
-SMS_API_EMAIL=your-email@example.com
-
-# Google OAuth (optional)
-GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=your-client-secret
-
-# Payment (optional)
-PAYSTACK_SECRET_KEY=sk_test_xxx
-
-# Redis (optional - for rate limiting)
-REDIS_URL=redis://localhost:6379
-
-# Sentry (optional - for error tracking)
-SENTRY_DSN=https://xxx@sentry.io/xxx
-ENVIRONMENT=production
-
-# CORS
-CORS_ORIGINS=http://localhost:8000,https://your-domain.com
-```
-
-## 🎯 Supported Services
-
-- WhatsApp
-- Telegram  
-- Google
-- Discord
-- Instagram
-- Facebook
-- Twitter/X
-- TikTok
-- 100+ more
-
-## 📡 API Endpoints
-
-### Authentication
-- `POST /auth/register` - Register user
-- `POST /auth/login` - Login
-- `POST /auth/google` - Google OAuth
-- `GET /auth/me` - Get user info
-- `POST /auth/forgot-password` - Request password reset
-- `POST /auth/reset-password` - Reset password
-
-### Verification
-- `POST /verify/create` - Create SMS/voice verification
-- `GET /verify/{id}` - Get verification status
-- `GET /verify/{id}/messages` - Get SMS messages
-- `GET /verify/{id}/voice` - Get voice call details
-- `DELETE /verify/{id}` - Cancel verification
-
-### Rentals
-- `POST /rentals/create` - Rent number (1hr-30days)
-- `GET /rentals/active` - List active rentals
-- `GET /rentals/{id}` - Get rental details
-- `POST /rentals/{id}/extend` - Extend rental
-- `POST /rentals/{id}/release` - Release early (50% refund)
-
-### Wallet
-- `POST /wallet/fund` - Fund wallet
-- `POST /wallet/paystack/initialize` - Initialize payment
-- `POST /wallet/paystack/webhook` - Payment webhook
-- `GET /wallet/paystack/verify/{ref}` - Verify payment
-
-### More
-- `GET /health` - Health check
-- `GET /docs` - Interactive API docs
-- See [API_EXAMPLES.md](API_EXAMPLES.md) for code samples
-
-## 🐳 Docker Deployment
-
-```bash
-docker build -t namaskah-sms .
-docker run -p 8000:8000 --env-file .env namaskah-sms
-```
-
-## ☁️ Cloud Deployment
-
-### Railway
-```bash
-railway login
-railway init
-railway up
-```
-
-### Render
-1. Connect GitHub repo
-2. Add environment variables
-3. Deploy
-
-## 📖 Usage
-
-### Web Interface
-1. Open `http://localhost:8000`
-2. Register/Login
-3. Select service (WhatsApp, Telegram, etc.)
-4. Get temporary phone number
-5. Use number for verification
-6. Check messages for code
-
-### API
-```python
-import requests
-
-# Login
-r = requests.post('http://localhost:8000/auth/login', json={
-    'email': 'user@example.com',
-    'password': 'password'
-})
-token = r.json()['token']
-
-# Create verification
-r = requests.post('http://localhost:8000/verify/create',
-    headers={'Authorization': f'Bearer {token}'},
-    json={'service_name': 'whatsapp'}
-)
-verification = r.json()
-print(f"Phone: {verification['phone_number']}")
-
-# Get messages
-r = requests.get(f"http://localhost:8000/verify/{verification['id']}/messages",
-    headers={'Authorization': f'Bearer {token}'}
-)
-messages = r.json()['messages']
-print(f"Codes: {messages}")
-```
-
-## 🗂️ Project Structure
-
-```
-.
-├── main.py                      # Backend API
-├── requirements.txt             # Dependencies
-├── pytest.ini                   # Test configuration
-├── .env.example                 # Config template
-├── static/
-│   ├── css/style.css           # Styles
-│   └── js/
-│       ├── app.js              # Frontend logic
-│       └── config.js           # Config loader
-├── templates/
-│   └── index.html              # Web interface
-├── tests/                       # Test suite (70%+ coverage)
-│   ├── test_auth.py
-│   ├── test_verification.py
-│   ├── test_rentals.py
-│   ├── test_wallet.py
-│   └── test_system.py
-└── docs/
-    ├── API_EXAMPLES.md          # API usage examples
-    ├── POSTGRESQL_MIGRATION.md  # Database migration
-    └── REDIS_SETUP.md           # Redis configuration
-```
-
-## 🔒 Security
-
-- JWT token authentication (30-day expiry)
-- Password hashing (bcrypt)
-- HTTPS enforcement (production)
-- Security headers (HSTS, X-Frame-Options, CSP)
-- Redis rate limiting (100 req/min per user)
-- Email verification on registration
-- Secure password reset (1-hour tokens)
-- Request ID tracking (X-Request-ID)
-- Sentry error monitoring
-- Environment-based secrets
-- CORS restrictions
-- Paystack webhook signature verification
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=main --cov-report=html
-
-# Run specific test file
-pytest tests/test_auth.py -v
-```
-
-## 🐛 Troubleshooting
-
-**"Invalid token"**
-- Token expired (30 days) - Login again
-- Check Authorization header format
-
-**"Insufficient credits"**
-- Fund wallet via Paystack/crypto
-- Check balance: GET /auth/me
-
-**"Rate limit exceeded"**
-- Max 100 requests per minute
-- Wait 60 seconds or upgrade plan
-
-**"Authentication failed"**
-- Check SMS API key
-- Verify account has balance
-
-**Database errors**
-- Local: Delete `sms.db` and restart
-- Production: Check PostgreSQL connection
-
-**Redis not available**
-- App continues with in-memory rate limiting
-- Install Redis for persistent limits
-
-**Google Sign-In not showing**
-- Check GOOGLE_CLIENT_ID in .env
-- Verify authorized origins in Google Console
-
-## 📚 Documentation
-
-- **API Docs**: `http://localhost:8000/docs` (Interactive)
-- **API Examples**: [API_EXAMPLES.md](API_EXAMPLES.md)
-- **PostgreSQL Migration**: [POSTGRESQL_MIGRATION.md](POSTGRESQL_MIGRATION.md)
-- **Redis Setup**: [REDIS_SETUP.md](REDIS_SETUP.md)
-- **Deployment**: [DEPLOY.md](DEPLOY.md)
-- **Security**: [SECURITY_SETUP.md](SECURITY_SETUP.md)
-
-## 🚀 Production Deployment
-
-1. **Database**: Migrate to PostgreSQL ([guide](POSTGRESQL_MIGRATION.md))
-2. **Redis**: Add for persistent rate limiting ([guide](REDIS_SETUP.md))
-3. **Sentry**: Configure error tracking
-4. **Paystack**: Add webhook URL to dashboard
-5. **Google OAuth**: Add authorized origins
-6. **Environment**: Set all variables on Render
-
-## 📈 Pricing
-
-### Verification Plans
-- **Pay-as-You-Go**: ₵0.85 per verification
-- **Developer Plan**: ₵0.65 per verification (Save 24%, min ₵50 funded)
-- **Enterprise Plan**: ₵0.55 per verification (Save 35%, min ₵200 funded)
-
-### Number Rentals (Minimum 7 days)
-**Base Pricing (General Use):**
-- 7 days: ₵50.00
-- 14 days: ₵90.00
-- 30 days: ₵180.00
-
-**Rental Modes:**
-- Always Ready: Full price (always active)
-- Manual: 30% discount (wake-up required)
-
-**Service-Specific Multipliers:**
-- General Use: 1.0x (cheapest - base price)
-- Telegram: 1.3x
-- Instagram: 1.4x
-- Facebook: 1.4x
-- WhatsApp: 1.5x
-- Google: 1.6x
-
-*Note: Specific services cost MORE than general use numbers*
-
-## 📝 License
-
-MIT
-
-## 🆘 Support
-
-- **Email**: support@namaskah.app
-- **API Docs**: `http://localhost:8000/docs`
-- **Issues**: [GitHub Issues](https://github.com/Infradevandops/NAMASKAH/issues)
+Namaskah SMS provides instant phone number verification services for 1,807+ online platforms. Our infrastructure delivers temporary phone numbers for SMS and voice verification with guaranteed delivery and automatic refunds.
 
 ---
 
-**Production-Ready. Secure. Scalable.**
+## Services
 
-**Version**: 2.0.0
+### SMS Verification
+Instant temporary phone numbers for receiving SMS verification codes across 1,807+ supported services including:
+
+- **Social Media**: Instagram, Facebook, Twitter/X, TikTok, Snapchat, LinkedIn
+- **Messaging**: WhatsApp, Telegram, Discord, Signal, WeChat, Viber
+- **Dating**: Tinder, Bumble, Hinge, OkCupid, Match, POF
+- **Finance**: PayPal, Venmo, CashApp, Revolut, Wise, Coinbase
+- **E-commerce**: Amazon, eBay, Alibaba, Etsy, Shopify
+- **Food Delivery**: Uber Eats, DoorDash, Grubhub, Postmates
+- **Gaming**: Steam, Roblox, Twitch, Epic Games
+- **Cryptocurrency**: Binance, Kraken, Crypto.com, Gemini
+- **General Use**: Any unlisted service
+
+### Voice Verification
+Voice call verification with transcription and audio recording for services requiring phone call confirmation.
+
+### Number Rentals
+Long-term phone number rentals (minimum 7 days) for sustained verification needs:
+
+**Rental Modes:**
+- **Always Ready**: Number remains active 24/7 for instant SMS reception
+- **Manual Mode**: 30% discount, requires manual activation before use
+
+**Duration Options:**
+- 7 days
+- 14 days
+- 30 days
+- Custom durations available
+
+---
+
+## Pricing
+
+### Verification Services
+
+| Plan | Price per Verification | Discount | Minimum Purchase |
+|------|----------------------|----------|------------------|
+| **Pay-as-You-Go** | 85¢ | — | None |
+| **Developer** | 65¢ | 24% | $50 total funded |
+| **Enterprise** | 55¢ | 35% | $200 total funded |
+
+*All prices in USD cents. 1 USD = 1 Namaskah Coin (₵)*
+
+### Number Rentals
+
+**Base Pricing (General Use - Always Ready Mode):**
+
+| Duration | Price |
+|----------|-------|
+| 7 days | $50.00 |
+| 14 days | $90.00 |
+| 30 days | $180.00 |
+
+**Service-Specific Pricing Multipliers:**
+
+| Service | Multiplier | 7-Day Price |
+|---------|-----------|-------------|
+| WhatsApp | 0.6× | $30.00 |
+| Telegram | 0.7× | $35.00 |
+| Instagram | 0.75× | $37.50 |
+| Facebook | 0.75× | $37.50 |
+| Google | 0.8× | $40.00 |
+| General Use | 1.0× | $50.00 |
+
+*Manual Mode: Apply 30% discount to all rental prices*
+
+---
+
+## Features
+
+### Core Platform
+- 🔐 Secure authentication (JWT + Google OAuth)
+- 💰 Multi-currency wallet system (Paystack, Bitcoin, Ethereum, Solana, USDT)
+- 📊 Real-time analytics dashboard
+- 🔔 Webhook notifications for SMS delivery
+- 🎁 Referral program (1 free verification per referral)
+- 🔑 API access for developers
+- 📱 Responsive web interface with dark/light themes
+
+### Security & Compliance
+- End-to-end encryption
+- HTTPS enforcement
+- Rate limiting (100 requests/minute)
+- Email verification
+- Secure password reset
+- Request ID tracking
+- GDPR compliant
+
+### Developer Tools
+- RESTful API
+- API key management
+- Webhook integration
+- Comprehensive documentation
+- Code examples (Python, JavaScript, cURL)
+
+---
+
+## API Overview
+
+### Authentication
+```
+POST /auth/register    - Create account
+POST /auth/login       - User login
+POST /auth/google      - Google OAuth
+GET  /auth/me          - Get user profile
+```
+
+### Verification
+```
+POST   /verify/create           - Create verification
+GET    /verify/{id}             - Check status
+GET    /verify/{id}/messages    - Retrieve SMS
+DELETE /verify/{id}             - Cancel & refund
+```
+
+### Rentals
+```
+POST /rentals/create        - Rent number
+GET  /rentals/active        - List active rentals
+POST /rentals/{id}/extend   - Extend duration
+POST /rentals/{id}/release  - Early release (50% refund)
+```
+
+### Wallet
+```
+POST /wallet/fund                    - Add funds
+POST /wallet/paystack/initialize     - Payment gateway
+GET  /wallet/paystack/verify/{ref}   - Verify payment
+```
+
+**Full API Documentation**: Available at `/docs` endpoint
+
+---
+
+## Service Guarantees
+
+### Delivery Assurance
+- **SMS Delivery**: 60-120 seconds average
+- **Automatic Refunds**: Full refund if SMS not received
+- **Success Rate**: 95%+ across all services
+- **Uptime**: 99.9% platform availability
+
+### Support
+- **Response Time**: Within 24 hours
+- **Channels**: Email, in-app support tickets
+- **Coverage**: 24/7 automated systems, business hours for human support
+
+---
+
+## Payment Methods
+
+- **Paystack**: Bank transfer, card, USSD
+- **Cryptocurrency**: Bitcoin (BTC), Ethereum (ETH), Solana (SOL), Tether (USDT)
+
+*All payments are final. Funded balances are for service usage only and cannot be withdrawn.*
+
+---
+
+## Getting Started
+
+1. **Create Account**: Register at the platform
+2. **Fund Wallet**: Minimum $5 deposit
+3. **Select Service**: Choose from 1,807+ services
+4. **Receive Number**: Get temporary phone number instantly
+5. **Get Code**: SMS delivered within 60-120 seconds
+
+**New User Bonus**: 1 free verification on signup
+
+### Admin Access
+
+For administrative functions, use the admin panel at `/admin`:
+
+```
+Email: admin@namaskah.app
+Password: Admin@2024!
+```
+
+**Admin Features:**
+- View platform statistics (users, revenue, verifications)
+- Filter data by time period (7/14/30/60/90 days or all time)
+- Monitor most used services
+- Manage user accounts
+- Add credits to user wallets
+- View support tickets and respond to users
+
+---
+
+## Business Inquiries
+
+### Enterprise Solutions
+Custom pricing and dedicated support available for high-volume users.
+
+### Partnership Opportunities
+API reseller and white-label solutions available.
+
+### Contact
+- **Email**: support@namaskah.app
+- **Website**: https://namaskah.app
+- **Documentation**: https://namaskah.app/docs
+
+---
+
+## License
+
+MIT License
+
+Copyright (c) 2024 Namaskah
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+**Namaskah SMS** • Enterprise-Grade Verification Platform • Version 2.0.0

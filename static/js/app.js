@@ -281,6 +281,11 @@ function renderServices() {
     const search = document.getElementById('service-search').value.toLowerCase();
     let html = '';
     
+    // Add General Use button first
+    html += `<div style="min-width: 100%;">`;
+    html += `<div onclick="selectService('general')" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 15px; cursor: pointer; border-radius: 8px; transition: all 0.3s; text-align: center; font-weight: bold; font-size: 1rem; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">🌐 General Use (Unlisted Services)</div>`;
+    html += `</div>`;
+    
     const categoryOrder = ['Social', 'Messaging', 'Dating', 'Finance', 'Shopping', 'Food', 'Gaming', 'Crypto'];
     
     categoryOrder.forEach(category => {

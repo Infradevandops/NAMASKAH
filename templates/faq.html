@@ -95,7 +95,13 @@
                 <span class="faq-icon">+</span>
             </div>
             <div class="faq-answer">
-                Each verification costs ₵0.50 (Namaskah Coins). There are no subscriptions or hidden fees. You only pay for what you use.
+                <p><strong>Verification Pricing:</strong></p>
+                <ul>
+                    <li><strong>Pay-as-You-Go:</strong> 85¢ per verification</li>
+                    <li><strong>Developer Plan:</strong> 65¢ per verification (Save 24%, min $50 funded)</li>
+                    <li><strong>Enterprise Plan:</strong> 55¢ per verification (Save 35%, min $200 funded)</li>
+                </ul>
+                <p>No subscriptions or hidden fees. You only pay for what you use.</p>
             </div>
         </div>
 
@@ -171,7 +177,21 @@
                 <span class="faq-icon">+</span>
             </div>
             <div class="faq-answer">
-                Yes! Generate API keys in your dashboard and use our RESTful API. Check our <a href="/api-docs" style="color: #667eea;">API Documentation</a> for complete reference with code examples.
+                <p><strong>Yes!</strong> API access is available on <strong>Developer Plan</strong> (minimum $50 funded) and <strong>Enterprise Plan</strong> (minimum $200 funded).</p>
+                <p><strong>Quick Start:</strong></p>
+                <ol>
+                    <li>Fund your wallet with minimum $50 to unlock Developer Plan</li>
+                    <li>Generate API keys in your dashboard under "API Keys" section</li>
+                    <li>Use the API key in your requests: <code>Authorization: Bearer YOUR_API_KEY</code></li>
+                </ol>
+                <p><strong>Example:</strong></p>
+                <pre style="background: #f9fafb; padding: 15px; border-radius: 6px; overflow-x: auto;">curl -X POST https://namaskah.app/verify/create \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"service_name": "whatsapp", "capability": "sms"}'</pre>
+                <p style="margin-top: 15px;">
+                    <a href="/api-docs" style="display: inline-block; background: #667eea; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">📚 View Full API Documentation</a>
+                </p>
             </div>
         </div>
 
@@ -181,7 +201,68 @@
                 <span class="faq-icon">+</span>
             </div>
             <div class="faq-answer">
-                Webhooks allow you to receive SMS notifications automatically at your server URL. When an SMS arrives, we send a POST request to your webhook URL with the message content. Perfect for automation!
+                <p><strong>Webhooks</strong> allow you to receive SMS notifications automatically at your server URL. Available on <strong>Developer Plan</strong> and <strong>Enterprise Plan</strong>.</p>
+                <p><strong>How it works:</strong></p>
+                <ol>
+                    <li>Add your webhook URL in the dashboard (must be HTTPS)</li>
+                    <li>When an SMS arrives, we POST to your URL with the message</li>
+                    <li>Your server receives instant notifications</li>
+                </ol>
+                <p><strong>Webhook Payload:</strong></p>
+                <pre style="background: #f9fafb; padding: 15px; border-radius: 6px; overflow-x: auto;">{
+  "verification_id": "ver_123456",
+  "messages": ["Your code is 123456"],
+  "timestamp": "2024-01-15T10:30:00Z"
+}</pre>
+                <p style="margin-top: 15px;">
+                    <a href="/api-docs" style="display: inline-block; background: #667eea; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">📚 View Webhook Documentation</a>
+                </p>
+            </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('active')">
+            <div class="faq-question">
+                Which plan do I need for API and webhooks?
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                    <thead>
+                        <tr style="background: #f9fafb;">
+                            <th style="padding: 12px; text-align: left; border: 1px solid #e5e7eb;">Feature</th>
+                            <th style="padding: 12px; text-align: center; border: 1px solid #e5e7eb;">Pay-as-You-Go</th>
+                            <th style="padding: 12px; text-align: center; border: 1px solid #e5e7eb;">Developer</th>
+                            <th style="padding: 12px; text-align: center; border: 1px solid #e5e7eb;">Enterprise</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding: 12px; border: 1px solid #e5e7eb;">API Keys</td>
+                            <td style="padding: 12px; text-align: center; border: 1px solid #e5e7eb;">❌</td>
+                            <td style="padding: 12px; text-align: center; border: 1px solid #e5e7eb;">✅</td>
+                            <td style="padding: 12px; text-align: center; border: 1px solid #e5e7eb;">✅</td>
+                        </tr>
+                        <tr style="background: #f9fafb;">
+                            <td style="padding: 12px; border: 1px solid #e5e7eb;">Webhooks</td>
+                            <td style="padding: 12px; text-align: center; border: 1px solid #e5e7eb;">❌</td>
+                            <td style="padding: 12px; text-align: center; border: 1px solid #e5e7eb;">✅</td>
+                            <td style="padding: 12px; text-align: center; border: 1px solid #e5e7eb;">✅</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px; border: 1px solid #e5e7eb;">Price per SMS</td>
+                            <td style="padding: 12px; text-align: center; border: 1px solid #e5e7eb;">85¢</td>
+                            <td style="padding: 12px; text-align: center; border: 1px solid #e5e7eb;">65¢</td>
+                            <td style="padding: 12px; text-align: center; border: 1px solid #e5e7eb;">55¢</td>
+                        </tr>
+                        <tr style="background: #f9fafb;">
+                            <td style="padding: 12px; border: 1px solid #e5e7eb;">Minimum Funded</td>
+                            <td style="padding: 12px; text-align: center; border: 1px solid #e5e7eb;">$0</td>
+                            <td style="padding: 12px; text-align: center; border: 1px solid #e5e7eb;">$50</td>
+                            <td style="padding: 12px; text-align: center; border: 1px solid #e5e7eb;">$200</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p style="margin-top: 15px; color: #10b981; font-weight: 600;">💡 Upgrade by funding your wallet to unlock API access and save on every verification!</p>
             </div>
         </div>
 
