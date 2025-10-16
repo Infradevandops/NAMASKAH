@@ -1769,3 +1769,40 @@ async function submitSupport(event) {
         showNotification('❌ Network error', 'error');
     }
 }
+
+// Button selection handlers
+function selectMode(mode) {
+    document.getElementById('mode-always').checked = (mode === 'always');
+    document.getElementById('mode-manual').checked = (mode === 'manual');
+    
+    document.getElementById('mode-always-label').style.borderColor = (mode === 'always') ? '#667eea' : 'transparent';
+    document.getElementById('mode-manual-label').style.borderColor = (mode === 'manual') ? '#667eea' : 'transparent';
+    
+    updateRentalPrice();
+}
+
+function selectDuration(days) {
+    [7, 14, 30, 60, 90].forEach(d => {
+        const radio = document.getElementById(`duration-${d}`);
+        const label = document.getElementById(`duration-${d}-label`);
+        if (d === days) {
+            radio.checked = true;
+            label.style.borderColor = '#667eea';
+        } else {
+            radio.checked = false;
+            label.style.borderColor = 'transparent';
+        }
+    });
+    
+    updateRentalPrice();
+}
+
+function selectCapability(type) {
+    document.querySelector('input[name="capability"][value="sms"]').checked = (type === 'sms');
+    document.querySelector('input[name="capability"][value="voice"]').checked = (type === 'voice');
+    
+    document.getElementById('capability-sms-label').style.borderColor = (type === 'sms') ? '#fbbf24' : 'transparent';
+    document.getElementById('capability-voice-label').style.borderColor = (type === 'voice') ? '#fbbf24' : 'transparent';
+    
+    updateCapability();
+}
