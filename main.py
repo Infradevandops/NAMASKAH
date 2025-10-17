@@ -69,27 +69,30 @@ VOICE_PREMIUM = 0.25
 SUBSCRIPTION_PLANS = {
     'starter': {
         'name': 'Starter',
-        'price': 0,  # Free
+        'duration': 7,  # 7 days
+        'price': 12.5,  # N12.5 = $25
         'discount': 0.0,  # No discount
         'area_code': False,
         'carrier': False,
-        'description': 'Random numbers from random carriers'
+        'description': 'Random numbers, 7 days'
     },
     'pro': {
         'name': 'Pro',
-        'price': 25.0,  # N25 = $50/month
+        'duration': 30,  # 30 days (1 month)
+        'price': 25.0,  # N25 = $50
         'discount': 0.20,  # 20% discount
         'area_code': True,
         'carrier': False,
-        'description': 'Choose area code, 20% discount'
+        'description': 'Choose area code, 30 days, 20% discount'
     },
     'turbo': {
         'name': 'Turbo',
-        'price': 100.0,  # N100 = $200/month
+        'duration': 0,  # Lifetime
+        'price': 75.0,  # N75 = $150
         'discount': 0.35,  # 35% discount
         'area_code': True,
         'carrier': True,
-        'description': 'Choose area code + carrier, 35% discount'
+        'description': 'Choose area code + carrier, lifetime, 35% discount'
     }
 }
 
@@ -281,8 +284,8 @@ class Subscription(Base):
     status = Column(String, default="active")  # active, cancelled, expired
     price = Column(Float, nullable=False)
     discount = Column(Float, default=0.0)  # 0.20 for pro, 0.35 for turbo
-    billing_cycle = Column(String, default="monthly")  # monthly
-    next_billing_date = Column(DateTime)
+    duration = Column(Float, default=0)  # days (0 = lifetime)
+    expires_at = Column(DateTime)  # null for lifetime
     cancelled_at = Column(DateTime)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime)
@@ -2034,25 +2037,28 @@ def get_subscription_plans():
             {
                 "id": "starter",
                 "name": "Starter",
-                "price": 0,
-                "price_usd": 0,
+                "duration": "7 days",
+                "price": 12.5,
+                "price_usd": 25,
                 "discount": "0%",
                 "features": [
                     "Random phone numbers",
                     "Random carriers",
-                    "Pay per verification",
+                    "7 days access",
                     "Basic support"
                 ]
             },
             {
                 "id": "pro",
                 "name": "Pro",
+                "duration": "30 days",
                 "price": 25.0,
                 "price_usd": 50,
                 "discount": "20%",
                 "features": [
                     "Choose area code",
                     "20% discount on all verifications",
+                    "30 days access",
                     "Priority support",
                     "API access"
                 ]
@@ -2060,13 +2066,15 @@ def get_subscription_plans():
             {
                 "id": "turbo",
                 "name": "Turbo",
-                "price": 100.0,
-                "price_usd": 200,
+                "duration": "Lifetime",
+                "price": 75.0,
+                "price_usd": 150,
                 "discount": "35%",
                 "features": [
                     "Choose area code",
                     "Choose carrier (Verizon, AT&T, T-Mobile)",
                     "35% discount on all verifications",
+                    "Lifetime access",
                     "Premium support",
                     "Advanced API access"
                 ]
@@ -2094,8 +2102,9 @@ def subscribe_to_plan(req: SubscribeRequest, user: User = Depends(get_current_us
         existing.plan = req.plan
         existing.price = plan['price']
         existing.discount = plan['discount']
+        existing.duration = plan['duration']
         existing.status = "active"
-        existing.next_billing_date = datetime.now(timezone.utc) + timedelta(days=30)
+        existing.expires_at = None if plan['duration'] == 0 else datetime.now(timezone.utc) + timedelta(days=plan['duration'])
         existing.updated_at = datetime.now(timezone.utc)
     else:
         # New subscription
@@ -2105,8 +2114,9 @@ def subscribe_to_plan(req: SubscribeRequest, user: User = Depends(get_current_us
             plan=req.plan,
             price=plan['price'],
             discount=plan['discount'],
+            duration=plan['duration'],
             status="active",
-            next_billing_date=datetime.now(timezone.utc) + timedelta(days=30)
+            expires_at=None if plan['duration'] == 0 else datetime.now(timezone.utc) + timedelta(days=plan['duration'])
         )
         db.add(subscription)
     
@@ -2124,10 +2134,13 @@ def subscribe_to_plan(req: SubscribeRequest, user: User = Depends(get_current_us
     
     db.commit()
     
+    expires_at = None if plan['duration'] == 0 else datetime.now(timezone.utc) + timedelta(days=plan['duration'])
+    
     return {
         "message": f"Successfully subscribed to {plan['name']} plan!",
         "plan": req.plan,
-        "next_billing_date": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
+        "duration": f"{plan['duration']} days" if plan['duration'] > 0 else "Lifetime",
+        "expires_at": expires_at.isoformat() if expires_at else "Never",
         "remaining_credits": user.credits
     }
 
@@ -2150,7 +2163,8 @@ def get_current_subscription(user: User = Depends(get_current_user), db: Session
         "status": subscription.status,
         "price": subscription.price,
         "discount": f"{int(subscription.discount * 100)}%",
-        "next_billing_date": subscription.next_billing_date.isoformat() if subscription.next_billing_date else None,
+        "duration": f"{subscription.duration} days" if subscription.duration > 0 else "Lifetime",
+        "expires_at": subscription.expires_at.isoformat() if subscription.expires_at else "Never",
         "features": SUBSCRIPTION_PLANS[subscription.plan]
     }
 
@@ -2170,9 +2184,9 @@ def cancel_subscription(user: User = Depends(get_current_user), db: Session = De
     db.commit()
     
     return {
-        "message": "Subscription cancelled. You'll be downgraded to Starter plan at the end of billing period.",
+        "message": "Subscription cancelled. You'll be downgraded to Starter plan when it expires.",
         "plan": subscription.plan,
-        "active_until": subscription.next_billing_date.isoformat() if subscription.next_billing_date else None
+        "active_until": subscription.expires_at.isoformat() if subscription.expires_at else "Lifetime (no refund)"
     }
 
 @app.get("/admin/stats", tags=["Admin"], summary="Get Platform Statistics")
