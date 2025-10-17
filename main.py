@@ -122,8 +122,17 @@ SMTP_USER = os.getenv("SMTP_USER")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 FROM_EMAIL = os.getenv("FROM_EMAIL", "noreply@namaskah.app")
 
-# Database
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {})
+# Database with connection pooling
+if "sqlite" in DATABASE_URL:
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(
+        DATABASE_URL,
+        pool_size=20,
+        max_overflow=40,
+        pool_pre_ping=True,
+        pool_recycle=3600
+    )
 SessionLocal = sessionmaker(bind=engine)
 from sqlalchemy.orm import declarative_base as new_declarative_base
 Base = new_declarative_base()
@@ -308,6 +317,52 @@ def create_admin_if_not_exists():
         db.close()
 
 create_admin_if_not_exists()
+
+# Background task for TextVerified API health check
+@app.on_event("startup")
+async def startup_event():
+    """Run background tasks on startup"""
+    import asyncio
+    asyncio.create_task(check_textverified_health_loop())
+
+async def check_textverified_health_loop():
+    """Check TextVerified API health every 5 minutes"""
+    while True:
+        try:
+            db = SessionLocal()
+            try:
+                # Try to get token from TextVerified
+                tv_client.get_token()
+                status = "operational"
+                logger.info("✅ TextVerified API: Operational")
+            except Exception as e:
+                status = "down"
+                logger.error(f"❌ TextVerified API: Down - {str(e)}")
+            
+            # Update or create status record
+            status_record = db.query(ServiceStatus).filter(
+                ServiceStatus.service_name == "textverified_api"
+            ).first()
+            
+            if status_record:
+                status_record.status = status
+                status_record.last_checked = datetime.now(timezone.utc)
+            else:
+                status_record = ServiceStatus(
+                    id=f"status_textverified_api_{datetime.now(timezone.utc).timestamp()}",
+                    service_name="textverified_api",
+                    status=status,
+                    success_rate=100.0 if status == "operational" else 0.0
+                )
+                db.add(status_record)
+            
+            db.commit()
+            db.close()
+        except Exception as e:
+            logger.error(f"Health check error: {e}")
+        
+        # Wait 5 minutes
+        await asyncio.sleep(300)
 
 # Email Helper
 def send_email(to_email: str, subject: str, body: str):
@@ -2510,6 +2565,8 @@ def get_rental_messages(rental_id: str, user: User = Depends(get_current_user), 
 
 # CORS for frontend
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+import time
 
 # Get allowed origins from environment
 allowed_origins = os.getenv("CORS_ORIGINS", "http://localhost:8000").split(",")
@@ -2522,6 +2579,9 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["X-Request-ID"],
 )
+
+# Add GZip compression for responses >1KB
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Rate Limiting with Redis
 import redis
@@ -2586,6 +2646,37 @@ async def request_id_middleware(request: Request, call_next):
     request_id = str(uuid.uuid4())
     response = await call_next(request)
     response.headers["X-Request-ID"] = request_id
+    return response
+
+@app.middleware("http")
+async def request_logging_middleware(request: Request, call_next):
+    start_time = time.time()
+    
+    # Extract user ID from token if present
+    user_id = "anonymous"
+    auth_header = request.headers.get("authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        try:
+            token = auth_header.split(" ")[1]
+            payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+            user_id = payload.get("user_id", "unknown")
+        except:
+            pass
+    
+    # Process request
+    response = await call_next(request)
+    
+    # Calculate duration
+    duration = time.time() - start_time
+    
+    # Log request
+    logger.info(
+        f"{request.method} {request.url.path} - "
+        f"Status: {response.status_code} - "
+        f"Duration: {duration:.3f}s - "
+        f"User: {user_id}"
+    )
+    
     return response
 
 @app.middleware("http")

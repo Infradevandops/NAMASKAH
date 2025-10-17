@@ -107,6 +107,13 @@
             <div id="overall-status" class="overall-status status-operational">
                 <span>●</span> All Systems Operational
             </div>
+            <div id="api-status" style="margin-top: 20px; padding: 15px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border);">
+                <div style="font-weight: 600; margin-bottom: 8px; color: var(--text);">🔌 TextVerified API</div>
+                <div id="api-status-indicator" style="display: flex; align-items: center; gap: 8px;">
+                    <div class="status-dot dot-operational"></div>
+                    <span>Checking...</span>
+                </div>
+            </div>
         </div>
 
         <div id="status-content">
@@ -143,10 +150,29 @@
                 
                 renderStatus(data);
                 updateOverallStatus(data);
+                updateAPIStatus(data);
                 document.getElementById('update-time').textContent = new Date().toLocaleString();
             } catch (error) {
                 document.getElementById('status-content').innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Unable to load service status</p>';
             }
+        }
+        
+        function updateAPIStatus(data) {
+            const indicator = document.getElementById('api-status-indicator');
+            const apiStatus = data.status && data.status['textverified_api'] ? data.status['textverified_api'] : 'operational';
+            
+            const statusConfig = {
+                'operational': { dot: 'dot-operational', text: 'Operational', color: '#10b981' },
+                'degraded': { dot: 'dot-degraded', text: 'Degraded Performance', color: '#3b82f6' },
+                'down': { dot: 'dot-down', text: 'Service Down', color: '#ef4444' }
+            };
+            
+            const config = statusConfig[apiStatus] || statusConfig['operational'];
+            
+            indicator.innerHTML = `
+                <div class="status-dot ${config.dot}"></div>
+                <span style="color: ${config.color}; font-weight: 600;">${config.text}</span>
+            `;
         }
 
         function renderStatus(data) {
