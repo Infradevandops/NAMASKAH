@@ -69,8 +69,7 @@ function renderServices() {
     
     if (!search || 'general'.includes(search) || 'unlisted'.includes(search)) {
         html += `<div style="min-width: 100px;">`;
-        html += `<div style="font-weight: bold; font-size: 0.75rem; color: #f59e0b; margin-bottom: 8px; border-bottom: 2px solid #f59e0b; padding-bottom: 4px;">Unlisted Services</div>`;
-        html += `<div onclick="selectService('general')" style="font-size: 0.65rem; padding: 3px; cursor: pointer; border-radius: 4px; transition: all 0.2s; background: rgba(245, 158, 11, 0.1); font-weight: 600; color: #f59e0b;" onmouseover="this.style.background='#f59e0b'; this.style.color='white'" onmouseout="this.style.background='rgba(245, 158, 11, 0.1)'; this.style.color='#f59e0b'">Any Service</div>`;
+
         html += `</div>`;
     }
     
