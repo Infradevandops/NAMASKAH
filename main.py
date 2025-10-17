@@ -85,6 +85,36 @@ ETHEREUM_ADDRESS = os.getenv("ETHEREUM_ADDRESS", "0x742d35Cc6634C0532925a3b844Bc
 SOLANA_ADDRESS = os.getenv("SOLANA_ADDRESS", "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU")
 USDT_ADDRESS = os.getenv("USDT_ADDRESS", "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb")
 
+# Exchange rate cache (updates every 1 hour)
+exchange_rate_cache = {"rate": 1478.24, "last_updated": None}
+
+def get_usd_to_ngn_rate():
+    """Get current USD to NGN exchange rate with 1-hour caching"""
+    from datetime import datetime, timedelta, timezone
+    
+    now = datetime.now(timezone.utc)
+    
+    # Check if cache is valid (less than 1 hour old)
+    if exchange_rate_cache["last_updated"] and \
+       (now - exchange_rate_cache["last_updated"]) < timedelta(hours=1):
+        return exchange_rate_cache["rate"]
+    
+    # Fetch new rate
+    try:
+        response = requests.get("https://api.exchangerate-api.com/v4/latest/USD", timeout=5)
+        if response.status_code == 200:
+            rates = response.json().get("rates", {})
+            new_rate = rates.get("NGN", 1478.24)
+            exchange_rate_cache["rate"] = new_rate
+            exchange_rate_cache["last_updated"] = now
+            print(f"✅ Exchange rate updated: 1 USD = ₦{new_rate}")
+            return new_rate
+    except Exception as e:
+        print(f"⚠️ Exchange rate API error: {e}")
+    
+    # Return cached/fallback rate
+    return exchange_rate_cache["rate"]
+
 # Email Config
 SMTP_HOST = os.getenv("SMTP_HOST")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
@@ -1611,16 +1641,19 @@ def get_stats(period: str = "30", admin: User = Depends(get_admin_user), db: Ses
 @app.post("/wallet/paystack/initialize", tags=["Wallet"], summary="Initialize Paystack Payment")
 def initialize_paystack(req: FundWalletRequest, user: User = Depends(get_current_user)):
     """Initialize Paystack payment with detailed transaction info"""
-    if req.amount < 2.5:
-        raise HTTPException(status_code=400, detail="Minimum funding amount is N2.50 ($5 USD)")
+    if req.amount < 5:
+        raise HTTPException(status_code=400, detail="Minimum funding amount is $5 USD")
     
     # Only Paystack is supported
     if req.payment_method != 'paystack':
         raise HTTPException(status_code=400, detail="Only Paystack payment is supported. Crypto payments are not available.")
     
     reference = f"namaskah_{user.id}_{int(datetime.now(timezone.utc).timestamp())}"
-    amount_usd = req.amount * NAMASKAH_TO_USD  # Convert N to USD
-    amount_ngn = amount_usd * 1500  # Approximate NGN rate (adjust as needed)
+    amount_usd = req.amount  # User enters USD amount directly
+    
+    # Get current USD to NGN exchange rate (cached, updates hourly)
+    USD_TO_NGN_RATE = get_usd_to_ngn_rate()
+    amount_ngn = amount_usd * USD_TO_NGN_RATE  # Exact NGN amount based on current rate
     
     if not PAYSTACK_SECRET_KEY or not PAYSTACK_SECRET_KEY.startswith('sk_'):
         raise HTTPException(status_code=503, detail="Payment system not configured. Please contact support.")
