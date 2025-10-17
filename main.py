@@ -1162,7 +1162,10 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     # Log login
-    log_activity(db, user_id=user.id, email=user.email, action="login", status="success")
+    try:
+        log_activity(db, user_id=user.id, email=user.email, action="login", status="success")
+    except:
+        pass  # Don't fail login if logging fails
     
     token = jwt.encode({"user_id": user.id, "exp": datetime.now(timezone.utc) + timedelta(days=30)}, JWT_SECRET)
     return {"token": token, "user_id": user.id, "credits": user.credits, "is_admin": user.is_admin}
