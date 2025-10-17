@@ -1167,7 +1167,9 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     except:
         pass  # Don't fail login if logging fails
     
-    token = jwt.encode({"user_id": user.id, "exp": datetime.now(timezone.utc) + timedelta(days=30)}, JWT_SECRET)
+    token = jwt.encode({"user_id": user.id, "exp": datetime.now(timezone.utc) + timedelta(days=30)}, JWT_SECRET, algorithm="HS256")
+    if isinstance(token, bytes):
+        token = token.decode('utf-8')
     return {"token": token, "user_id": user.id, "credits": user.credits, "is_admin": user.is_admin}
 
 @app.get("/auth/verify", tags=["Authentication"], summary="Verify Email")
