@@ -325,6 +325,22 @@ class PaymentLog(Base):
 
 Base.metadata.create_all(bind=engine)
 
+# Auto-fix admin password on startup
+try:
+    db = SessionLocal()
+    admin = db.query(User).filter(User.email == "admin@namaskah.app").first()
+    if admin:
+        try:
+            bcrypt.checkpw(b"Admin@2024!", admin.password_hash.encode('utf-8'))
+        except:
+            admin.password_hash = bcrypt.hashpw(b"Admin@2024!", bcrypt.gensalt()).decode()
+            admin.is_admin = True
+            db.commit()
+            print("✅ Admin password auto-fixed")
+    db.close()
+except Exception as e:
+    print(f"Admin check: {e}")
+
 # Create database indexes for performance
 def create_indexes():
     """Create indexes on frequently queried fields"""
@@ -1109,24 +1125,6 @@ def google_auth(req: GoogleAuthRequest, db: Session = Depends(get_db)):
         }
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Google authentication failed: {str(e)}")
-
-@app.get("/auth/reset-admin-password", tags=["System"], summary="Reset Admin Password")
-def reset_admin_password(secret: str, db: Session = Depends(get_db)):
-    """Reset admin password - requires secret key"""
-    if secret != "RESET_ADMIN_2024":
-        raise HTTPException(status_code=403, detail="Invalid secret")
-    
-    admin = db.query(User).filter(User.email == "admin@namaskah.app").first()
-    if not admin:
-        raise HTTPException(status_code=404, detail="Admin not found")
-    
-    # Reset password with bcrypt
-    new_hash = bcrypt.hashpw(b"Admin@2024!", bcrypt.gensalt()).decode()
-    admin.password_hash = new_hash
-    admin.is_admin = True
-    db.commit()
-    
-    return {"message": "Admin password reset to Admin@2024!", "email": "admin@namaskah.app"}
 
 @app.post("/auth/login", tags=["Authentication"], summary="Login User")
 def login(req: LoginRequest, db: Session = Depends(get_db)):
