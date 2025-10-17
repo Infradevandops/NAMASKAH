@@ -735,11 +735,27 @@ async def startup_event():
         if admin:
             try:
                 bcrypt.checkpw(b"Admin@2024!", admin.password_hash.encode('utf-8'))
+                print("✅ Admin password OK")
             except:
                 admin.password_hash = bcrypt.hashpw(b"Admin@2024!", bcrypt.gensalt()).decode()
                 admin.is_admin = True
                 db.commit()
                 print("✅ Admin password auto-fixed")
+        else:
+            # Create admin if doesn't exist
+            import secrets
+            admin = User(
+                id=f"user_{datetime.now(timezone.utc).timestamp()}",
+                email="admin@namaskah.app",
+                password_hash=bcrypt.hashpw(b"Admin@2024!", bcrypt.gensalt()).decode(),
+                credits=100.0,
+                is_admin=True,
+                email_verified=True,
+                referral_code=secrets.token_urlsafe(6)
+            )
+            db.add(admin)
+            db.commit()
+            print("✅ Admin user created")
         db.close()
     except Exception as e:
         print(f"Admin check: {e}")
