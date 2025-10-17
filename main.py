@@ -195,6 +195,15 @@ class SupportTicket(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime)
 
+class ServiceStatus(Base):
+    __tablename__ = "service_status"
+    id = Column(String, primary_key=True)
+    service_name = Column(String, nullable=False)
+    status = Column(String, default="operational")  # operational, degraded, down
+    success_rate = Column(Float, default=100.0)
+    last_checked = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
 Base.metadata.create_all(bind=engine)
 
 # Auto-create admin user on startup
@@ -534,7 +543,7 @@ def get_services_status(db: Session = Depends(get_db)):
         
         twenty_four_hours_ago = datetime.now(timezone.utc) - timedelta(hours=24)
         
-        # Get success rates per service
+        # Get success rates per service from verifications
         service_stats = db.query(
             Verification.service_name,
             func.count(Verification.id).label('total'),
@@ -550,14 +559,38 @@ def get_services_status(db: Session = Depends(get_db)):
         for stat in service_stats:
             if stat.total > 0:
                 success_rate = (stat.completed / stat.total) * 100
+                
+                # Determine status
                 if success_rate < 50:
-                    status_map[stat.service_name] = 'down'
+                    service_status = 'down'
                     down_count += 1
                 elif success_rate < 85:
-                    status_map[stat.service_name] = 'degraded'
+                    service_status = 'degraded'
                     degraded_count += 1
                 else:
-                    status_map[stat.service_name] = 'operational'
+                    service_status = 'operational'
+                
+                status_map[stat.service_name] = service_status
+                
+                # Update or create service status record
+                status_record = db.query(ServiceStatus).filter(
+                    ServiceStatus.service_name == stat.service_name
+                ).first()
+                
+                if status_record:
+                    status_record.status = service_status
+                    status_record.success_rate = success_rate
+                    status_record.last_checked = datetime.now(timezone.utc)
+                else:
+                    status_record = ServiceStatus(
+                        id=f"status_{stat.service_name}_{datetime.now(timezone.utc).timestamp()}",
+                        service_name=stat.service_name,
+                        status=service_status,
+                        success_rate=success_rate
+                    )
+                    db.add(status_record)
+        
+        db.commit()
         
         # Determine overall status
         if down_count > 5:
@@ -575,7 +608,8 @@ def get_services_status(db: Session = Depends(get_db)):
                 "down": down_count,
                 "degraded": degraded_count,
                 "operational": len(service_stats) - down_count - degraded_count
-            }
+            },
+            "last_updated": datetime.now(timezone.utc).isoformat()
         }
     except Exception as e:
         # Default to all operational if error
@@ -583,8 +617,31 @@ def get_services_status(db: Session = Depends(get_db)):
             "categories": {},
             "status": {},
             "overall_status": "operational",
-            "stats": {"down": 0, "degraded": 0, "operational": 0}
+            "stats": {"down": 0, "degraded": 0, "operational": 0},
+            "last_updated": datetime.now(timezone.utc).isoformat()
         }
+
+@app.get("/services/status/history", tags=["System"], summary="Get Service Status History")
+def get_service_status_history(service_name: str = None, db: Session = Depends(get_db)):
+    """Get historical status data for services"""
+    query = db.query(ServiceStatus)
+    
+    if service_name:
+        query = query.filter(ServiceStatus.service_name == service_name)
+    
+    statuses = query.order_by(ServiceStatus.created_at.desc()).limit(100).all()
+    
+    return {
+        "history": [
+            {
+                "service_name": s.service_name,
+                "status": s.status,
+                "success_rate": s.success_rate,
+                "checked_at": s.last_checked.isoformat()
+            }
+            for s in statuses
+        ]
+    }
 
 @app.post("/auth/register", tags=["Authentication"], summary="Register New User")
 def register(req: RegisterRequest, referral_code: str = None, db: Session = Depends(get_db)):
