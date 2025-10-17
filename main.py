@@ -1155,21 +1155,183 @@ def cancel_verification(verification_id: str, user: User = Depends(get_current_u
 
 # Admin Endpoints
 @app.get("/admin/users", tags=["Admin"], summary="List All Users")
-def get_all_users(admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
-    """Get all registered users (admin only)"""
-    users = db.query(User).all()
+def get_all_users(
+    search: str = None,
+    page: int = 1,
+    limit: int = 50,
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Get all registered users with search and pagination (admin only)"""
+    query = db.query(User)
+    
+    # Search filter
+    if search:
+        query = query.filter(
+            (User.email.contains(search)) | (User.id.contains(search))
+        )
+    
+    # Get total count
+    total = query.count()
+    
+    # Pagination
+    offset = (page - 1) * limit
+    users = query.order_by(User.created_at.desc()).offset(offset).limit(limit).all()
+    
     return {
         "users": [
             {
                 "id": u.id,
                 "email": u.email,
                 "credits": u.credits,
+                "free_verifications": u.free_verifications,
                 "is_admin": u.is_admin,
-                "created_at": u.created_at
+                "email_verified": u.email_verified,
+                "created_at": u.created_at.isoformat()
             }
             for u in users
+        ],
+        "pagination": {
+            "page": page,
+            "limit": limit,
+            "total": total,
+            "pages": (total + limit - 1) // limit
+        }
+    }
+
+@app.get("/admin/users/{user_id}", tags=["Admin"], summary="Get User Details")
+def get_user_details(user_id: str, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Get detailed user information including history (admin only)"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get verification history
+    verifications = db.query(Verification).filter(
+        Verification.user_id == user_id
+    ).order_by(Verification.created_at.desc()).limit(20).all()
+    
+    # Get transaction history
+    transactions = db.query(Transaction).filter(
+        Transaction.user_id == user_id
+    ).order_by(Transaction.created_at.desc()).limit(20).all()
+    
+    # Calculate stats
+    from sqlalchemy import func
+    total_spent = db.query(func.sum(Transaction.amount)).filter(
+        Transaction.user_id == user_id,
+        Transaction.type == "debit"
+    ).scalar() or 0
+    
+    total_funded = db.query(func.sum(Transaction.amount)).filter(
+        Transaction.user_id == user_id,
+        Transaction.type == "credit"
+    ).scalar() or 0
+    
+    return {
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "credits": user.credits,
+            "free_verifications": user.free_verifications,
+            "is_admin": user.is_admin,
+            "email_verified": user.email_verified,
+            "referral_code": user.referral_code,
+            "created_at": user.created_at.isoformat()
+        },
+        "stats": {
+            "total_verifications": len(verifications),
+            "total_spent": abs(total_spent),
+            "total_funded": total_funded
+        },
+        "recent_verifications": [
+            {
+                "id": v.id,
+                "service_name": v.service_name,
+                "status": v.status,
+                "cost": v.cost,
+                "created_at": v.created_at.isoformat()
+            }
+            for v in verifications
+        ],
+        "recent_transactions": [
+            {
+                "id": t.id,
+                "amount": t.amount,
+                "type": t.type,
+                "description": t.description,
+                "created_at": t.created_at.isoformat()
+            }
+            for t in transactions
         ]
     }
+
+@app.get("/admin/export/users", tags=["Admin"], summary="Export Users to CSV")
+def export_users_csv(admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Export all users to CSV (admin only)"""
+    from fastapi.responses import StreamingResponse
+    import io
+    import csv
+    
+    users = db.query(User).all()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Header
+    writer.writerow(['ID', 'Email', 'Credits', 'Free Verifications', 'Is Admin', 'Email Verified', 'Created At'])
+    
+    # Data
+    for u in users:
+        writer.writerow([
+            u.id,
+            u.email,
+            u.credits,
+            u.free_verifications,
+            u.is_admin,
+            u.email_verified,
+            u.created_at.isoformat()
+        ])
+    
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=users_export.csv"}
+    )
+
+@app.get("/admin/export/transactions", tags=["Admin"], summary="Export Transactions to CSV")
+def export_transactions_csv(admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Export all transactions to CSV (admin only)"""
+    from fastapi.responses import StreamingResponse
+    import io
+    import csv
+    
+    transactions = db.query(Transaction).order_by(Transaction.created_at.desc()).all()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Header
+    writer.writerow(['ID', 'User ID', 'Amount', 'Type', 'Description', 'Created At'])
+    
+    # Data
+    for t in transactions:
+        writer.writerow([
+            t.id,
+            t.user_id,
+            t.amount,
+            t.type,
+            t.description,
+            t.created_at.isoformat()
+        ])
+    
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=transactions_export.csv"}
+    )
 
 @app.post("/admin/credits/add", tags=["Admin"], summary="Add Credits to User")
 def add_credits(req: AddCreditsRequest, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
