@@ -2055,7 +2055,6 @@ async def track_activity(request: Request, db: Session = Depends(get_db)):
             db,
             user_id=user_id,
             email=email,
-            session_id=data.get("session_id"),
             page=data.get("page"),
             action=data.get("action"),
             element=data.get("element"),
