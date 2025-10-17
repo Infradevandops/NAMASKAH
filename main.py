@@ -295,7 +295,6 @@ class ActivityLog(Base):
     id = Column(String, primary_key=True)
     user_id = Column(String)
     email = Column(String)
-    session_id = Column(String)
     page = Column(String)
     action = Column(String, nullable=False)
     element = Column(String)
