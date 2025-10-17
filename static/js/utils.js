@@ -55,20 +55,20 @@ function showApp() {
     // Hide loading spinner
     showLoading(false);
     
-    checkEmailVerification();
-    // Recheck every 30 seconds in case user verifies email
-    setInterval(checkEmailVerification, 30000);
-    
-    loadServices();
-    loadHistory();
-    loadTransactions();
-    loadAPIKeys();
-    loadWebhooks();
-    loadAnalytics();
-    loadNotificationSettings();
-    loadReferralStats();
-    loadActiveRentals();
-    startHistoryRefresh();
+    // Load data with error handling
+    try {
+        if (typeof checkEmailVerification === 'function') checkEmailVerification();
+        if (typeof loadServices === 'function') loadServices();
+        if (typeof loadAPIKeys === 'function') loadAPIKeys();
+        if (typeof loadWebhooks === 'function') loadWebhooks();
+        if (typeof loadAnalytics === 'function') loadAnalytics();
+        if (typeof loadNotificationSettings === 'function') loadNotificationSettings();
+        if (typeof loadReferralStats === 'function') loadReferralStats();
+        if (typeof loadActiveRentals === 'function') loadActiveRentals();
+        if (typeof startHistoryRefresh === 'function') startHistoryRefresh();
+    } catch (err) {
+        console.error('Error loading app data:', err);
+    }
 }
 
 function copyToClipboard(text) {

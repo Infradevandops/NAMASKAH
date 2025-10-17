@@ -46,8 +46,8 @@ async function register() {
 }
 
 async function login() {
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
+    const email = document.getElementById('login-email')?.value;
+    const password = document.getElementById('login-password')?.value;
     
     if (!email || !password) {
         showNotification('⚠️ Please enter email and password', 'error');
@@ -66,17 +66,21 @@ async function login() {
         const data = await res.json();
         showLoading(false);
         
-        if (res.ok) {
-            clearSession();
+        if (res.ok && data.token) {
+            if (typeof clearSession === 'function') clearSession();
             token = data.token;
             localStorage.setItem('token', token);
             showNotification('✅ Login successful!', 'success');
-            showApp();
+            setTimeout(() => {
+                if (typeof showApp === 'function') showApp();
+                else checkAuth();
+            }, 500);
         } else {
             showNotification(`❌ ${data.detail || 'Invalid credentials'}`, 'error');
         }
     } catch (err) {
         showLoading(false);
+        console.error('Login error:', err);
         showNotification('🌐 Network error. Check your connection', 'error');
     }
 }
