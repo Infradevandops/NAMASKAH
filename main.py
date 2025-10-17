@@ -263,11 +263,15 @@ class ActivityLog(Base):
     id = Column(String, primary_key=True)
     user_id = Column(String)
     email = Column(String)
+    session_id = Column(String)
+    page = Column(String)
     action = Column(String, nullable=False)
+    element = Column(String)
     status = Column(String, nullable=False)
     details = Column(String)
     error_message = Column(String)
     ip_address = Column(String)
+    user_agent = Column(String)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 class PaymentLog(Base):
@@ -418,17 +422,22 @@ def send_email(to_email: str, subject: str, body: str):
         print(f"Email error: {e}")
 
 # Activity Logging Helper
-def log_activity(db: Session, user_id=None, email=None, action=None, status=None, details=None, error=None):
+def log_activity(db: Session, user_id=None, email=None, session_id=None, page=None, action=None, element=None, status=None, details=None, error=None, ip=None, user_agent=None):
     """Log user activity"""
     try:
         log = ActivityLog(
             id=f"log_{datetime.now(timezone.utc).timestamp()}",
             user_id=user_id,
             email=email,
+            session_id=session_id,
+            page=page,
             action=action,
+            element=element,
             status=status,
             details=details,
-            error_message=error
+            error_message=error,
+            ip_address=ip,
+            user_agent=user_agent
         )
         db.add(log)
         db.commit()
@@ -677,9 +686,68 @@ async def startup_event():
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+# Tracking script
+@app.get("/track.js")
+async def tracking_script():
+    """Serve tracking JavaScript"""
+    script = """
+(function() {
+    const API_BASE = '';
+    const sessionId = sessionStorage.getItem('session_id') || Math.random().toString(36).substr(2, 9);
+    sessionStorage.setItem('session_id', sessionId);
+    
+    function track(action, element, details) {
+        const token = localStorage.getItem('token') || localStorage.getItem('admin_token');
+        fetch(API_BASE + '/track', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token ? `Bearer ${token}` : ''
+            },
+            body: JSON.stringify({
+                session_id: sessionId,
+                page: window.location.pathname,
+                action: action,
+                element: element,
+                details: details
+            })
+        }).catch(() => {});
+    }
+    
+    // Track page view
+    track('page_view', null, document.title);
+    
+    // Track button clicks
+    document.addEventListener('click', function(e) {
+        const target = e.target.closest('button, a, [onclick]');
+        if (target) {
+            const text = target.textContent.trim().substring(0, 50);
+            const id = target.id || target.className;
+            track('click', id || text, text);
+        }
+    });
+    
+    // Track form submissions
+    document.addEventListener('submit', function(e) {
+        const form = e.target;
+        const formId = form.id || form.action;
+        track('form_submit', formId, 'Form submitted');
+    });
+    
+    // Track errors
+    window.addEventListener('error', function(e) {
+        track('error', 'window', e.message);
+    });
+})();
+    """
+    from fastapi.responses import Response
+    return Response(content=script, media_type="application/javascript")
+
 @app.get("/")
 async def root(request: Request):
-    return templates.TemplateResponse("landing.html", {"request": request})
+    response = templates.TemplateResponse("landing.html", {"request": request})
+    response.headers["Cache-Control"] = "no-cache"
+    return response
 
 @app.get("/app")
 async def app_page(request: Request):
@@ -708,6 +776,10 @@ async def status_page(request: Request):
 @app.get("/admin")
 async def admin_panel(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request})
+
+@app.get("/analytics")
+async def analytics_page(request: Request):
+    return templates.TemplateResponse("analytics.html", {"request": request})
 
 @app.get("/manifest.json")
 async def manifest():
@@ -1518,6 +1590,53 @@ def get_all_users(
         }
     }
 
+@app.get("/admin/users/{user_id}/journey", tags=["Admin"], summary="Get User Journey")
+def get_user_journey(user_id: str, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Get complete user journey with all activities"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get all activities
+    activities = db.query(ActivityLog).filter(
+        ActivityLog.user_id == user_id
+    ).order_by(ActivityLog.created_at.asc()).all()
+    
+    # Get payment logs
+    payments = db.query(PaymentLog).filter(
+        PaymentLog.user_id == user_id
+    ).order_by(PaymentLog.created_at.asc()).all()
+    
+    return {
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "created_at": user.created_at.isoformat()
+        },
+        "activities": [
+            {
+                "timestamp": a.created_at.isoformat(),
+                "page": a.page,
+                "action": a.action,
+                "element": a.element,
+                "status": a.status,
+                "details": a.details
+            }
+            for a in activities
+        ],
+        "payments": [
+            {
+                "timestamp": p.created_at.isoformat(),
+                "reference": p.reference,
+                "amount": p.namaskah_amount,
+                "status": p.status,
+                "webhook_received": p.webhook_received,
+                "credited": p.credited
+            }
+            for p in payments
+        ]
+    }
+
 @app.get("/admin/users/{user_id}", tags=["Admin"], summary="Get User Details")
 def get_user_details(user_id: str, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Get detailed user information including history (admin only)"""
@@ -1673,6 +1792,67 @@ def add_credits(req: AddCreditsRequest, admin: User = Depends(get_admin_user), d
     
     return {"message": f"Added N{req.amount} credits", "new_balance": user.credits}
 
+@app.get("/admin/analytics/summary", tags=["Admin"], summary="Get Analytics Summary")
+def get_analytics_summary(email: str = None, days: int = 7, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Get analytics summary for user or all users"""
+    from sqlalchemy import func
+    from datetime import timedelta
+    
+    start_date = datetime.now(timezone.utc) - timedelta(days=days)
+    
+    query = db.query(ActivityLog).filter(ActivityLog.created_at >= start_date)
+    if email:
+        query = query.filter(ActivityLog.email == email)
+    
+    # Page views
+    page_views = db.query(
+        ActivityLog.page,
+        func.count(ActivityLog.id).label('count')
+    ).filter(
+        ActivityLog.created_at >= start_date,
+        ActivityLog.action == 'page_view'
+    )
+    if email:
+        page_views = page_views.filter(ActivityLog.email == email)
+    page_views = page_views.group_by(ActivityLog.page).all()
+    
+    # Button clicks
+    button_clicks = db.query(
+        ActivityLog.element,
+        ActivityLog.page,
+        func.count(ActivityLog.id).label('count')
+    ).filter(
+        ActivityLog.created_at >= start_date,
+        ActivityLog.action == 'click'
+    )
+    if email:
+        button_clicks = button_clicks.filter(ActivityLog.email == email)
+    button_clicks = button_clicks.group_by(ActivityLog.element, ActivityLog.page).all()
+    
+    # Total activities
+    total_activities = query.count()
+    
+    # Unique sessions
+    unique_sessions = db.query(func.count(func.distinct(ActivityLog.session_id))).filter(
+        ActivityLog.created_at >= start_date
+    )
+    if email:
+        unique_sessions = unique_sessions.filter(ActivityLog.email == email)
+    unique_sessions = unique_sessions.scalar() or 0
+    
+    return {
+        "total_activities": total_activities,
+        "unique_sessions": unique_sessions,
+        "page_views": [
+            {"page": p[0], "count": p[1]}
+            for p in page_views
+        ],
+        "button_clicks": [
+            {"element": b[0], "page": b[1], "count": b[2]}
+            for b in button_clicks
+        ]
+    }
+
 @app.get("/admin/payment-logs", tags=["Admin"], summary="Get Payment Logs")
 def get_payment_logs(email: str = None, reference: str = None, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Get payment logs for troubleshooting (admin only)"""
@@ -1706,14 +1886,18 @@ def get_payment_logs(email: str = None, reference: str = None, admin: User = Dep
     }
 
 @app.get("/admin/activity-logs", tags=["Admin"], summary="Get Activity Logs")
-def get_activity_logs(email: str = None, action: str = None, limit: int = 100, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+def get_activity_logs(email: str = None, page: str = None, action: str = None, session_id: str = None, limit: int = 100, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Get activity logs for user tracking (admin only)"""
     query = db.query(ActivityLog)
     
     if email:
         query = query.filter(ActivityLog.email == email)
+    if page:
+        query = query.filter(ActivityLog.page == page)
     if action:
         query = query.filter(ActivityLog.action == action)
+    if session_id:
+        query = query.filter(ActivityLog.session_id == session_id)
     
     logs = query.order_by(ActivityLog.created_at.desc()).limit(limit).all()
     
@@ -1721,16 +1905,64 @@ def get_activity_logs(email: str = None, action: str = None, limit: int = 100, a
         "logs": [
             {
                 "id": log.id,
-                "email": log.email,
+                "email": log.email or "anonymous",
+                "session_id": log.session_id,
+                "page": log.page,
                 "action": log.action,
+                "element": log.element,
                 "status": log.status,
                 "details": log.details,
                 "error_message": log.error_message,
+                "ip_address": log.ip_address,
                 "created_at": log.created_at.isoformat() if log.created_at else None
             }
             for log in logs
         ]
     }
+
+@app.post("/track", tags=["System"], summary="Track User Activity")
+async def track_activity(request: Request, db: Session = Depends(get_db)):
+    """Track user activity from frontend"""
+    try:
+        data = await request.json()
+        
+        # Get user info from token if present
+        user_id = None
+        email = None
+        auth_header = request.headers.get("authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            try:
+                token = auth_header.split(" ")[1]
+                payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+                user_id = payload.get("user_id")
+                user = db.query(User).filter(User.id == user_id).first()
+                if user:
+                    email = user.email
+            except:
+                pass
+        
+        # Get IP and user agent
+        ip = request.client.host if request.client else None
+        user_agent = request.headers.get("user-agent")
+        
+        log_activity(
+            db,
+            user_id=user_id,
+            email=email,
+            session_id=data.get("session_id"),
+            page=data.get("page"),
+            action=data.get("action"),
+            element=data.get("element"),
+            status="success",
+            details=data.get("details"),
+            ip=ip,
+            user_agent=user_agent
+        )
+        
+        return {"status": "tracked"}
+    except Exception as e:
+        print(f"Track error: {e}")
+        return {"status": "error"}
 
 @app.get("/admin/stats", tags=["Admin"], summary="Get Platform Statistics")
 def get_stats(period: str = "30", admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
