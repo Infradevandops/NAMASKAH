@@ -2770,14 +2770,21 @@ def create_rental(req: CreateRentalRequest, user: User = Depends(get_current_use
     user.credits -= cost
     
     # Create verification for rental
-    verification_id = tv_client.create_verification(req.service_name, "sms")
-    details = tv_client.get_verification(verification_id)
+    try:
+        verification_id = tv_client.create_verification(req.service_name, "sms")
+        details = tv_client.get_verification(verification_id)
+        phone_number = details.get("number")
+        
+        if not phone_number:
+            raise HTTPException(status_code=503, detail="Failed to get phone number from provider")
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Rental service unavailable: {str(e)}")
     
     now = datetime.now(timezone.utc)
     rental = NumberRental(
         id=f"rental_{int(now.timestamp() * 1000)}",
         user_id=user.id,
-        phone_number=details.get("number"),
+        phone_number=phone_number,
         service_name=req.service_name,
         duration_hours=req.duration_hours,
         cost=cost,
