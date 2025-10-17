@@ -206,6 +206,42 @@ class ServiceStatus(Base):
 
 Base.metadata.create_all(bind=engine)
 
+# Create database indexes for performance
+def create_indexes():
+    """Create indexes on frequently queried fields"""
+    try:
+        with engine.connect() as conn:
+            # User indexes
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_users_referral_code ON users(referral_code)")
+            
+            # Verification indexes
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_verifications_user_id ON verifications(user_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_verifications_status ON verifications(status)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_verifications_created_at ON verifications(created_at)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_verifications_service_name ON verifications(service_name)")
+            
+            # Transaction indexes
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(type)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_transactions_created_at ON transactions(created_at)")
+            
+            # Rental indexes
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_rentals_user_id ON number_rentals(user_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_rentals_status ON number_rentals(status)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_rentals_expires_at ON number_rentals(expires_at)")
+            
+            # Service status indexes
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_service_status_name ON service_status(service_name)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_service_status_checked ON service_status(last_checked)")
+            
+            conn.commit()
+            print("✅ Database indexes created")
+    except Exception as e:
+        print(f"⚠️ Index creation skipped: {e}")
+
+create_indexes()
+
 # Auto-create admin user on startup
 def create_admin_if_not_exists():
     db = SessionLocal()
