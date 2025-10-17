@@ -1720,7 +1720,12 @@ async function loadActiveRentals() {
                             <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 10px;">
                                 ⏰ Expires in: <strong>${days}d ${hours}h</strong>
                             </div>
+                            <div id="rental-messages-${r.id}" style="background: var(--bg); padding: 10px; border-radius: 6px; margin-bottom: 10px; max-height: 200px; overflow-y: auto; display: none;">
+                                <div style="font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">📨 Messages:</div>
+                                <div id="rental-messages-content-${r.id}" style="font-size: 0.85rem;">Loading...</div>
+                            </div>
                             <div style="display: flex; gap: 8px;">
+                                <button onclick="toggleRentalMessages('${r.id}')" class="btn-small" style="flex: 1;">📨 View SMS</button>
                                 <button onclick="extendRental('${r.id}')" class="btn-small" style="flex: 1;">🔄 Extend</button>
                                 <button onclick="releaseRental('${r.id}')" class="btn-small btn-danger" style="flex: 1;">🚫 Release</button>
                             </div>
@@ -1731,6 +1736,52 @@ async function loadActiveRentals() {
         }
     } catch (err) {
         console.error('Failed to load rentals:', err);
+    }
+}
+
+let rentalMessagesCache = {};
+
+async function toggleRentalMessages(rentalId) {
+    const container = document.getElementById(`rental-messages-${rentalId}`);
+    const content = document.getElementById(`rental-messages-content-${rentalId}`);
+    
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        
+        if (!rentalMessagesCache[rentalId]) {
+            try {
+                const res = await fetch(`${API_BASE}/rentals/${rentalId}/messages`, {
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    rentalMessagesCache[rentalId] = data.messages;
+                    
+                    if (data.messages.length === 0) {
+                        content.innerHTML = '<div style="color: var(--text-secondary); font-style: italic;">No messages yet</div>';
+                    } else {
+                        content.innerHTML = data.messages.map(msg => 
+                            `<div style="padding: 8px; background: var(--bg-secondary); border-radius: 4px; margin-bottom: 6px; border-left: 3px solid #667eea;">${msg}</div>`
+                        ).join('');
+                    }
+                } else {
+                    content.innerHTML = '<div style="color: #ef4444;">Failed to load messages</div>';
+                }
+            } catch (error) {
+                content.innerHTML = '<div style="color: #ef4444;">Error loading messages</div>';
+            }
+        } else {
+            if (rentalMessagesCache[rentalId].length === 0) {
+                content.innerHTML = '<div style="color: var(--text-secondary); font-style: italic;">No messages yet</div>';
+            } else {
+                content.innerHTML = rentalMessagesCache[rentalId].map(msg => 
+                    `<div style="padding: 8px; background: var(--bg-secondary); border-radius: 4px; margin-bottom: 6px; border-left: 3px solid #667eea;">${msg}</div>`
+                ).join('');
+            }
+        }
+    } else {
+        container.style.display = 'none';
     }
 }
 

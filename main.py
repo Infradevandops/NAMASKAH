@@ -2211,13 +2211,34 @@ def get_rental_messages(rental_id: str, user: User = Depends(get_current_user), 
     if not rental:
         raise HTTPException(status_code=404, detail="Rental not found")
     
-    # For now, return placeholder - would integrate with TextVerified rental API
-    return {
-        "rental_id": rental.id,
-        "phone_number": rental.phone_number,
-        "messages": [],
-        "note": "Message retrieval for rentals coming soon"
-    }
+    if rental.status != "active":
+        raise HTTPException(status_code=400, detail="Rental is not active")
+    
+    # Get messages from TextVerified
+    try:
+        # TextVerified uses verification ID to track rentals
+        # We need to extract the verification ID from the rental
+        messages = tv_client.get_messages(rental.id)
+        
+        return {
+            "rental_id": rental.id,
+            "phone_number": rental.phone_number,
+            "service_name": rental.service_name,
+            "expires_at": rental.expires_at.isoformat(),
+            "messages": messages,
+            "message_count": len(messages)
+        }
+    except Exception as e:
+        # If TextVerified API fails, return empty messages
+        return {
+            "rental_id": rental.id,
+            "phone_number": rental.phone_number,
+            "service_name": rental.service_name,
+            "expires_at": rental.expires_at.isoformat(),
+            "messages": [],
+            "message_count": 0,
+            "error": str(e)
+        }
 
 # CORS for frontend
 from fastapi.middleware.cors import CORSMiddleware
