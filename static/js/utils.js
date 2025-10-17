@@ -52,6 +52,9 @@ function showApp() {
     document.getElementById('app-section').classList.remove('hidden');
     document.getElementById('top-logout-btn').classList.remove('hidden');
     
+    // Hide loading spinner
+    showLoading(false);
+    
     checkEmailVerification();
     // Recheck every 30 seconds in case user verifies email
     setInterval(checkEmailVerification, 30000);
