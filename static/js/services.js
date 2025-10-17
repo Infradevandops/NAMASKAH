@@ -88,7 +88,28 @@ function selectService(service) {
     document.querySelectorAll('#categories-container > div > div[onclick]').forEach(el => {
         el.style.fontWeight = 'normal';
     });
-    event.target.style.fontWeight = 'bold';
+    if (event && event.target) {
+        event.target.style.fontWeight = 'bold';
+    }
+}
+
+function showUnlistedModal() {
+    document.getElementById('unlisted-modal').classList.remove('hidden');
+}
+
+function closeUnlistedModal() {
+    document.getElementById('unlisted-modal').classList.add('hidden');
+    document.getElementById('unlisted-service-name').value = '';
+}
+
+function selectUnlistedService() {
+    const serviceName = document.getElementById('unlisted-service-name').value.trim().toLowerCase();
+    if (!serviceName) {
+        showNotification('⚠️ Please enter a service name', 'error');
+        return;
+    }
+    closeUnlistedModal();
+    selectService(serviceName);
 }
 
 function filterServices() {

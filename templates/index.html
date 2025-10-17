@@ -241,7 +241,7 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2 style="margin: 0;">Create Verification</h2>
                     <div style="display: flex; gap: 10px;">
-                        <button onclick="selectService('general')" style="background: #f59e0b; padding: 10px 20px;">🌐 Unlisted Services</button>
+                        <button onclick="showUnlistedModal()" style="background: #f59e0b; padding: 10px 20px;">🌐 Unlisted Services</button>
                         <button onclick="showRentalModal()" style="background: #8b5cf6; padding: 10px 20px;">🏠 Rent Number</button>
                     </div>
                 </div>
@@ -311,7 +311,20 @@
                 <div id="messages-list"></div>
             </div>
 
-            <div id="rental-modal" class="modal hidden">
+            <div id="unlisted-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>🌐 Unlisted Service</h2>
+                <p>Enter the service name you want to verify:</p>
+                <input type="text" id="unlisted-service-name" placeholder="e.g., discord, uber, airbnb" style="width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #e5e7eb; border-radius: 8px;">
+                <p style="font-size: 14px; color: #6b7280;">💡 Enter the exact service name (lowercase, no spaces)</p>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button onclick="selectUnlistedService()" style="flex: 1;">Continue</button>
+                    <button onclick="closeUnlistedModal()" class="btn-danger" style="flex: 1;">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="rental-modal" class="modal hidden">
                 <div class="modal-content" style="max-width: 600px;">
                     <span class="close" onclick="closeRentalModal()">&times;</span>
                     <h2>🏠 Rent Phone Number</h2>
