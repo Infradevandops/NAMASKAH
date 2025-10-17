@@ -6,8 +6,12 @@ import uuid
 
 import jwt
 from dotenv import load_dotenv
-import sentry_sdk
-from sentry_sdk.integrations.fastapi import FastApiIntegration
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    SENTRY_AVAILABLE = True
+except ImportError:
+    SENTRY_AVAILABLE = False
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
@@ -34,7 +38,7 @@ load_dotenv()
 
 # Initialize Sentry for error tracking
 SENTRY_DSN = os.getenv("SENTRY_DSN")
-if SENTRY_DSN:
+if SENTRY_AVAILABLE and SENTRY_DSN:
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         integrations=[FastApiIntegration()],
@@ -319,14 +323,9 @@ def create_admin_if_not_exists():
 create_admin_if_not_exists()
 
 # Background task for TextVerified API health check
-@app.on_event("startup")
-async def startup_event():
-    """Run background tasks on startup"""
-    import asyncio
-    asyncio.create_task(check_textverified_health_loop())
-
 async def check_textverified_health_loop():
     """Check TextVerified API health every 5 minutes"""
+    import asyncio
     while True:
         try:
             db = SessionLocal()
@@ -595,6 +594,13 @@ Get token via `/auth/login` or `/auth/register`.
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, general_exception_handler)
+
+# Register startup event
+@app.on_event("startup")
+async def startup_event():
+    """Run background tasks on startup"""
+    import asyncio
+    asyncio.create_task(check_textverified_health_loop())
 
 # Mount static files and templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -2584,19 +2590,28 @@ app.add_middleware(
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Rate Limiting with Redis
-import redis
-from time import time
+import time as time_module
+try:
+    import redis
+    REDIS_MODULE_AVAILABLE = True
+except ImportError:
+    REDIS_MODULE_AVAILABLE = False
 
 # Initialize Redis connection
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
-try:
-    redis_client = redis.from_url(REDIS_URL, decode_responses=True)
-    redis_client.ping()
-    REDIS_AVAILABLE = True
-except:
+if REDIS_MODULE_AVAILABLE:
+    try:
+        redis_client = redis.from_url(REDIS_URL, decode_responses=True)
+        redis_client.ping()
+        REDIS_AVAILABLE = True
+    except:
+        redis_client = None
+        REDIS_AVAILABLE = False
+        print("Redis not available, using in-memory rate limiting")
+else:
     redis_client = None
     REDIS_AVAILABLE = False
-    print("Redis not available, using in-memory rate limiting")
+    print("Redis module not installed, rate limiting disabled")
 
 def check_rate_limit(user_id: str, limit: int = 100, window: int = 60):
     """Check if user exceeded rate limit (100 req/min)"""
@@ -2605,7 +2620,7 @@ def check_rate_limit(user_id: str, limit: int = 100, window: int = 60):
     
     try:
         key = f"rate_limit:{user_id}"
-        now = time()
+        now = time_module.time()
         
         # Remove old requests outside window
         redis_client.zremrangebyscore(key, 0, now - window)
@@ -2650,7 +2665,7 @@ async def request_id_middleware(request: Request, call_next):
 
 @app.middleware("http")
 async def request_logging_middleware(request: Request, call_next):
-    start_time = time.time()
+    start_time = time_module.time()
     
     # Extract user ID from token if present
     user_id = "anonymous"
@@ -2667,7 +2682,7 @@ async def request_logging_middleware(request: Request, call_next):
     response = await call_next(request)
     
     # Calculate duration
-    duration = time.time() - start_time
+    duration = time_module.time() - start_time
     
     # Log request
     logger.info(
