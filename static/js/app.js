@@ -233,6 +233,10 @@ function showApp() {
     document.getElementById('auth-section').classList.add('hidden');
     document.getElementById('app-section').classList.remove('hidden');
     document.getElementById('top-logout-btn').classList.remove('hidden');
+    
+    // Show email verification banner if not verified
+    checkEmailVerification();
+    
     loadServices();
     loadHistory();
     loadTransactions();
@@ -243,6 +247,39 @@ function showApp() {
     loadReferralStats();
     loadActiveRentals();
     startHistoryRefresh();
+}
+
+async function checkEmailVerification() {
+    try {
+        const res = await fetch(`${API_BASE}/auth/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        
+        if (!data.email_verified) {
+            document.getElementById('email-verification-banner').classList.remove('hidden');
+        }
+    } catch (error) {
+        console.error('Email verification check failed:', error);
+    }
+}
+
+async function resendVerificationEmail() {
+    try {
+        const res = await fetch(`${API_BASE}/auth/resend-verification`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (res.ok) {
+            alert('✅ Verification email sent! Check your inbox.');
+        } else {
+            const data = await res.json();
+            alert('❌ ' + (data.detail || 'Failed to send email'));
+        }
+    } catch (error) {
+        alert('❌ Error sending verification email');
+    }
 }
 
 let servicesData = null;

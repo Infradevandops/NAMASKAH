@@ -826,6 +826,7 @@ def get_me(user: User = Depends(get_current_user)):
         "credits": credits,
         "free_verifications": user.free_verifications,
         "is_admin": user.is_admin,
+        "email_verified": user.email_verified,
         "created_at": user.created_at
     }
 
@@ -906,6 +907,10 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
         tier_multiplier = PRICING_TIERS['pay_as_you_go']
     
     cost = round(base_cost * tier_multiplier, 2)
+    
+    # Enforce email verification
+    if not user.email_verified:
+        raise HTTPException(status_code=403, detail="Please verify your email before creating verifications")
     
     # Check if user has free verifications or credits
     if user.free_verifications >= 1:
