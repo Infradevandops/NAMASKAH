@@ -13,8 +13,18 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import create_engine, Column, String, DateTime, Boolean, Float
+from error_handlers import (
+    http_exception_handler,
+    validation_exception_handler,
+    general_exception_handler,
+    log_transaction,
+    log_security_event,
+    logger
+)
 
 from sqlalchemy.orm import sessionmaker, Session
 from passlib.hash import bcrypt
@@ -423,7 +433,7 @@ tv_client = TextVerifiedClient()
 # FastAPI App
 app = FastAPI(
     title="Namaskah SMS API",
-    version="2.1.0",
+    version="2.2.0",
     description="""🚀 **Simple SMS Verification Service**
 
 Namaskah SMS provides temporary phone numbers for SMS verification across 1,807+ services.
@@ -495,6 +505,11 @@ Get token via `/auth/login` or `/auth/register`.
         {"name": "System", "description": "Health checks and service info"}
     ]
 )
+
+# Register error handlers
+app.add_exception_handler(StarletteHTTPException, http_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(Exception, general_exception_handler)
 
 # Mount static files and templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
