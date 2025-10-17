@@ -125,6 +125,7 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 FROM_EMAIL = os.getenv("FROM_EMAIL", "noreply@namaskah.app")
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 
 # Database with connection pooling
 if "sqlite" in DATABASE_URL:
@@ -849,7 +850,7 @@ def register(req: RegisterRequest, referral_code: str = None, db: Session = Depe
     db.commit()
     
     # Send verification email
-    verification_url = f"http://localhost:8000/auth/verify?token={verification_token}"
+    verification_url = f"{BASE_URL}/auth/verify?token={verification_token}"
     send_email(
         user.email,
         "Verify Your Email - Namaskah SMS",
@@ -964,7 +965,7 @@ def resend_verification(user: User = Depends(get_current_user), db: Session = De
     user.verification_token = verification_token
     db.commit()
     
-    verification_url = f"http://localhost:8000/auth/verify?token={verification_token}"
+    verification_url = f"{BASE_URL}/auth/verify?token={verification_token}"
     send_email(
         user.email,
         "Verify Your Email - Namaskah SMS",
@@ -988,7 +989,7 @@ def forgot_password(req: PasswordResetRequest, db: Session = Depends(get_db)):
     user.reset_token_expires = datetime.now(timezone.utc) + timedelta(hours=1)
     db.commit()
     
-    reset_url = f"http://localhost:8000/auth/reset-password?token={reset_token}"
+    reset_url = f"{BASE_URL}/auth/reset-password?token={reset_token}"
     send_email(
         user.email,
         "Reset Your Password - Namaskah SMS",
@@ -1235,7 +1236,7 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
             f"""<h2>⚠️ Low Balance Alert</h2>
             <p>Your wallet balance is low: <strong>N{user.credits:.2f}</strong></p>
             <p>Fund your wallet to continue using Namaskah SMS.</p>
-            <p><a href="http://localhost:8000/app">Fund Wallet Now</a></p>"""
+            <p><a href="{BASE_URL}/app">Fund Wallet Now</a></p>"""
         )
     
     # Create transaction
@@ -1325,7 +1326,7 @@ async def get_messages(verification_id: str, user: User = Depends(get_current_us
                 <p>Your verification for <strong>{verification.service_name}</strong> has received an SMS.</p>
                 <p><strong>Messages:</strong></p>
                 <ul>{''.join([f'<li>{msg}</li>' for msg in messages])}</ul>
-                <p>View in dashboard: <a href="http://localhost:8000/app">Namaskah SMS</a></p>"""
+                <p>View in dashboard: <a href="{BASE_URL}/app">Namaskah SMS</a></p>"""
             )
     
     return {"verification_id": verification_id, "messages": messages}
@@ -1728,7 +1729,7 @@ def initialize_paystack(req: FundWalletRequest, user: User = Depends(get_current
             "email": user.email,
             "amount": int(amount_ngn * 100),  # Convert to kobo
             "reference": reference,
-            "callback_url": f"https://namaskah.app/app?reference={reference}",
+            "callback_url": f"{BASE_URL}/app?reference={reference}",
             "metadata": {
                 "user_id": user.id,
                 "user_email": user.email,
@@ -1851,7 +1852,7 @@ async def paystack_webhook(request: Request, db: Session = Depends(get_db)):
             <p>Credited: <strong>N{namaskah_amount:.2f}</strong></p>
             <p>New balance: <strong>N{user.credits:.2f}</strong></p>
             <p>Reference: {reference}</p>
-            <p><a href="http://localhost:8000/app">Start Using Credits</a></p>"""
+            <p><a href="{BASE_URL}/app">Start Using Credits</a></p>"""
         )
         
         return {"status": "success", "reference": reference, "amount": namaskah_amount}
@@ -2171,7 +2172,7 @@ def get_referral_stats(user: User = Depends(get_current_user), db: Session = Dep
         "referral_code": user.referral_code,
         "total_referrals": len(referrals),
         "total_earnings": user.referral_earnings,
-        "referral_link": f"http://localhost:8000/app?ref={user.referral_code}",
+        "referral_link": f"{BASE_URL}/app?ref={user.referral_code}",
         "referred_users": referred_users
     }
 
