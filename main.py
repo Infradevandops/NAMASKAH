@@ -1400,65 +1400,108 @@ def initialize_paystack(req: FundWalletRequest, user: User = Depends(get_current
 
 @app.post("/wallet/paystack/webhook", tags=["Wallet"], summary="Paystack Webhook")
 async def paystack_webhook(request: Request, db: Session = Depends(get_db)):
-    """Handle Paystack payment webhooks"""
+    """Handle Paystack payment webhooks with signature verification"""
     import hmac
     import hashlib
     
-    # Verify webhook signature
+    # Get signature and body
     signature = request.headers.get('x-paystack-signature')
     body = await request.body()
     
-    if PAYSTACK_SECRET_KEY:
-        expected_signature = hmac.new(
-            PAYSTACK_SECRET_KEY.encode('utf-8'),
-            body,
-            hashlib.sha512
-        ).hexdigest()
-        
-        if signature != expected_signature:
-            raise HTTPException(status_code=400, detail="Invalid signature")
+    # Verify webhook signature (CRITICAL SECURITY)
+    if not PAYSTACK_SECRET_KEY or not PAYSTACK_SECRET_KEY.startswith('sk_'):
+        # Log but don't process if no valid secret key
+        print("⚠️ Paystack webhook received but no valid secret key configured")
+        return {"status": "ignored", "reason": "no_secret_key"}
+    
+    expected_signature = hmac.new(
+        PAYSTACK_SECRET_KEY.encode('utf-8'),
+        body,
+        hashlib.sha512
+    ).hexdigest()
+    
+    if signature != expected_signature:
+        print(f"❌ Invalid Paystack signature: {signature[:20]}...")
+        raise HTTPException(status_code=400, detail="Invalid signature")
     
     # Parse webhook data
-    data = await request.json()
+    try:
+        data = await request.json()
+    except:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+    
     event = data.get('event')
+    print(f"📥 Paystack webhook: {event}")
     
     if event == 'charge.success':
-        payment_data = data['data']
-        reference = payment_data['reference']
-        amount = payment_data['amount'] / 100  # Convert from kobo
-        user_id = payment_data['metadata'].get('user_id')
+        payment_data = data.get('data', {})
+        reference = payment_data.get('reference')
+        amount_kobo = payment_data.get('amount', 0)
+        amount = amount_kobo / 100  # Convert from kobo to Naira
+        user_id = payment_data.get('metadata', {}).get('user_id')
+        
+        if not reference or not user_id:
+            print(f"⚠️ Missing reference or user_id in webhook")
+            return {"status": "error", "reason": "missing_data"}
+        
+        # Check for duplicate transaction
+        existing = db.query(Transaction).filter(
+            Transaction.description.contains(reference)
+        ).first()
+        
+        if existing:
+            print(f"⚠️ Duplicate transaction: {reference}")
+            return {"status": "duplicate", "reference": reference}
         
         # Find user and add credits
         user = db.query(User).filter(User.id == user_id).first()
-        if user:
-            user.credits += amount
-            
-            # Create transaction
-            db.add(Transaction(
-                id=f"txn_{datetime.now(timezone.utc).timestamp()}",
-                user_id=user.id,
-                amount=amount,
-                type="credit",
-                description=f"Paystack payment: {reference}"
-            ))
-            db.commit()
-            
-            # Send confirmation email
-            send_email(
-                user.email,
-                "💰 Payment Successful - Namaskah SMS",
-                f"""<h2>Payment Confirmed!</h2>
-                <p>Your payment of <strong>N{amount:.2f}</strong> has been received.</p>
-                <p>New balance: <strong>N{user.credits:.2f}</strong></p>
-                <p>Reference: {reference}</p>
-                <p><a href="http://localhost:8000/app">Start Using Credits</a></p>"""
-            )
+        if not user:
+            print(f"❌ User not found: {user_id}")
+            return {"status": "error", "reason": "user_not_found"}
+        
+        # Convert USD to Namaskah coins (1 USD = 0.5N)
+        namaskah_amount = amount * USD_TO_NAMASKAH
+        
+        user.credits += namaskah_amount
+        
+        # Create transaction
+        transaction = Transaction(
+            id=f"txn_{datetime.now(timezone.utc).timestamp()}",
+            user_id=user.id,
+            amount=namaskah_amount,
+            type="credit",
+            description=f"Paystack payment: {reference} (NGN {amount})"
+        )
+        db.add(transaction)
+        db.commit()
+        
+        print(f"✅ Payment processed: {reference} - N{namaskah_amount} for {user.email}")
+        
+        # Send confirmation email
+        send_email(
+            user.email,
+            "💰 Payment Successful - Namaskah SMS",
+            f"""<h2>Payment Confirmed!</h2>
+            <p>Your payment of <strong>NGN {amount:.2f}</strong> has been received.</p>
+            <p>Credited: <strong>N{namaskah_amount:.2f}</strong></p>
+            <p>New balance: <strong>N{user.credits:.2f}</strong></p>
+            <p>Reference: {reference}</p>
+            <p><a href="http://localhost:8000/app">Start Using Credits</a></p>"""
+        )
+        
+        return {"status": "success", "reference": reference, "amount": namaskah_amount}
     
-    return {"status": "success"}
+    elif event == 'charge.failed':
+        payment_data = data.get('data', {})
+        reference = payment_data.get('reference')
+        print(f"❌ Payment failed: {reference}")
+        return {"status": "failed", "reference": reference}
+    
+    return {"status": "ignored", "event": event}
 
 @app.get("/wallet/paystack/verify/{reference}", tags=["Wallet"], summary="Verify Payment")
 def verify_payment(reference: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Verify Paystack payment status"""
+    """Verify Paystack payment status (manual verification)"""
     if not PAYSTACK_SECRET_KEY or not PAYSTACK_SECRET_KEY.startswith('sk_'):
         return {"status": "demo", "message": "Demo mode - payment not verified"}
     
@@ -1466,38 +1509,73 @@ def verify_payment(reference: str, user: User = Depends(get_current_user), db: S
         headers = {"Authorization": f"Bearer {PAYSTACK_SECRET_KEY}"}
         r = requests.get(f"https://api.paystack.co/transaction/verify/{reference}", headers=headers)
         r.raise_for_status()
-        data = r.json()
+        response_data = r.json()
         
-        if data['data']['status'] == 'success':
-            amount = data['data']['amount'] / 100
+        if not response_data.get('status'):
+            return {"status": "error", "message": "Invalid response from Paystack"}
+        
+        payment_data = response_data.get('data', {})
+        payment_status = payment_data.get('status')
+        
+        if payment_status == 'success':
+            amount_kobo = payment_data.get('amount', 0)
+            amount = amount_kobo / 100  # Convert from kobo
             
             # Check if already credited
             existing = db.query(Transaction).filter(
-                Transaction.user_id == user.id,
                 Transaction.description.contains(reference)
             ).first()
             
-            if not existing:
-                user.credits += amount
-                db.add(Transaction(
-                    id=f"txn_{datetime.now(timezone.utc).timestamp()}",
-                    user_id=user.id,
-                    amount=amount,
-                    type="credit",
-                    description=f"Paystack payment: {reference}"
-                ))
-                db.commit()
+            if existing:
+                return {
+                    "status": "already_credited",
+                    "message": "Payment already processed",
+                    "reference": reference,
+                    "balance": user.credits
+                }
+            
+            # Convert USD to Namaskah coins
+            namaskah_amount = amount * USD_TO_NAMASKAH
+            
+            user.credits += namaskah_amount
+            transaction = Transaction(
+                id=f"txn_{datetime.now(timezone.utc).timestamp()}",
+                user_id=user.id,
+                amount=namaskah_amount,
+                type="credit",
+                description=f"Paystack payment verified: {reference} (NGN {amount})"
+            )
+            db.add(transaction)
+            db.commit()
+            
+            # Send confirmation email
+            send_email(
+                user.email,
+                "💰 Payment Confirmed - Namaskah SMS",
+                f"""<h2>Payment Verified!</h2>
+                <p>Your payment of <strong>NGN {amount:.2f}</strong> has been confirmed.</p>
+                <p>Credited: <strong>N{namaskah_amount:.2f}</strong></p>
+                <p>New balance: <strong>N{user.credits:.2f}</strong></p>
+                <p>Reference: {reference}</p>"""
+            )
             
             return {
                 "status": "success",
-                "amount": amount,
+                "amount": namaskah_amount,
                 "new_balance": user.credits,
-                "reference": reference
+                "reference": reference,
+                "message": f"Credited N{namaskah_amount:.2f} to your wallet"
             }
         else:
-            return {"status": "failed", "message": "Payment not successful"}
+            return {
+                "status": "failed",
+                "message": f"Payment status: {payment_status}",
+                "reference": reference
+            }
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=500, detail=f"Paystack API error: {str(e)}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Verification error: {str(e)}")
 
 @app.post("/wallet/crypto/address", tags=["Wallet"], summary="Get Crypto Payment Address")
 def get_crypto_address(req: FundWalletRequest, user: User = Depends(get_current_user)):
