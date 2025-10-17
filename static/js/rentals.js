@@ -19,9 +19,14 @@ function closeRentalModal() {
 }
 
 function updateRentalPrice() {
-    const service = document.getElementById('rental-service').value;
-    const mode = document.querySelector('input[name="rental-mode"]:checked').value;
-    const duration = parseInt(document.querySelector('input[name="rental-duration"]:checked').value);
+    const service = document.getElementById('rental-service')?.value || 'telegram';
+    const modeChecked = document.querySelector('input[name="rental-mode"]:checked');
+    const durationChecked = document.querySelector('input[name="rental-duration"]:checked');
+    
+    if (!modeChecked || !durationChecked) return;
+    
+    const mode = modeChecked.value;
+    const duration = parseInt(durationChecked.value);
     
     const isGeneral = service.toLowerCase() === 'general';
     const pricingTable = isGeneral ? RENTAL_GENERAL_USE : RENTAL_SERVICE_SPECIFIC;
@@ -29,18 +34,21 @@ function updateRentalPrice() {
     const basePrice = pricingTable[duration];
     const modeMultiplier = mode === 'manual' ? 0.7 : 1.0;
     
-    const totalPrice = basePrice * modeMultiplier;
+    const totalPrice = (basePrice || 5.0) * modeMultiplier;
     
     Object.keys(pricingTable).forEach(hours => {
         const price = pricingTable[hours] * modeMultiplier;
         const days = hours / 24;
         const priceElement = document.getElementById(`price-${days}`);
         if (priceElement) {
-            priceElement.textContent = `N${price.toFixed(2)}`;
+            priceElement.textContent = `$${(price * 2).toFixed(2)}`;
         }
     });
     
-    document.getElementById('rental-total').textContent = `N${totalPrice.toFixed(2)}`;
+    const totalElement = document.getElementById('rental-total');
+    if (totalElement) {
+        totalElement.textContent = `$${(totalPrice * 2).toFixed(2)}`;
+    }
     
     const days = duration / 24;
     const expiryDate = new Date();

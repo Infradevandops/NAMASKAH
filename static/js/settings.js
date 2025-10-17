@@ -50,9 +50,13 @@ async function loadReferralStats() {
         
         if (res.ok) {
             const data = await res.json();
+            const userEmail = document.getElementById('user-email').textContent;
+            const userName = userEmail.split('@')[0];
+            const liveUrl = window.location.hostname === 'localhost' ? 'https://namaskah.app' : window.location.origin;
+            const referralLink = `${liveUrl}/?ref=${userName}_${data.referral_code}`;
             
             document.getElementById('referral-code').textContent = data.referral_code;
-            document.getElementById('referral-link').value = data.referral_link;
+            document.getElementById('referral-link').value = referralLink;
             document.getElementById('total-referrals').textContent = data.total_referrals;
             document.getElementById('referral-earnings').textContent = `₵${data.total_earnings.toFixed(2)}`;
             
@@ -86,7 +90,14 @@ function copyReferralLink() {
 }
 
 function showSupportModal() {
-    document.getElementById('support-modal').classList.remove('hidden');
+    const modal = document.getElementById('support-modal');
+    modal.classList.remove('hidden');
+    
+    // Pre-fill email if user is logged in
+    const userEmail = document.getElementById('user-email')?.textContent;
+    if (userEmail) {
+        document.getElementById('support-email').value = userEmail;
+    }
 }
 
 function closeSupportModal() {
@@ -104,9 +115,12 @@ async function submitSupport(event) {
     showLoading(true);
     
     try {
+        const headers = {'Content-Type': 'application/json'};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        
         const res = await fetch(`${API_BASE}/support/submit`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers,
             body: JSON.stringify({ name, email, category, message })
         });
         
@@ -132,10 +146,11 @@ function toggleAdvanced() {
     if (section.classList.contains('hidden')) {
         section.classList.remove('hidden');
         btn.textContent = '🔓 Hide Advanced';
-        btn.style.background = '#667eea';
+        btn.style.background = '#ef4444';
+        window.scrollTo({ top: section.offsetTop - 100, behavior: 'smooth' });
     } else {
         section.classList.add('hidden');
-        btn.textContent = '🔒 Show Advanced';
-        btn.style.background = '#6b7280';
+        btn.textContent = '🔓 Show Advanced';
+        btn.style.background = '#667eea';
     }
 }

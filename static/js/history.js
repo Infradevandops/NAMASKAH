@@ -15,7 +15,7 @@ function stopHistoryRefresh() {
     }
 }
 
-async function loadHistory(silent = false) {
+async function loadHistory(silent = false, showAll = false) {
     if (!token) return;
     
     try {
@@ -26,11 +26,13 @@ async function loadHistory(silent = false) {
         if (res.ok) {
             const data = await res.json();
             const list = document.getElementById('verifications');
+            const verifications = data.verifications;
             
-            if (data.verifications.length === 0) {
+            if (verifications.length === 0) {
                 list.innerHTML = '<p style="color: #6b7280;">No verifications yet. Create one above!</p>';
             } else {
-                list.innerHTML = data.verifications.map(v => `
+                const displayItems = showAll ? verifications : verifications.slice(0, 5);
+                list.innerHTML = displayItems.map(v => `
                     <div class="verification-item" onclick="loadVerification('${v.id}')">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
@@ -44,6 +46,10 @@ async function loadHistory(silent = false) {
                         </div>
                     </div>
                 `).join('');
+                
+                if (!showAll && verifications.length > 5) {
+                    list.innerHTML += `<button onclick="loadHistory(false, true)" style="width: 100%; margin-top: 10px; background: #667eea;">Show All (${verifications.length})</button>`;
+                }
             }
             
             if (!silent) showNotification('History loaded', 'success');
@@ -80,7 +86,7 @@ async function loadVerification(id) {
     }
 }
 
-async function loadTransactions(silent = false) {
+async function loadTransactions(silent = false, showAll = false) {
     if (!token) return;
     
     try {
@@ -91,11 +97,13 @@ async function loadTransactions(silent = false) {
         if (res.ok) {
             const data = await res.json();
             const list = document.getElementById('transactions');
+            const transactions = data.transactions;
             
-            if (data.transactions.length === 0) {
+            if (transactions.length === 0) {
                 list.innerHTML = '<p style="color: #6b7280;">No transactions yet.</p>';
             } else {
-                list.innerHTML = data.transactions.map(t => {
+                const displayItems = showAll ? transactions : transactions.slice(0, 5);
+                list.innerHTML = displayItems.map(t => {
                     const isCredit = t.type === 'credit';
                     const color = isCredit ? '#10b981' : '#ef4444';
                     const sign = isCredit ? '+' : '';
@@ -115,6 +123,10 @@ async function loadTransactions(silent = false) {
                         </div>
                     `;
                 }).join('');
+                
+                if (!showAll && transactions.length > 5) {
+                    list.innerHTML += `<button onclick="loadTransactions(false, true)" style="width: 100%; margin-top: 10px; background: #667eea;">Show All (${transactions.length})</button>`;
+                }
             }
             
             if (!silent) showNotification('Transactions loaded', 'success');
@@ -126,10 +138,76 @@ async function loadTransactions(silent = false) {
 
 async function exportTransactions() {
     if (!token) return;
-    window.open(`${API_BASE}/transactions/export`, '_blank');
+    try {
+        const res = await fetch(`${API_BASE}/transactions/export`, {
+            headers: {'Authorization': `Bearer ${token}`}
+        });
+        if (res.ok) {
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `transactions_${Date.now()}.csv`;
+            a.click();
+            showNotification('✅ Exported successfully', 'success');
+        } else {
+            showNotification('❌ Export failed', 'error');
+        }
+    } catch (err) {
+        showNotification('❌ Export failed', 'error');
+    }
 }
 
 async function exportVerifications() {
     if (!token) return;
-    window.open(`${API_BASE}/verifications/export`, '_blank');
+    try {
+        const res = await fetch(`${API_BASE}/verifications/export`, {
+            headers: {'Authorization': `Bearer ${token}`}
+        });
+        if (res.ok) {
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `verifications_${Date.now()}.csv`;
+            a.click();
+            showNotification('✅ Exported successfully', 'success');
+        } else {
+            showNotification('❌ Export failed', 'error');
+        }
+    } catch (err) {
+        showNotification('❌ Export failed', 'error');
+    }
+}
+
+function toggleHistory() {
+    const section = document.getElementById('verifications-list');
+    const btn = document.getElementById('toggle-history-btn');
+    if (section.style.display === 'none') {
+        section.style.display = 'block';
+        btn.textContent = '❌ Hide Verifications';
+        btn.style.background = '#ef4444';
+        loadHistory();
+        window.scrollTo({ top: section.offsetTop - 100, behavior: 'smooth' });
+    } else {
+        section.style.display = 'none';
+        btn.textContent = '📜 Show Verifications';
+        btn.style.background = '#667eea';
+    }
+}
+
+function toggleTransactions() {
+    const section = document.getElementById('transactions-list');
+    const btn = document.getElementById('toggle-transactions-btn');
+    if (section.style.display === 'none') {
+        section.style.display = 'block';
+        btn.textContent = '❌ Hide Transactions';
+        btn.style.background = '#ef4444';
+        loadTransactions();
+        window.scrollTo({ top: section.offsetTop - 100, behavior: 'smooth' });
+    } else {
+        section.style.display = 'none';
+        btn.textContent = '💳 Show Transactions';
+        btn.style.background = '#667eea';
+    }
 }

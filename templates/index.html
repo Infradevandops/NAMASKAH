@@ -116,12 +116,10 @@
                     <span id="user-email"></span>
                     <div style="font-size: 16px; color: #667eea; font-weight: bold;">Wallet: N<span id="user-credits">0.00</span></div>
                     <div style="font-size: 14px; color: #10b981; font-weight: 600; margin-top: 5px;">🎁 <span id="free-verifications">0</span> Free Verifications</div>
-
-
                 </div>
-                <div style="display: flex; gap: 8px;">
-                    <button onclick="showFundWallet()" style="background: #10b981; padding: 8px 12px; font-size: 13px;">💰 Fund</button>
-                    <button onclick="clearSession()" style="padding: 8px 12px; font-size: 13px; background: #6b7280;">Clear</button>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button onclick="showFundWallet()" style="background: #10b981; padding: 8px 16px; font-size: 13px; font-weight: 600;">💰 Fund Wallet</button>
+                    <button onclick="showSupportModal()" style="background: #667eea; padding: 8px 16px; font-size: 13px; font-weight: 600;">💬 Support</button>
                 </div>
             </div>
 
@@ -238,13 +236,7 @@
             </div>
 
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 style="margin: 0;">Create Verification</h2>
-                    <div style="display: flex; gap: 10px;">
-                        <button onclick="showUnlistedModal()" style="background: #f59e0b; padding: 10px 20px;">🌐 Unlisted Services</button>
-                        <button onclick="showRentalModal()" style="background: #8b5cf6; padding: 10px 20px;">🏠 Rent Number</button>
-                    </div>
-                </div>
+                <h2 style="margin: 0 0 20px 0;">Create Verification</h2>
                 <input type="text" id="service-search" placeholder="🔍 Search 1,807 services..." 
                        oninput="filterServices()" style="margin-bottom: 15px;">
                 <div id="services-grid" style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 15px; max-height: 400px; overflow-y: auto;">
@@ -253,8 +245,12 @@
                     </div>
                 </div>
                 <input type="hidden" id="service-select" value="">
-                <div id="service-info" style="font-size: 14px; color: #6b7280; margin-top: 10px;">
+                <div id="service-info" style="font-size: 14px; color: #6b7280; margin: 10px 0;">
                     ⚡ Click a service to select
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
+                    <button onclick="showRentalModal()" style="background: #8b5cf6; padding: 10px 16px; font-weight: 600; flex: 1;">🏠 Rent Number</button>
+                    <button onclick="showUnlistedModal()" style="background: #f59e0b; padding: 10px 16px; font-weight: 600; flex: 1;">🌐 Other Service</button>
                 </div>
                 
                 <div id="capability-selection" class="hidden" style="margin-top: 20px;">
@@ -298,11 +294,11 @@
                         <span id="timer-info" style="font-size: 12px; color: #6b7280;">Service-specific wait time</span>
                     </div>
                 </div>
-                <div class="actions">
-                    <button onclick="checkMessages()" id="check-messages-btn">Check Messages</button>
-                    <button onclick="checkVoiceCall()" id="check-voice-btn" class="hidden">📞 Get Voice Call</button>
-                    <button onclick="cancelVerification()" class="btn-danger">Cancel</button>
-                    <button onclick="retryVerification()" id="retry-btn" class="hidden">Retry with New Number</button>
+                <div class="actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button onclick="checkMessages()" id="check-messages-btn" style="grid-column: 1 / -1;">📨 Check Messages</button>
+                    <button onclick="checkVoiceCall()" id="check-voice-btn" class="hidden" style="grid-column: 1 / -1;">📞 Get Voice Call</button>
+                    <button onclick="retryVerification()" id="retry-btn" class="hidden" style="background: #667eea;">🔄 Retry</button>
+                    <button onclick="cancelVerification()" class="btn-danger">❌ Cancel</button>
                 </div>
             </div>
 
@@ -430,34 +426,45 @@
                 <div id="active-rentals-list"></div>
             </div>
 
-            <div id="verifications-list" class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <div id="verifications-list" class="card" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                     <h2 style="margin: 0;">Recent Verifications</h2>
                     <div style="display: flex; gap: 8px;">
-                        <button onclick="loadHistory()" class="btn-small">Refresh</button>
-                        <button onclick="exportVerifications()" class="btn-small" style="background: #10b981;">📄 Export CSV</button>
+                        <button onclick="exportVerifications()" class="btn-small" style="background: #10b981; font-weight: 600;">📄 Export</button>
+                        <button onclick="loadHistory()" class="btn-small" style="font-weight: 600;">🔄 Refresh</button>
+                        <button onclick="toggleHistory()" class="btn-small" style="background: #ef4444; font-weight: 600;">❌ Hide</button>
                     </div>
                 </div>
                 <div id="verifications"></div>
             </div>
 
-            <div id="transactions-list" class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <div id="transactions-list" class="card" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                     <h2 style="margin: 0;">💳 Transaction History</h2>
-                    <button onclick="exportTransactions()" class="btn-small" style="background: #10b981;">📄 Export CSV</button>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="exportTransactions()" class="btn-small" style="background: #10b981; font-weight: 600;">📄 Export</button>
+                        <button onclick="loadTransactions()" class="btn-small" style="font-weight: 600;">🔄 Refresh</button>
+                        <button onclick="toggleTransactions()" class="btn-small" style="background: #ef4444; font-weight: 600;">❌ Hide</button>
+                    </div>
                 </div>
-                <button onclick="loadTransactions()" class="btn-small" style="margin-bottom: 15px;">Refresh Transactions</button>
                 <div id="transactions"></div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button onclick="toggleHistory()" id="toggle-history-btn" style="flex: 1; padding: 12px; background: #667eea; font-weight: 600;">📜 Show Verifications</button>
+                    <button onclick="toggleTransactions()" id="toggle-transactions-btn" style="flex: 1; padding: 12px; background: #667eea; font-weight: 600;">💳 Show Transactions</button>
+                </div>
             </div>
 
 
 
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 style="margin: 0;">⚙️ Advanced Settings</h2>
-                    <button onclick="toggleAdvanced()" id="advanced-toggle-btn" style="background: #6b7280; padding: 10px 20px;">🔒 Show Advanced</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                    <h2 style="margin: 0;">⚙️ Settings</h2>
+                    <button onclick="toggleAdvanced()" id="advanced-toggle-btn" style="background: #667eea; padding: 10px 20px; font-weight: 600;">🔓 Show Advanced</button>
                 </div>
-                <p style="color: #6b7280; margin-bottom: 20px;">Developer features: API keys, webhooks, and notification settings</p>
+                <p style="color: #6b7280; margin-bottom: 20px;">API keys, webhooks, notifications, and support</p>
                 
                 <div id="advanced-section" class="hidden">
                     <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border);">
@@ -478,6 +485,18 @@
                             <button onclick="createWebhook()">Add Webhook</button>
                         </div>
                         <div id="webhooks-list"></div>
+                    </div>
+
+                    <div id="pwa-install-section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 8px; margin-bottom: 20px; color: white; display: none;">
+                        <h3 style="margin: 0 0 10px 0; color: white;">📱 Install App</h3>
+                        <p style="margin-bottom: 15px; font-size: 14px; opacity: 0.95;">Install Namaskah for faster access and offline support</p>
+                        <button onclick="installPWA()" style="width: 100%; padding: 12px; background: white; color: #667eea; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">⬇️ Install Now</button>
+                    </div>
+
+                    <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border);">
+                        <h3 style="margin: 0 0 15px 0;">💬 Support</h3>
+                        <p style="color: #6b7280; margin-bottom: 15px; font-size: 14px;">Need help? Contact our support team</p>
+                        <button onclick="showSupportModal()" style="width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Contact Support</button>
                     </div>
 
                     <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border);">
@@ -874,7 +893,8 @@
             <a href="/faq" style="color: var(--text); text-decoration: none;">FAQ</a> •
             <a href="/status" style="color: var(--text); text-decoration: none;">Service Status</a> •
             <a href="/admin" style="color: var(--text); text-decoration: none;">Admin</a> •
-            <a href="/api-docs" style="color: var(--text); text-decoration: none;">API Docs</a>
+            <a href="/api-docs" style="color: var(--text); text-decoration: none;">API Docs</a> •
+            <a href="#" onclick="showSupportModal(); return false;" style="color: var(--text); text-decoration: none;">💬 Contact Support</a>
         </p>
         <p style="opacity: 0.7; font-size: 0.9rem; margin-top: 15px;">© 2024 Namaskah. All rights reserved.</p>
     </footer>

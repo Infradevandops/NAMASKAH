@@ -158,37 +158,62 @@ function initSwipeGestures() {
 
 // PWA Install Prompt
 let deferredPrompt;
+let installPromptShown = false;
 
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
     
-    // Show custom install prompt after 30 seconds
+    // Show install section in settings
+    const installSection = document.getElementById('pwa-install-section');
+    if (installSection) installSection.style.display = 'block';
+    
+    // Show install prompt after 10 seconds if not dismissed
     setTimeout(() => {
-        if (!localStorage.getItem('pwaInstallDismissed')) {
+        const dismissed = localStorage.getItem('pwaInstallDismissed');
+        const dismissedTime = localStorage.getItem('pwaInstallDismissedTime');
+        const now = Date.now();
+        
+        // Show again after 7 days
+        if (!dismissed || (dismissedTime && now - parseInt(dismissedTime) > 7 * 24 * 60 * 60 * 1000)) {
             showPWAInstallPrompt();
         }
-    }, 30000);
+    }, 10000);
 });
 
 function showPWAInstallPrompt() {
+    if (installPromptShown || isPWA()) return;
     const prompt = document.querySelector('.pwa-install-prompt');
-    if (prompt) prompt.classList.add('show');
+    if (prompt) {
+        prompt.classList.add('show');
+        installPromptShown = true;
+        hapticFeedback('light');
+    }
 }
 
 function dismissPWAPrompt() {
-    document.querySelector('.pwa-install-prompt').classList.remove('show');
+    const prompt = document.querySelector('.pwa-install-prompt');
+    if (prompt) prompt.classList.remove('show');
     localStorage.setItem('pwaInstallDismissed', 'true');
+    localStorage.setItem('pwaInstallDismissedTime', Date.now().toString());
+    hapticFeedback('light');
 }
 
 async function installPWA() {
-    if (!deferredPrompt) return;
+    if (!deferredPrompt) {
+        showNotification('⚠️ Install not available', 'error');
+        return;
+    }
     
+    hapticFeedback('medium');
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
     
     if (outcome === 'accepted') {
-        showNotification('✅ App installed!', 'success');
+        showNotification('✅ App installed successfully!', 'success');
+        localStorage.setItem('pwaInstalled', 'true');
+    } else {
+        showNotification('👍 Install cancelled', 'info');
     }
     
     deferredPrompt = null;
@@ -228,6 +253,9 @@ function isPWA() {
 // Show PWA-specific UI
 if (isPWA()) {
     document.body.classList.add('pwa-mode');
+    // Hide install prompt if already installed
+    const installPrompt = document.querySelector('.pwa-install-prompt');
+    if (installPrompt) installPrompt.style.display = 'none';
 }
 
 // Initialize mobile features

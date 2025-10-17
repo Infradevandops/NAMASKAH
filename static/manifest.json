@@ -1,12 +1,14 @@
 {
-  "name": "Namaskah SMS",
+  "name": "Namaskah SMS - Verification Platform",
   "short_name": "Namaskah",
   "description": "Enterprise SMS Verification Platform - Instant phone number verification for 1,807+ services",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0f172a",
-  "theme_color": "#0077B5",
+  "theme_color": "#667eea",
   "orientation": "portrait-primary",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/static/icons/icon-72x72.png",

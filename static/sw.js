@@ -1,5 +1,5 @@
 // Service Worker for PWA
-const CACHE_NAME = 'namaskah-v2.3.0';
+const CACHE_NAME = 'namaskah-v2.4.0';
 const urlsToCache = [
   '/',
   '/static/css/style.css',
@@ -47,22 +47,29 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - Network first, fallback to cache
 self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') return;
+  
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Clone response and cache it
-        const responseClone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseClone);
-        });
+        // Only cache successful responses
+        if (response.status === 200) {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+        }
         return response;
       })
       .catch(() => {
         // Network failed, try cache
-        return caches.match(event.request);
+        return caches.match(event.request).then(cached => {
+          return cached || new Response('Offline', { status: 503 });
+        });
       })
   );
-});
+}
 
 // Background sync for offline actions
 self.addEventListener('sync', (event) => {
