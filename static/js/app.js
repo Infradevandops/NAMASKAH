@@ -1509,30 +1509,28 @@ async function selectPayment(method) {
             
             if (res.ok) {
                 const data = await res.json();
-                showNotification('🚀 Redirecting to Paystack...', 'success');
-                // In production, redirect to data.authorization_url
-                setTimeout(() => processPayment(method, amount), 1500);
+                showLoading(false);
+                
+                // Show payment details
+                if (data.payment_details) {
+                    showNotification(
+                        `💰 Pay ₦${data.payment_details.ngn_amount.toLocaleString()} to receive N${data.payment_details.namaskah_amount}`,
+                        'success'
+                    );
+                }
+                
+                // Redirect to Paystack
+                setTimeout(() => {
+                    window.location.href = data.authorization_url;
+                }, 1500);
             } else {
-                throw new Error('Paystack initialization failed');
+                const error = await res.json();
+                throw new Error(error.detail || 'Paystack initialization failed');
             }
         } else {
-            // Get crypto address
-            const res = await fetch(`${API_BASE}/wallet/crypto/address`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ amount, payment_method: method })
-            });
-            
-            if (res.ok) {
-                const data = await res.json();
-                showLoading(false);
-                showCryptoPayment(data, method, amount);
-            } else {
-                throw new Error('Crypto address generation failed');
-            }
+            // Crypto payments not supported
+            showLoading(false);
+            showNotification('❌ Crypto payments are not available. Please use Paystack.', 'error');
         }
     } catch (err) {
         showLoading(false);
