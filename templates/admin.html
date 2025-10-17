@@ -358,7 +358,29 @@
         }
 
         async function exportUsers() {
-            window.open(`${API_BASE}/admin/export/users`, '_blank');
+            try {
+                const response = await fetch(`${API_BASE}/admin/export/users`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!response.ok) {
+                    showNotification('Export failed: Not authenticated', 'error');
+                    return;
+                }
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `users_export_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                showNotification('Users exported successfully!', 'success');
+            } catch (error) {
+                showNotification('Failed to export users', 'error');
+            }
         }
 
         async function loadTickets(status = null) {
