@@ -1084,7 +1084,9 @@ def register(req: RegisterRequest, referral_code: str = None, db: Session = Depe
         <p>This link expires in 24 hours.</p>"""
     )
     
-    token = jwt.encode({"user_id": user.id, "exp": datetime.now(timezone.utc) + timedelta(days=30)}, JWT_SECRET)
+    token = jwt.encode({"user_id": user.id, "exp": datetime.now(timezone.utc) + timedelta(days=30)}, JWT_SECRET, algorithm="HS256")
+    if isinstance(token, bytes):
+        token = token.decode('utf-8')
     return {"token": token, "user_id": user.id, "credits": user.credits, "free_verifications": user.free_verifications, "referral_code": user.referral_code, "email_verified": False}
 
 @app.get("/auth/google/config", tags=["Authentication"], summary="Get Google OAuth Config")
@@ -1129,8 +1131,11 @@ def google_auth(req: GoogleAuthRequest, db: Session = Depends(get_db)):
         # Generate JWT
         token = jwt.encode(
             {"user_id": user.id, "exp": datetime.now(timezone.utc) + timedelta(days=30)},
-            JWT_SECRET
+            JWT_SECRET,
+            algorithm="HS256"
         )
+        if isinstance(token, bytes):
+            token = token.decode('utf-8')
         
         return {
             "token": token,
