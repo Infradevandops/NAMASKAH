@@ -403,6 +403,15 @@
             </div>
 
             <div class="card" id="active-rentals-section" style="display: none;">
+                <!-- Email Verification Banner for Rentals -->
+                <div id="rental-verification-banner" class="hidden" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div>
+                        <div style="font-weight: 700; font-size: 16px; margin-bottom: 5px;">⚠️ Email Verification Required for Rentals</div>
+                        <div style="font-size: 14px; opacity: 0.95;">Please verify your email to rent numbers</div>
+                    </div>
+                    <button onclick="resendVerificationEmail()" style="background: white; color: #d97706; padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">📧 Resend Email</button>
+                </div>
+                
                 <h2>🏠 Active Rentals</h2>
                 <div id="active-rentals-list"></div>
             </div>

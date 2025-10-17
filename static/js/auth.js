@@ -127,7 +127,24 @@ function showTab(tab) {
     }
 }
 
-// Email verification no longer required - removed
+async function checkEmailVerification() {
+    try {
+        const res = await fetch(`${API_BASE}/auth/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        
+        // Only show banner on rentals tab if not verified
+        if (!data.email_verified) {
+            const rentalBanner = document.getElementById('rental-verification-banner');
+            if (rentalBanner) {
+                rentalBanner.classList.remove('hidden');
+            }
+        }
+    } catch (error) {
+        console.error('Email verification check failed:', error);
+    }
+}
 
 async function resendVerificationEmail() {
     try {

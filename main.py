@@ -2751,6 +2751,10 @@ def create_rental(req: CreateRentalRequest, user: User = Depends(get_current_use
     
     Minimum 7 days. Pricing varies by service and mode (Always Ready vs Manual).
     """
+    # Email verification required for rentals
+    if not user.email_verified:
+        raise HTTPException(status_code=403, detail="Email verification required for number rentals. Please verify your email first.")
+    
     # Default to always_active mode if not specified
     mode = getattr(req, 'mode', 'always_active')
     cost = calculate_rental_cost(req.duration_hours, req.service_name, mode)
