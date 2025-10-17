@@ -258,6 +258,35 @@ class ServiceStatus(Base):
     last_checked = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
+class ActivityLog(Base):
+    __tablename__ = "activity_logs"
+    id = Column(String, primary_key=True)
+    user_id = Column(String)
+    email = Column(String)
+    action = Column(String, nullable=False)
+    status = Column(String, nullable=False)
+    details = Column(String)
+    error_message = Column(String)
+    ip_address = Column(String)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+class PaymentLog(Base):
+    __tablename__ = "payment_logs"
+    id = Column(String, primary_key=True)
+    user_id = Column(String)
+    email = Column(String)
+    reference = Column(String, unique=True)
+    amount_ngn = Column(Float)
+    amount_usd = Column(Float)
+    namaskah_amount = Column(Float)
+    status = Column(String)
+    payment_method = Column(String)
+    webhook_received = Column(Boolean, default=False)
+    credited = Column(Boolean, default=False)
+    error_message = Column(String)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime)
+
 Base.metadata.create_all(bind=engine)
 
 # Create database indexes for performance
@@ -387,6 +416,47 @@ def send_email(to_email: str, subject: str, body: str):
             server.send_message(msg)
     except Exception as e:
         print(f"Email error: {e}")
+
+# Activity Logging Helper
+def log_activity(db: Session, user_id=None, email=None, action=None, status=None, details=None, error=None):
+    """Log user activity"""
+    try:
+        log = ActivityLog(
+            id=f"log_{datetime.now(timezone.utc).timestamp()}",
+            user_id=user_id,
+            email=email,
+            action=action,
+            status=status,
+            details=details,
+            error_message=error
+        )
+        db.add(log)
+        db.commit()
+    except Exception as e:
+        print(f"Activity log error: {e}")
+
+# Payment Logging Helper
+def log_payment(db: Session, user_id=None, email=None, reference=None, amount_ngn=0, amount_usd=0, namaskah_amount=0, status="initialized", **kwargs):
+    """Log payment attempt"""
+    try:
+        log = PaymentLog(
+            id=f"pay_{datetime.now(timezone.utc).timestamp()}",
+            user_id=user_id,
+            email=email,
+            reference=reference,
+            amount_ngn=amount_ngn,
+            amount_usd=amount_usd,
+            namaskah_amount=namaskah_amount,
+            status=status,
+            payment_method="paystack",
+            **kwargs
+        )
+        db.add(log)
+        db.commit()
+        return log
+    except Exception as e:
+        print(f"Payment log error: {e}")
+        return None
 
 # Schemas
 class RegisterRequest(BaseModel):
@@ -849,6 +919,9 @@ def register(req: RegisterRequest, referral_code: str = None, db: Session = Depe
     db.add(user)
     db.commit()
     
+    # Log registration
+    log_activity(db, user_id=user.id, email=user.email, action="register", status="success", details=f"New user registered")
+    
     # Send verification email
     verification_url = f"{BASE_URL}/auth/verify?token={verification_token}"
     send_email(
@@ -937,6 +1010,9 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     
     if not password_valid:
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Log login
+    log_activity(db, user_id=user.id, email=user.email, action="login", status="success")
     
     token = jwt.encode({"user_id": user.id, "exp": datetime.now(timezone.utc) + timedelta(days=30)}, JWT_SECRET)
     return {"token": token, "user_id": user.id, "credits": user.credits, "is_admin": user.is_admin}
@@ -1597,6 +1673,65 @@ def add_credits(req: AddCreditsRequest, admin: User = Depends(get_admin_user), d
     
     return {"message": f"Added N{req.amount} credits", "new_balance": user.credits}
 
+@app.get("/admin/payment-logs", tags=["Admin"], summary="Get Payment Logs")
+def get_payment_logs(email: str = None, reference: str = None, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Get payment logs for troubleshooting (admin only)"""
+    query = db.query(PaymentLog)
+    
+    if email:
+        query = query.filter(PaymentLog.email == email)
+    if reference:
+        query = query.filter(PaymentLog.reference == reference)
+    
+    logs = query.order_by(PaymentLog.created_at.desc()).limit(50).all()
+    
+    return {
+        "logs": [
+            {
+                "id": log.id,
+                "email": log.email,
+                "reference": log.reference,
+                "amount_ngn": log.amount_ngn,
+                "amount_usd": log.amount_usd,
+                "namaskah_amount": log.namaskah_amount,
+                "status": log.status,
+                "webhook_received": log.webhook_received,
+                "credited": log.credited,
+                "error_message": log.error_message,
+                "created_at": log.created_at.isoformat() if log.created_at else None,
+                "updated_at": log.updated_at.isoformat() if log.updated_at else None
+            }
+            for log in logs
+        ]
+    }
+
+@app.get("/admin/activity-logs", tags=["Admin"], summary="Get Activity Logs")
+def get_activity_logs(email: str = None, action: str = None, limit: int = 100, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Get activity logs for user tracking (admin only)"""
+    query = db.query(ActivityLog)
+    
+    if email:
+        query = query.filter(ActivityLog.email == email)
+    if action:
+        query = query.filter(ActivityLog.action == action)
+    
+    logs = query.order_by(ActivityLog.created_at.desc()).limit(limit).all()
+    
+    return {
+        "logs": [
+            {
+                "id": log.id,
+                "email": log.email,
+                "action": log.action,
+                "status": log.status,
+                "details": log.details,
+                "error_message": log.error_message,
+                "created_at": log.created_at.isoformat() if log.created_at else None
+            }
+            for log in logs
+        ]
+    }
+
 @app.get("/admin/stats", tags=["Admin"], summary="Get Platform Statistics")
 def get_stats(period: str = "30", admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Get platform-wide statistics (admin only)
@@ -1697,7 +1832,7 @@ def get_stats(period: str = "30", admin: User = Depends(get_admin_user), db: Ses
 # REMOVED: Mock fund_wallet endpoint - Use Paystack only
 
 @app.post("/wallet/paystack/initialize", tags=["Wallet"], summary="Initialize Paystack Payment")
-def initialize_paystack(req: FundWalletRequest, user: User = Depends(get_current_user)):
+def initialize_paystack(req: FundWalletRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Initialize Paystack payment with detailed transaction info"""
     if req.amount < 5:
         raise HTTPException(status_code=400, detail="Minimum funding amount is $5 USD")
@@ -1712,6 +1847,7 @@ def initialize_paystack(req: FundWalletRequest, user: User = Depends(get_current
     # Get current USD to NGN exchange rate (cached, updates hourly)
     USD_TO_NGN_RATE = get_usd_to_ngn_rate()
     amount_ngn = amount_usd * USD_TO_NGN_RATE  # Exact NGN amount based on current rate
+    namaskah_amount = amount_usd * USD_TO_NAMASKAH
     
     if not PAYSTACK_SECRET_KEY or not PAYSTACK_SECRET_KEY.startswith('sk_'):
         raise HTTPException(status_code=503, detail="Payment system not configured. Please contact support.")
@@ -1739,6 +1875,13 @@ def initialize_paystack(req: FundWalletRequest, user: User = Depends(get_current
                         json=payload, headers=headers)
         r.raise_for_status()
         data = r.json()
+        
+        # Log payment initialization
+        log_payment(db, user_id=user.id, email=user.email, reference=reference, 
+                   amount_ngn=amount_ngn, amount_usd=amount_usd, namaskah_amount=namaskah_amount,
+                   status="initialized")
+        log_activity(db, user_id=user.id, email=user.email, action="payment_init", 
+                    status="success", details=f"Paystack payment initialized: {reference}")
         
         return {
             "success": True,
@@ -1801,9 +1944,14 @@ async def paystack_webhook(request: Request, db: Session = Depends(get_db)):
         amount_kobo = payment_data.get('amount', 0)
         amount = amount_kobo / 100  # Convert from kobo to Naira
         user_id = payment_data.get('metadata', {}).get('user_id')
+        user_email = payment_data.get('metadata', {}).get('user_email') or payment_data.get('customer', {}).get('email')
         
         if not reference or not user_id:
             print(f"⚠️ Missing reference or user_id in webhook")
+            # Log failed webhook
+            if user_email:
+                log_activity(db, email=user_email, action="webhook_received", status="failed", 
+                           error="Missing reference or user_id")
             return {"status": "error", "reason": "missing_data"}
         
         # Check for duplicate transaction
@@ -1813,16 +1961,26 @@ async def paystack_webhook(request: Request, db: Session = Depends(get_db)):
         
         if existing:
             print(f"⚠️ Duplicate transaction: {reference}")
+            # Update payment log
+            payment_log = db.query(PaymentLog).filter(PaymentLog.reference == reference).first()
+            if payment_log:
+                payment_log.webhook_received = True
+                payment_log.status = "duplicate"
+                db.commit()
             return {"status": "duplicate", "reference": reference}
         
         # Find user and add credits
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
             print(f"❌ User not found: {user_id}")
+            log_activity(db, user_id=user_id, email=user_email, action="webhook_received", 
+                        status="failed", error=f"User not found: {user_id}")
             return {"status": "error", "reason": "user_not_found"}
         
-        # Convert USD to Namaskah coins (1 USD = 0.5N)
-        namaskah_amount = amount * USD_TO_NAMASKAH
+        # Convert NGN to Namaskah coins
+        # Get USD amount from metadata or calculate from NGN
+        usd_amount = payment_data.get('metadata', {}).get('usd_amount', amount / get_usd_to_ngn_rate())
+        namaskah_amount = usd_amount * USD_TO_NAMASKAH
         
         user.credits += namaskah_amount
         
@@ -1835,6 +1993,24 @@ async def paystack_webhook(request: Request, db: Session = Depends(get_db)):
             description=f"Paystack payment: {reference} (NGN {amount})"
         )
         db.add(transaction)
+        
+        # Update payment log
+        payment_log = db.query(PaymentLog).filter(PaymentLog.reference == reference).first()
+        if payment_log:
+            payment_log.webhook_received = True
+            payment_log.credited = True
+            payment_log.status = "completed"
+            payment_log.updated_at = datetime.now(timezone.utc)
+        else:
+            # Create payment log if doesn't exist
+            log_payment(db, user_id=user.id, email=user.email, reference=reference,
+                       amount_ngn=amount, amount_usd=usd_amount, namaskah_amount=namaskah_amount,
+                       status="completed", webhook_received=True, credited=True)
+        
+        # Log activity
+        log_activity(db, user_id=user.id, email=user.email, action="payment_completed", 
+                    status="success", details=f"Credited N{namaskah_amount:.2f} from {reference}")
+        
         db.commit()
         
         print(f"✅ Payment processed: {reference} - N{namaskah_amount} for {user.email}")
