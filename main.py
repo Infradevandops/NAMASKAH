@@ -325,22 +325,6 @@ class PaymentLog(Base):
 
 Base.metadata.create_all(bind=engine)
 
-# Auto-fix admin password on startup
-try:
-    db = SessionLocal()
-    admin = db.query(User).filter(User.email == "admin@namaskah.app").first()
-    if admin:
-        try:
-            bcrypt.checkpw(b"Admin@2024!", admin.password_hash.encode('utf-8'))
-        except:
-            admin.password_hash = bcrypt.hashpw(b"Admin@2024!", bcrypt.gensalt()).decode()
-            admin.is_admin = True
-            db.commit()
-            print("✅ Admin password auto-fixed")
-    db.close()
-except Exception as e:
-    print(f"Admin check: {e}")
-
 # Create database indexes for performance
 def create_indexes():
     """Create indexes on frequently queried fields"""
@@ -744,6 +728,22 @@ async def startup_event():
     """Run background tasks on startup"""
     import asyncio
     asyncio.create_task(check_textverified_health_loop())
+    
+    # Auto-fix admin password
+    try:
+        db = SessionLocal()
+        admin = db.query(User).filter(User.email == "admin@namaskah.app").first()
+        if admin:
+            try:
+                bcrypt.checkpw(b"Admin@2024!", admin.password_hash.encode('utf-8'))
+            except:
+                admin.password_hash = bcrypt.hashpw(b"Admin@2024!", bcrypt.gensalt()).decode()
+                admin.is_admin = True
+                db.commit()
+                print("✅ Admin password auto-fixed")
+        db.close()
+    except Exception as e:
+        print(f"Admin check: {e}")
 
 # Mount static files and templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
