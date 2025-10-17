@@ -332,14 +332,15 @@
                     
                     <div style="margin-bottom: 20px;">
                         <label style="font-weight: bold; display: block; margin-bottom: 10px;">Select Service</label>
-                        <select id="rental-service" onchange="updateRentalPrice()" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px;">
-                            <option value="general">🌐 General Use (Cheapest)</option>
+                        <select id="rental-service" onchange="updateRentalPrice(); toggleCustomRentalService()" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px;">
                             <option value="telegram">💬 Telegram</option>
                             <option value="instagram">📷 Instagram</option>
                             <option value="facebook">👥 Facebook</option>
                             <option value="whatsapp">📱 WhatsApp</option>
-                            <option value="google">🔍 Google (Most Expensive)</option>
+                            <option value="google">🔍 Google</option>
+                            <option value="custom">🌐 Other Service (Enter Name)</option>
                         </select>
+                        <input type="text" id="custom-rental-service" placeholder="Enter service name (e.g., discord, uber)" style="width: 100%; padding: 12px; margin-top: 10px; border: 2px solid #e5e7eb; border-radius: 8px; display: none;">
                     </div>
                     
                     <div style="margin-bottom: 20px;">

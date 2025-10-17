@@ -48,8 +48,27 @@ function updateRentalPrice() {
     document.getElementById('rental-expiry').textContent = expiryDate.toLocaleDateString();
 }
 
-async function createRentalNumber() {
+function toggleCustomRentalService() {
     const service = document.getElementById('rental-service').value;
+    const customInput = document.getElementById('custom-rental-service');
+    if (service === 'custom') {
+        customInput.style.display = 'block';
+    } else {
+        customInput.style.display = 'none';
+    }
+}
+
+async function createRentalNumber() {
+    let service = document.getElementById('rental-service').value;
+    
+    if (service === 'custom') {
+        service = document.getElementById('custom-rental-service').value.trim().toLowerCase();
+        if (!service) {
+            showNotification('⚠️ Please enter a service name', 'error');
+            return;
+        }
+    }
+    
     const mode = document.querySelector('input[name="rental-mode"]:checked').value;
     const duration = parseInt(document.querySelector('input[name="rental-duration"]:checked').value);
     
