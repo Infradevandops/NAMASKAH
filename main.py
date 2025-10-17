@@ -1212,10 +1212,6 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
     
     cost = round(base_cost * tier_multiplier, 2)
     
-    # Enforce email verification
-    if not user.email_verified:
-        raise HTTPException(status_code=403, detail="Please verify your email before creating verifications")
-    
     # Check if user has free verifications or credits
     if user.free_verifications >= 1:
         user.free_verifications -= 1
