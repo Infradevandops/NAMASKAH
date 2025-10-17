@@ -1606,114 +1606,68 @@ def get_stats(period: str = "30", admin: User = Depends(get_admin_user), db: Ses
     }
 
 # Payment Endpoints
-@app.post("/wallet/fund", tags=["Wallet"], summary="Fund Wallet")
-def fund_wallet(req: FundWalletRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Add credits to wallet. Minimum N2.50 ($5 USD). Supports Paystack, Bitcoin, Ethereum, Solana, USDT."""
-    if req.amount < 2.5:
-        raise HTTPException(status_code=400, detail="Minimum funding amount is N2.50 ($5 USD)")
-    
-    payment_methods = {
-        'paystack': '🏦 Paystack',
-        'bitcoin': '₿ Bitcoin',
-        'ethereum': 'Ξ Ethereum',
-        'solana': '◎ Solana',
-        'usdt': '₮ USDT'
-    }
-    
-    if req.payment_method not in payment_methods:
-        raise HTTPException(status_code=400, detail="Invalid payment method")
-    
-    # Add credits (amount is in N)
-    user.credits += req.amount
-    
-    # Create transaction
-    transaction = Transaction(
-        id=f"txn_{datetime.now(timezone.utc).timestamp()}",
-        user_id=user.id,
-        amount=req.amount,
-        type="credit",
-        description=f"Wallet funded via {payment_methods[req.payment_method]}"
-    )
-    db.add(transaction)
-    
-    # Check if user was referred and this is their first funding of N2.50+
-    if req.amount >= 2.5 and user.referred_by:
-        referrer = db.query(User).filter(User.id == user.referred_by).first()
-        if referrer:
-            # Check if referrer already got reward
-            existing_reward = db.query(Transaction).filter(
-                Transaction.user_id == referrer.id,
-                Transaction.description.contains(f"Referral reward from {user.email}")
-            ).first()
-            
-            if not existing_reward:
-                referrer.free_verifications += 1
-                referrer.referral_earnings += 1.0
-                db.add(Transaction(
-                    id=f"txn_{datetime.now(timezone.utc).timestamp() + 0.001}",
-                    user_id=referrer.id,
-                    amount=1.0,
-                    type="credit",
-                    description=f"Referral reward from {user.email} (1 free verification)"
-                ))
-    
-    db.commit()
-    
-    return {
-        "success": True,
-        "amount": req.amount,
-        "new_balance": user.credits,
-        "payment_method": payment_methods[req.payment_method],
-        "message": f"Successfully added N{req.amount:.2f} to your wallet"
-    }
+# REMOVED: Mock fund_wallet endpoint - Use Paystack only
 
 @app.post("/wallet/paystack/initialize", tags=["Wallet"], summary="Initialize Paystack Payment")
 def initialize_paystack(req: FundWalletRequest, user: User = Depends(get_current_user)):
-    """Initialize Paystack payment"""
+    """Initialize Paystack payment with detailed transaction info"""
     if req.amount < 2.5:
         raise HTTPException(status_code=400, detail="Minimum funding amount is N2.50 ($5 USD)")
     
+    # Only Paystack is supported
+    if req.payment_method != 'paystack':
+        raise HTTPException(status_code=400, detail="Only Paystack payment is supported. Crypto payments are not available.")
+    
     reference = f"namaskah_{user.id}_{int(datetime.now(timezone.utc).timestamp())}"
+    amount_usd = req.amount * NAMASKAH_TO_USD  # Convert N to USD
+    amount_ngn = amount_usd * 1500  # Approximate NGN rate (adjust as needed)
     
-    if PAYSTACK_SECRET_KEY and PAYSTACK_SECRET_KEY.startswith('sk_'):
-        # Real Paystack integration
-        try:
-            headers = {
-                "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "email": user.email,
-                "amount": int(req.amount * 100),  # Convert to kobo/cents
-                "reference": reference,
-                "callback_url": f"http://localhost:8000/app?reference={reference}",
-                "metadata": {
-                    "user_id": user.id,
-                    "type": "wallet_funding"
-                }
-            }
-            r = requests.post("https://api.paystack.co/transaction/initialize", 
-                            json=payload, headers=headers)
-            r.raise_for_status()
-            data = r.json()
-            
-            return {
-                "authorization_url": data["data"]["authorization_url"],
-                "reference": reference,
-                "amount": req.amount
-            }
-        except Exception as e:
-            print(f"Paystack error: {e}")
-            # Fallback to demo mode
-            pass
+    if not PAYSTACK_SECRET_KEY or not PAYSTACK_SECRET_KEY.startswith('sk_'):
+        raise HTTPException(status_code=503, detail="Payment system not configured. Please contact support.")
     
-    # Demo mode
-    return {
-        "authorization_url": f"http://localhost:8000/app?payment=success&ref={reference}",
-        "reference": reference,
-        "amount": req.amount,
-        "demo": True
-    }
+    try:
+        headers = {
+            "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "email": user.email,
+            "amount": int(amount_ngn * 100),  # Convert to kobo
+            "reference": reference,
+            "callback_url": f"https://namaskah.app/app?reference={reference}",
+            "metadata": {
+                "user_id": user.id,
+                "user_email": user.email,
+                "type": "wallet_funding",
+                "namaskah_amount": req.amount,
+                "usd_amount": amount_usd
+            },
+            "channels": ["card", "bank", "ussd", "qr", "mobile_money", "bank_transfer"]
+        }
+        r = requests.post("https://api.paystack.co/transaction/initialize", 
+                        json=payload, headers=headers)
+        r.raise_for_status()
+        data = r.json()
+        
+        return {
+            "success": True,
+            "authorization_url": data["data"]["authorization_url"],
+            "access_code": data["data"]["access_code"],
+            "reference": reference,
+            "payment_details": {
+                "namaskah_amount": req.amount,
+                "usd_amount": round(amount_usd, 2),
+                "ngn_amount": round(amount_ngn, 2),
+                "currency": "NGN",
+                "exchange_rate": "1N = $2 USD"
+            },
+            "payment_methods": ["Card", "Bank Transfer", "USSD", "QR Code", "Mobile Money"],
+            "message": f"Pay NGN {amount_ngn:,.2f} to receive N{req.amount} credits"
+        }
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=503, detail=f"Payment gateway error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Payment initialization failed: {str(e)}")
 
 @app.post("/wallet/paystack/webhook", tags=["Wallet"], summary="Paystack Webhook")
 async def paystack_webhook(request: Request, db: Session = Depends(get_db)):
@@ -1894,43 +1848,7 @@ def verify_payment(reference: str, user: User = Depends(get_current_user), db: S
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Verification error: {str(e)}")
 
-@app.post("/wallet/crypto/address", tags=["Wallet"], summary="Get Crypto Payment Address")
-def get_crypto_address(req: FundWalletRequest, user: User = Depends(get_current_user)):
-    """Get crypto payment address"""
-    if req.amount < 2.5:
-        raise HTTPException(status_code=400, detail="Minimum funding amount is N2.50 ($5 USD)")
-    
-    addresses = {
-        'bitcoin': BITCOIN_ADDRESS,
-        'ethereum': ETHEREUM_ADDRESS,
-        'solana': SOLANA_ADDRESS,
-        'usdt': USDT_ADDRESS
-    }
-    
-    if req.payment_method not in addresses:
-        raise HTTPException(status_code=400, detail="Invalid crypto method")
-    
-    address = addresses[req.payment_method]
-    payment_id = f"crypto_{user.id}_{int(datetime.now(timezone.utc).timestamp())}"
-    
-    return {
-        "address": address,
-        "amount": req.amount,
-        "currency": req.payment_method.upper(),
-        "payment_id": payment_id,
-        "qr_code": f"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={address}",
-        "explorer_url": get_explorer_url(req.payment_method, address),
-        "instructions": f"Send exactly N{req.amount} (${req.amount * NAMASKAH_TO_USD} USD) worth of {req.payment_method.upper()} to the address above"
-    }
-
-def get_explorer_url(crypto: str, address: str) -> str:
-    explorers = {
-        'bitcoin': f'https://blockchair.com/bitcoin/address/{address}',
-        'ethereum': f'https://etherscan.io/address/{address}',
-        'solana': f'https://explorer.solana.com/address/{address}',
-        'usdt': f'https://etherscan.io/address/{address}'
-    }
-    return explorers.get(crypto, '')
+# REMOVED: Crypto payment endpoints - Not implemented
 
 # API Key Endpoints
 @app.post("/api-keys/create", tags=["API Keys"], summary="Create API Key")
