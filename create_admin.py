@@ -1,6 +1,6 @@
 """Create admin user with credentials: admin@namaskah.app / Admin@2024!"""
 import sqlite3
-from passlib.hash import bcrypt
+import bcrypt
 
 # Connect to database
 conn = sqlite3.connect('namaskah.db')
@@ -10,8 +10,8 @@ cursor = conn.cursor()
 cursor.execute("SELECT id FROM users WHERE email = 'admin@namaskah.app'")
 admin = cursor.fetchone()
 
-# Hash password using passlib (same as backend)
-password_hash = bcrypt.hash('Admin@2024!')
+# Hash password
+password_hash = bcrypt.hashpw(b'Admin@2024!', bcrypt.gensalt()).decode()
 
 if admin:
     # Update existing admin

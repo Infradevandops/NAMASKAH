@@ -31,7 +31,7 @@ from error_handlers import (
 )
 
 from sqlalchemy.orm import sessionmaker, Session
-from passlib.hash import bcrypt
+import bcrypt
 import requests
 
 load_dotenv()
@@ -371,7 +371,7 @@ def create_admin_if_not_exists():
             admin = User(
                 id=f"user_{datetime.now(timezone.utc).timestamp()}",
                 email="admin@namaskah.app",
-                password_hash=bcrypt.hash("Admin@2024!"),
+                password_hash=bcrypt.hashpw(b"Admin@2024!", bcrypt.gensalt()).decode(),
                 credits=100.0,
                 free_verifications=0.0,
                 is_admin=True,
@@ -1007,7 +1007,7 @@ def register(req: RegisterRequest, referral_code: str = None, db: Session = Depe
     user = User(
         id=f"user_{datetime.now(timezone.utc).timestamp()}",
         email=req.email,
-        password_hash=bcrypt.hash(req.password),
+        password_hash=bcrypt.hashpw(req.password.encode('utf-8'), bcrypt.gensalt()).decode(),
         credits=0.0,
         free_verifications=1.0,
         referral_code=user_referral_code,
@@ -1087,7 +1087,7 @@ def google_auth(req: GoogleAuthRequest, db: Session = Depends(get_db)):
             user = User(
                 id=f"user_{datetime.now(timezone.utc).timestamp()}",
                 email=email,
-                password_hash=bcrypt.hash(google_id),  # Use Google ID as password
+                password_hash=bcrypt.hashpw(google_id.encode('utf-8'), bcrypt.gensalt()).decode(),  # Use Google ID as password
                 credits=0.0,
                 free_verifications=1.0,
                 referral_code=secrets.token_urlsafe(6)
@@ -1122,7 +1122,7 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     
     # Verify password
     try:
-        password_valid = bcrypt.verify(req.password, user.password_hash)
+        password_valid = bcrypt.checkpw(req.password.encode('utf-8'), user.password_hash.encode('utf-8'))
     except Exception as e:
         print(f"Password verify error: {e}")
         password_valid = False
@@ -1203,7 +1203,7 @@ def reset_password(req: PasswordResetConfirm, db: Session = Depends(get_db)):
     if not user or not user.reset_token_expires or user.reset_token_expires < datetime.now(timezone.utc):
         raise HTTPException(status_code=400, detail="Invalid or expired reset token")
     
-    user.password_hash = bcrypt.hash(req.new_password)
+    user.password_hash = bcrypt.hashpw(req.new_password.encode('utf-8'), bcrypt.gensalt()).decode()
     user.reset_token = None
     user.reset_token_expires = None
     db.commit()
