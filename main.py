@@ -461,7 +461,6 @@ def log_activity(db: Session, user_id=None, email=None, session_id=None, page=No
             id=f"log_{datetime.now(timezone.utc).timestamp()}",
             user_id=user_id,
             email=email,
-            session_id=session_id,
             page=page,
             action=action,
             element=element,
