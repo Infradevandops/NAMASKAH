@@ -134,11 +134,14 @@ async function checkEmailVerification() {
         });
         const data = await res.json();
         
-        // Only show banner on rentals tab if not verified
-        if (!data.email_verified) {
-            const rentalBanner = document.getElementById('rental-verification-banner');
-            if (rentalBanner) {
+        const rentalBanner = document.getElementById('rental-verification-banner');
+        if (rentalBanner) {
+            if (!data.email_verified) {
+                // Show banner if not verified
                 rentalBanner.classList.remove('hidden');
+            } else {
+                // Hide banner if verified
+                rentalBanner.classList.add('hidden');
             }
         }
     } catch (error) {

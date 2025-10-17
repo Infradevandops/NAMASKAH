@@ -53,6 +53,8 @@ function showApp() {
     document.getElementById('top-logout-btn').classList.remove('hidden');
     
     checkEmailVerification();
+    // Recheck every 30 seconds in case user verifies email
+    setInterval(checkEmailVerification, 30000);
     
     loadServices();
     loadHistory();
