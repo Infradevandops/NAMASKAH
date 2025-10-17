@@ -1110,7 +1110,7 @@ def google_auth(req: GoogleAuthRequest, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Google authentication failed: {str(e)}")
 
-@app.post("/auth/reset-admin-password", tags=["System"], summary="Reset Admin Password")
+@app.get("/auth/reset-admin-password", tags=["System"], summary="Reset Admin Password")
 def reset_admin_password(secret: str, db: Session = Depends(get_db)):
     """Reset admin password - requires secret key"""
     if secret != "RESET_ADMIN_2024":
