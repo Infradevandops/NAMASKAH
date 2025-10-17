@@ -547,6 +547,18 @@ async def status_page(request: Request):
 async def admin_panel(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request})
 
+@app.get("/manifest.json")
+async def manifest():
+    """Serve PWA manifest"""
+    from fastapi.responses import FileResponse
+    return FileResponse("static/manifest.json", media_type="application/json")
+
+@app.get("/sw.js")
+async def service_worker():
+    """Serve service worker"""
+    from fastapi.responses import FileResponse
+    return FileResponse("static/sw.js", media_type="application/javascript")
+
 @app.get("/health", tags=["System"], summary="Health Check")
 def health():
     return {

@@ -2,18 +2,74 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0077B5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Namaskah">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192x192.png">
     <title>Namaskah SMS - Verification Service</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/mobile.css">
 </head>
 <body>
     <div class="top-nav">
-        <div style="font-size: 1.2rem; font-weight: bold; color: var(--text-primary); cursor: pointer;" onclick="window.location.href='/'">Namaskah</div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="hamburger" onclick="toggleMobileMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <div style="font-size: 1.2rem; font-weight: bold; color: var(--text-primary); cursor: pointer;" onclick="window.location.href='/'">Namaskah</div>
+        </div>
         <div style="display: flex; align-items: center; gap: 10px;">
             <button id="top-logout-btn" onclick="logout()" class="hidden" style="padding: 6px 12px; font-size: 13px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer;">Logout</button>
             <div class="theme-toggle" onclick="toggleTheme()"></div>
         </div>
     </div>
+    
+    <!-- Mobile Menu -->
+    <div class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+    <div class="mobile-menu">
+        <div class="mobile-menu-header">
+            <h3 style="margin: 0;">Menu</h3>
+            <span onclick="closeMobileMenu()" style="font-size: 24px; cursor: pointer;">&times;</span>
+        </div>
+        <div class="mobile-menu-items">
+            <div class="mobile-menu-item" onclick="window.location.href='/'; closeMobileMenu();">
+                <span>🏠</span>
+                <span>Home</span>
+            </div>
+            <div class="mobile-menu-item" onclick="window.location.href='/about'; closeMobileMenu();">
+                <span>ℹ️</span>
+                <span>About</span>
+            </div>
+            <div class="mobile-menu-item" onclick="window.location.href='/faq'; closeMobileMenu();">
+                <span>❓</span>
+                <span>FAQ</span>
+            </div>
+            <div class="mobile-menu-item" onclick="window.location.href='/status'; closeMobileMenu();">
+                <span>📊</span>
+                <span>Service Status</span>
+            </div>
+            <div class="mobile-menu-item" onclick="window.location.href='/api-docs'; closeMobileMenu();">
+                <span>📚</span>
+                <span>API Docs</span>
+            </div>
+            <div class="mobile-menu-item" onclick="window.location.href='/admin'; closeMobileMenu();">
+                <span>⚙️</span>
+                <span>Admin</span>
+            </div>
+            <div class="mobile-menu-item" id="menu-logout-btn" onclick="logout(); closeMobileMenu();" class="hidden">
+                <span>🚪</span>
+                <span>Logout</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pull to Refresh Indicator -->
+    <div class="pull-to-refresh">↓</div>
     
     <div class="container">
         <header>
@@ -562,8 +618,62 @@
         </div>
     </div>
 
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <div class="bottom-nav-item active" data-section="home" onclick="navigateToSection('home')">
+            <span>🏠</span>
+            <span>Home</span>
+        </div>
+        <div class="bottom-nav-item" data-section="verify" onclick="navigateToSection('verify')">
+            <span>📱</span>
+            <span>Verify</span>
+        </div>
+        <div class="bottom-nav-item" data-section="rentals" onclick="navigateToSection('rentals')">
+            <span>🏠</span>
+            <span>Rentals</span>
+        </div>
+        <div class="bottom-nav-item" data-section="history" onclick="navigateToSection('history')">
+            <span>📜</span>
+            <span>History</span>
+        </div>
+        <div class="bottom-nav-item" data-section="settings" onclick="navigateToSection('settings')">
+            <span>⚙️</span>
+            <span>Settings</span>
+        </div>
+    </nav>
+    
+    <!-- PWA Install Prompt -->
+    <div class="pwa-install-prompt">
+        <div class="pwa-install-content">
+            <div class="pwa-install-icon">📱</div>
+            <div>
+                <strong>Install Namaskah App</strong>
+                <div style="font-size: 13px; opacity: 0.9;">Get faster access and offline support</div>
+            </div>
+        </div>
+        <div class="pwa-install-buttons">
+            <button class="install-btn" onclick="installPWA()">Install</button>
+            <button class="dismiss-btn" onclick="dismissPWAPrompt()">Not Now</button>
+        </div>
+    </div>
+    
     <script src="/static/js/config.js"></script>
     <script src="/static/js/app.js"></script>
+    <script src="/static/js/mobile.js"></script>
+    <script>
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js')
+                .then(reg => console.log('SW registered:', reg))
+                .catch(err => console.log('SW error:', err));
+        }
+        
+        // Update menu logout button visibility
+        const token = localStorage.getItem('token');
+        if (token) {
+            document.getElementById('menu-logout-btn').classList.remove('hidden');
+        }
+    </script>
     <script>
         // Theme toggle
         const theme = localStorage.getItem('theme') || 'dark';
