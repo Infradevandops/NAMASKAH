@@ -807,6 +807,16 @@ async function loadHistory(silent = false) {
     }
 }
 
+async function exportTransactions() {
+    if (!token) return;
+    window.open(`${API_BASE}/transactions/export`, '_blank');
+}
+
+async function exportVerifications() {
+    if (!token) return;
+    window.open(`${API_BASE}/verifications/export`, '_blank');
+}
+
 async function loadTransactions(silent = false) {
     if (!token) return;
     

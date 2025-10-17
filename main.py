@@ -888,11 +888,25 @@ def get_me(user: User = Depends(get_current_user)):
     }
 
 @app.get("/verifications/history", tags=["Verification"], summary="Get Verification History")
-def get_history(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Get last 20 verifications for current user"""
-    verifications = db.query(Verification).filter(
-        Verification.user_id == user.id
-    ).order_by(Verification.created_at.desc()).limit(20).all()
+def get_history(
+    service: str = None,
+    status: str = None,
+    limit: int = 50,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get verification history with filtering for current user"""
+    query = db.query(Verification).filter(Verification.user_id == user.id)
+    
+    # Filter by service
+    if service:
+        query = query.filter(Verification.service_name == service)
+    
+    # Filter by status
+    if status and status in ['pending', 'completed', 'cancelled']:
+        query = query.filter(Verification.status == status)
+    
+    verifications = query.order_by(Verification.created_at.desc()).limit(limit).all()
     
     return {
         "verifications": [
@@ -900,20 +914,65 @@ def get_history(user: User = Depends(get_current_user), db: Session = Depends(ge
                 "id": v.id,
                 "service_name": v.service_name,
                 "phone_number": v.phone_number,
+                "capability": v.capability,
                 "status": v.status,
                 "cost": v.cost,
-                "created_at": v.created_at
+                "created_at": v.created_at.isoformat()
             }
             for v in verifications
         ]
     }
 
+@app.get("/verifications/export", tags=["Verification"], summary="Export Verifications to CSV")
+def export_user_verifications(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Export user's verifications to CSV"""
+    from fastapi.responses import StreamingResponse
+    import io
+    import csv
+    
+    verifications = db.query(Verification).filter(
+        Verification.user_id == user.id
+    ).order_by(Verification.created_at.desc()).all()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Header
+    writer.writerow(['Date', 'Service', 'Phone Number', 'Type', 'Status', 'Cost (N)'])
+    
+    # Data
+    for v in verifications:
+        writer.writerow([
+            v.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            v.service_name,
+            v.phone_number or 'N/A',
+            v.capability.upper(),
+            v.status.upper(),
+            f"{v.cost:.2f}"
+        ])
+    
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=verifications_{user.id}.csv"}
+    )
+
 @app.get("/transactions/history", tags=["Wallet"], summary="Get Transaction History")
-def get_transactions(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Get last 50 transactions (credits/debits) for current user"""
-    transactions = db.query(Transaction).filter(
-        Transaction.user_id == user.id
-    ).order_by(Transaction.created_at.desc()).limit(50).all()
+def get_transactions(
+    type: str = None,
+    limit: int = 50,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get transaction history with filtering (credits/debits) for current user"""
+    query = db.query(Transaction).filter(Transaction.user_id == user.id)
+    
+    # Filter by type
+    if type and type in ['credit', 'debit']:
+        query = query.filter(Transaction.type == type)
+    
+    transactions = query.order_by(Transaction.created_at.desc()).limit(limit).all()
     
     return {
         "transactions": [
@@ -922,11 +981,44 @@ def get_transactions(user: User = Depends(get_current_user), db: Session = Depen
                 "amount": t.amount,
                 "type": t.type,
                 "description": t.description,
-                "created_at": t.created_at
+                "created_at": t.created_at.isoformat()
             }
             for t in transactions
         ]
     }
+
+@app.get("/transactions/export", tags=["Wallet"], summary="Export Transactions to CSV")
+def export_user_transactions(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Export user's transactions to CSV"""
+    from fastapi.responses import StreamingResponse
+    import io
+    import csv
+    
+    transactions = db.query(Transaction).filter(
+        Transaction.user_id == user.id
+    ).order_by(Transaction.created_at.desc()).all()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Header
+    writer.writerow(['Date', 'Type', 'Amount (N)', 'Description'])
+    
+    # Data
+    for t in transactions:
+        writer.writerow([
+            t.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            t.type.upper(),
+            f"{t.amount:.2f}",
+            t.description
+        ])
+    
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=transactions_{user.id}.csv"}
+    )
 
 @app.post("/verify/create", tags=["Verification"], summary="Create SMS/Voice Verification")
 def create_verification(req: CreateVerificationRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):

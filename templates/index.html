@@ -370,13 +370,21 @@
             </div>
 
             <div id="verifications-list" class="card">
-                <h2>Recent Verifications</h2>
-                <button onclick="loadHistory()" class="btn-small" style="margin-bottom: 15px;">Refresh History</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 style="margin: 0;">Recent Verifications</h2>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="loadHistory()" class="btn-small">Refresh</button>
+                        <button onclick="exportVerifications()" class="btn-small" style="background: #10b981;">📄 Export CSV</button>
+                    </div>
+                </div>
                 <div id="verifications"></div>
             </div>
 
             <div id="transactions-list" class="card">
-                <h2>💳 Transaction History</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 style="margin: 0;">💳 Transaction History</h2>
+                    <button onclick="exportTransactions()" class="btn-small" style="background: #10b981;">📄 Export CSV</button>
+                </div>
                 <button onclick="loadTransactions()" class="btn-small" style="margin-bottom: 15px;">Refresh Transactions</button>
                 <div id="transactions"></div>
             </div>
