@@ -460,7 +460,7 @@ Authorization: Bearer YOUR_JWT_TOKEN
 Get token via `/auth/login` or `/auth/register`.
 
 ## Currency
-- **Symbol**: N (Namaskah Coin)
+- **Symbol**: N
 - **Exchange Rate**: 1N = $2 USD
 
 ## Pricing
@@ -1662,7 +1662,7 @@ def initialize_paystack(req: FundWalletRequest, user: User = Depends(get_current
                 "exchange_rate": "1N = $2 USD"
             },
             "payment_methods": ["Card", "Bank Transfer", "USSD", "QR Code", "Mobile Money"],
-            "message": f"Pay NGN {amount_ngn:,.2f} to receive N{req.amount} credits"
+            "message": f"Pay NGN {amount_ngn:,.2f} (${amount_usd:.2f} USD)"
         }
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=503, detail=f"Payment gateway error: {str(e)}")

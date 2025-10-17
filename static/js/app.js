@@ -1514,7 +1514,7 @@ async function selectPayment(method) {
                 // Show payment details
                 if (data.payment_details) {
                     showNotification(
-                        `💰 Pay ₦${data.payment_details.ngn_amount.toLocaleString()} to receive N${data.payment_details.namaskah_amount}`,
+                        `💰 Pay ₦${data.payment_details.ngn_amount.toLocaleString()} ($${data.payment_details.usd_amount})`,
                         'success'
                     );
                 }
