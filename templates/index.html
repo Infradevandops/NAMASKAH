@@ -772,10 +772,13 @@
                 const data = await res.json();
                 
                 if (res.ok) {
+                    token = data.token;
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('user_id', data.user_id);
                     showNotification('✅ Signed in with Google successfully!', 'success');
-                    setTimeout(() => location.reload(), 500);
+                    setTimeout(() => {
+                        checkAuth();
+                    }, 500);
                 } else {
                     showNotification('❌ ' + (data.detail || 'Google sign-in failed'), 'error');
                 }
