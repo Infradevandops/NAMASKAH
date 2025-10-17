@@ -1,12 +1,24 @@
 // Service Worker for PWA
-const CACHE_NAME = 'namaskah-v2.2.0';
+const CACHE_NAME = 'namaskah-v2.3.0';
 const urlsToCache = [
   '/',
   '/static/css/style.css',
   '/static/css/mobile.css',
-  '/static/js/app.js',
+  '/static/js/config.js',
+  '/static/js/utils.js',
+  '/static/js/auth.js',
+  '/static/js/services.js',
+  '/static/js/verification.js',
+  '/static/js/history.js',
+  '/static/js/wallet.js',
+  '/static/js/rentals.js',
+  '/static/js/developer.js',
+  '/static/js/settings.js',
   '/static/js/mobile.js',
-  '/static/js/config.js'
+  '/static/js/biometric.js',
+  '/static/js/offline-queue.js',
+  '/static/js/main.js',
+  '/static/manifest.json'
 ];
 
 // Install event

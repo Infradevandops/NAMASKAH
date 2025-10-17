@@ -486,6 +486,45 @@
                                    style="width: 150px; padding: 8px; border: 2px solid #e5e7eb; border-radius: 6px;">
                         </div>
                     </div>
+
+                    <div id="biometric-section" style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; margin-top: 20px; border: 1px solid var(--border); display: none;">
+                        <h3 style="margin: 0 0 15px 0;">🔐 Biometric Authentication</h3>
+                        <p style="color: #6b7280; margin-bottom: 15px; font-size: 14px;">Use fingerprint or face recognition to login</p>
+                        <div id="biometric-status" style="margin-bottom: 15px;"></div>
+                        <button id="biometric-toggle" onclick="toggleBiometric()" style="padding: 10px 20px;">Enable Biometric</button>
+                    </div>
+
+                    <script>
+                        checkBiometricSupport().then(supported => {
+                            if (supported) {
+                                document.getElementById('biometric-section').style.display = 'block';
+                                const enabled = localStorage.getItem('biometric_enabled');
+                                const status = document.getElementById('biometric-status');
+                                const btn = document.getElementById('biometric-toggle');
+                                
+                                if (enabled) {
+                                    status.innerHTML = '<span style="color: #10b981;">✅ Biometric authentication is enabled</span>';
+                                    btn.textContent = 'Disable Biometric';
+                                    btn.style.background = '#ef4444';
+                                } else {
+                                    status.innerHTML = '<span style="color: #6b7280;">❌ Biometric authentication is disabled</span>';
+                                    btn.textContent = 'Enable Biometric';
+                                    btn.style.background = '#10b981';
+                                }
+                            }
+                        });
+                        
+                        async function toggleBiometric() {
+                            const enabled = localStorage.getItem('biometric_enabled');
+                            if (enabled) {
+                                disableBiometric();
+                            } else {
+                                const email = document.getElementById('user-email').textContent;
+                                await registerBiometric(email);
+                            }
+                            location.reload();
+                        }
+                    </script>
                 </div>
             </div>
 
@@ -646,9 +685,21 @@
         </div>
     </div>
     
+    <!-- Modular JavaScript Architecture -->
     <script src="/static/js/config.js"></script>
-    <script src="/static/js/app.js"></script>
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/services.js"></script>
+    <script src="/static/js/verification.js"></script>
+    <script src="/static/js/history.js"></script>
+    <script src="/static/js/wallet.js"></script>
+    <script src="/static/js/rentals.js"></script>
+    <script src="/static/js/developer.js"></script>
+    <script src="/static/js/settings.js"></script>
     <script src="/static/js/mobile.js"></script>
+    <script src="/static/js/biometric.js"></script>
+    <script src="/static/js/offline-queue.js"></script>
+    <script src="/static/js/main.js"></script>
     <script>
         // Register Service Worker
         if ('serviceWorker' in navigator) {

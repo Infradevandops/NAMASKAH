@@ -66,9 +66,41 @@
             </div>
 
             <div class="card">
-                <h2>👥 Users</h2>
-                <button onclick="loadUsers()" class="btn-small" style="margin-bottom: 15px;">Refresh</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 style="margin: 0;">👥 Users</h2>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="user-search" placeholder="Search users..." style="padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 6px;" oninput="searchUsers()">
+                        <button onclick="loadUsers()" class="btn-small">Refresh</button>
+                        <button onclick="exportUsers()" class="btn-small" style="background: #10b981;">📄 Export CSV</button>
+                    </div>
+                </div>
                 <div id="users-list"></div>
+                <div id="pagination" style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;"></div>
+            </div>
+
+            <div class="card">
+                <h2>🎫 Support Tickets</h2>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button onclick="loadTickets('open')" class="btn-small">Open</button>
+                    <button onclick="loadTickets('resolved')" class="btn-small">Resolved</button>
+                    <button onclick="loadTickets()" class="btn-small">All</button>
+                </div>
+                <div id="tickets-list"></div>
+            </div>
+
+            <div id="ticket-modal" class="card hidden">
+                <h2>Respond to Ticket</h2>
+                <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <div><strong>From:</strong> <span id="ticket-email"></span></div>
+                    <div><strong>Category:</strong> <span id="ticket-category"></span></div>
+                    <div style="margin-top: 10px;"><strong>Message:</strong></div>
+                    <div id="ticket-message" style="margin-top: 5px; color: #6b7280;"></div>
+                </div>
+                <textarea id="ticket-response" rows="5" placeholder="Your response..." style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; resize: vertical;"></textarea>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button onclick="respondToTicket()">Send Response</button>
+                    <button onclick="closeTicketModal()" class="btn-danger">Cancel</button>
+                </div>
             </div>
 
             <div id="add-credits-modal" class="card hidden">
@@ -152,6 +184,7 @@
             document.getElementById('admin-section').classList.remove('hidden');
             loadStats();
             loadUsers();
+            loadTickets();
         }
 
         function logout() {
@@ -207,8 +240,10 @@
                 
                 if (res.ok) {
                     const data = await res.json();
+                    allUsers = data.users;
+                    renderUsers(allUsers);
+                    /*
                     const list = document.getElementById('users-list');
-                    
                     list.innerHTML = data.users.map(u => `
                         <div class="verification-item" style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
@@ -224,7 +259,7 @@
                                 Add Credits
                             </button>
                         </div>
-                    `).join('');
+                    `).join('');*/
                     
                     showNotification('Users loaded', 'success');
                 }
@@ -273,6 +308,127 @@
                 }
             } catch (err) {
                 showNotification('Network error', 'error');
+            }
+        }
+
+        let allUsers = [];
+        let currentTicketId = null;
+
+        function searchUsers() {
+            const query = document.getElementById('user-search').value.toLowerCase();
+            const filtered = allUsers.filter(u => 
+                u.email.toLowerCase().includes(query) || u.id.includes(query)
+            );
+            renderUsers(filtered);
+        }
+
+        function renderUsers(users) {
+            const list = document.getElementById('users-list');
+            list.innerHTML = users.map(u => `
+                <div class="verification-item" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>${u.email}</strong>
+                        <div style="font-size: 14px; color: #6b7280;">
+                            Credits: $${u.credits.toFixed(2)} | Free: ${u.free_verifications || 0} ${u.is_admin ? '| 👑 Admin' : ''}
+                        </div>
+                        <div style="font-size: 12px; color: #9ca3af;">
+                            Joined: ${new Date(u.created_at).toLocaleDateString()}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="viewUserDetails('${u.id}')" class="btn-small">View</button>
+                        <button onclick="openAddCredits('${u.id}', '${u.email}')" class="btn-small">Add Credits</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function viewUserDetails(userId) {
+            try {
+                const res = await fetch(`${API_BASE}/admin/users/${userId}`, {
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    alert(`User: ${data.user.email}\nCredits: $${data.user.credits}\nTotal Verifications: ${data.stats.total_verifications}\nTotal Spent: $${data.stats.total_spent}`);
+                }
+            } catch (err) {
+                showNotification('Failed to load user details', 'error');
+            }
+        }
+
+        async function exportUsers() {
+            window.open(`${API_BASE}/admin/export/users`, '_blank');
+        }
+
+        async function loadTickets(status = null) {
+            try {
+                const url = status ? `${API_BASE}/admin/support/tickets?status=${status}` : `${API_BASE}/admin/support/tickets`;
+                const res = await fetch(url, {
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    const list = document.getElementById('tickets-list');
+                    if (data.tickets.length === 0) {
+                        list.innerHTML = '<p style="color: #6b7280; text-align: center;">No tickets found</p>';
+                    } else {
+                        list.innerHTML = data.tickets.map(t => `
+                            <div class="verification-item" style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <strong>${t.name}</strong> (${t.email})
+                                    <div style="font-size: 14px; color: #6b7280;">
+                                        ${t.category} | ${t.status}
+                                    </div>
+                                    <div style="font-size: 12px; color: #9ca3af;">
+                                        ${new Date(t.created_at).toLocaleString()}
+                                    </div>
+                                </div>
+                                <button onclick="openTicketModal('${t.id}', '${t.name}', '${t.email}', '${t.category}', '${t.message.replace(/'/g, "\\'")}')">Respond</button>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (err) {
+                showNotification('Failed to load tickets', 'error');
+            }
+        }
+
+        function openTicketModal(id, name, email, category, message) {
+            currentTicketId = id;
+            document.getElementById('ticket-email').textContent = `${name} (${email})`;
+            document.getElementById('ticket-category').textContent = category;
+            document.getElementById('ticket-message').textContent = message;
+            document.getElementById('ticket-modal').classList.remove('hidden');
+        }
+
+        function closeTicketModal() {
+            document.getElementById('ticket-modal').classList.add('hidden');
+            currentTicketId = null;
+        }
+
+        async function respondToTicket() {
+            const response = document.getElementById('ticket-response').value;
+            if (!response) {
+                showNotification('Please enter a response', 'error');
+                return;
+            }
+            try {
+                const res = await fetch(`${API_BASE}/admin/support/${currentTicketId}/respond`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({response})
+                });
+                if (res.ok) {
+                    showNotification('Response sent!', 'success');
+                    closeTicketModal();
+                    loadTickets();
+                }
+            } catch (err) {
+                showNotification('Failed to send response', 'error');
             }
         }
 

@@ -257,6 +257,50 @@ document.addEventListener('touchend', (e) => {
     lastTouchEnd = now;
 }, false);
 
+// Advanced Gestures
+let touchStartX = 0;
+let touchEndX = 0;
+
+function handleSwipe() {
+    const diff = touchEndX - touchStartX;
+    if (Math.abs(diff) > 100) {
+        if (diff > 0) {
+            // Swipe right - go back
+            if (window.history.length > 1) window.history.back();
+        } else {
+            // Swipe left - open menu
+            toggleMobileMenu();
+        }
+    }
+}
+
+document.addEventListener('touchstart', e => {
+    touchStartX = e.changedTouches[0].screenX;
+});
+
+document.addEventListener('touchend', e => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+});
+
+// Shake to refresh
+let lastShake = 0;
+if (window.DeviceMotionEvent) {
+    window.addEventListener('devicemotion', (e) => {
+        const acc = e.accelerationIncludingGravity;
+        const threshold = 15;
+        
+        if (acc && (Math.abs(acc.x) > threshold || Math.abs(acc.y) > threshold || Math.abs(acc.z) > threshold)) {
+            const now = Date.now();
+            if (now - lastShake > 1000) {
+                lastShake = now;
+                hapticFeedback('medium');
+                refreshData();
+            }
+        }
+    });
+}
+
 // Export functions
 window.navigateToSection = navigateToSection;
 window.toggleMobileMenu = toggleMobileMenu;

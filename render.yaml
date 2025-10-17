@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: namaskah-sms
+    env: python
+    region: oregon
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: namaskah-db
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: TEXTVERIFIED_API_KEY
+        sync: false
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+    healthCheckPath: /health
+    autoDeploy: true
+
+databases:
+  - name: namaskah-db
+    databaseName: namaskah
+    plan: starter
