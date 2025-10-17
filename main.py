@@ -454,7 +454,7 @@ def send_email(to_email: str, subject: str, body: str):
         print(f"Email error: {e}")
 
 # Activity Logging Helper
-def log_activity(db: Session, user_id=None, email=None, session_id=None, page=None, action=None, element=None, status=None, details=None, error=None, ip=None, user_agent=None):
+def log_activity(db: Session, user_id=None, email=None, page=None, action=None, element=None, status=None, details=None, error=None, ip=None, user_agent=None):
     """Log user activity"""
     try:
         log = ActivityLog(
