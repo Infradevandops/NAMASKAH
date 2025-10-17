@@ -65,17 +65,32 @@ SMS_PRICING = {
 # Voice adds N0.25 to SMS price
 VOICE_PREMIUM = 0.25
 
-# Pricing tiers (discounts applied to base price)
-PRICING_TIERS = {
-    'pay_as_you_go': 1.0,      # No discount
-    'developer': 0.80,         # 20% discount
-    'enterprise': 0.65         # 35% discount
-}
-
-# Minimum purchase amounts for discounted tiers (in N)
-MIN_PURCHASE = {
-    'developer': 25.0,    # N25 ($50 USD)
-    'enterprise': 100.0   # N100 ($200 USD)
+# Subscription Plans
+SUBSCRIPTION_PLANS = {
+    'starter': {
+        'name': 'Starter',
+        'price': 0,  # Free
+        'discount': 0.0,  # No discount
+        'area_code': False,
+        'carrier': False,
+        'description': 'Random numbers from random carriers'
+    },
+    'pro': {
+        'name': 'Pro',
+        'price': 25.0,  # N25 = $50/month
+        'discount': 0.20,  # 20% discount
+        'area_code': True,
+        'carrier': False,
+        'description': 'Choose area code, 20% discount'
+    },
+    'turbo': {
+        'name': 'Turbo',
+        'price': 100.0,  # N100 = $200/month
+        'discount': 0.35,  # 35% discount
+        'area_code': True,
+        'carrier': True,
+        'description': 'Choose area code + carrier, 35% discount'
+    }
 }
 
 VERIFICATION_COST = SMS_PRICING['popular']  # Default
@@ -257,6 +272,20 @@ class ServiceStatus(Base):
     success_rate = Column(Float, default=100.0)
     last_checked = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+class Subscription(Base):
+    __tablename__ = "subscriptions"
+    id = Column(String, primary_key=True)
+    user_id = Column(String, unique=True, nullable=False)
+    plan = Column(String, nullable=False)  # starter, pro, turbo
+    status = Column(String, default="active")  # active, cancelled, expired
+    price = Column(Float, nullable=False)
+    discount = Column(Float, default=0.0)  # 0.20 for pro, 0.35 for turbo
+    billing_cycle = Column(String, default="monthly")  # monthly
+    next_billing_date = Column(DateTime)
+    cancelled_at = Column(DateTime)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime)
 
 class ActivityLog(Base):
     __tablename__ = "activity_logs"
@@ -489,6 +518,8 @@ class PasswordResetConfirm(BaseModel):
 class CreateVerificationRequest(BaseModel):
     service_name: str
     capability: str = "sms"
+    area_code: str = None
+    carrier: str = None
 
 class AddCreditsRequest(BaseModel):
     user_id: str
@@ -509,6 +540,11 @@ class CreateRentalRequest(BaseModel):
     duration_hours: float
     mode: str = "always_ready"  # always_ready or manual
     auto_extend: bool = False
+    area_code: str = None
+    carrier: str = None
+
+class SubscribeRequest(BaseModel):
+    plan: str  # pro or turbo
 
 class ExtendRentalRequest(BaseModel):
     additional_hours: float
@@ -564,12 +600,20 @@ class TextVerifiedClient:
         self.token = r.json()["token"]
         return self.token
 
-    def create_verification(self, service_name: str, capability: str = "sms"):
+    def create_verification(self, service_name: str, capability: str = "sms", area_code: str = None, carrier: str = None):
         headers = {"Authorization": f"Bearer {self.get_token()}"}
+        payload = {"serviceName": service_name, "capability": capability}
+        
+        # Add filters if provided
+        if area_code:
+            payload["areaCode"] = area_code
+        if carrier:
+            payload["carrier"] = carrier
+        
         r = requests.post(
             f"{self.base_url}/api/pub/v2/verifications",
             headers=headers,
-            json={"serviceName": service_name, "capability": capability}
+            json=payload
         )
         r.raise_for_status()
         return r.headers.get("Location", "").split("/")[-1]
@@ -1342,23 +1386,19 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
     if req.capability == 'voice':
         base_cost += VOICE_PREMIUM
     
-    # Determine pricing tier based on user's total funded amount
-    total_funded = db.query(Transaction).filter(
-        Transaction.user_id == user.id,
-        Transaction.type == "credit",
-        Transaction.description.contains("funded")
-    ).with_entities(Transaction.amount).all()
-    total_funded_amount = sum([t[0] for t in total_funded]) if total_funded else 0
+    # Get user's subscription plan
+    subscription = db.query(Subscription).filter(
+        Subscription.user_id == user.id,
+        Subscription.status == "active"
+    ).first()
     
-    # Apply tier discount
-    if total_funded_amount >= MIN_PURCHASE['enterprise']:
-        tier_multiplier = PRICING_TIERS['enterprise']
-    elif total_funded_amount >= MIN_PURCHASE['developer']:
-        tier_multiplier = PRICING_TIERS['developer']
+    # Apply discount based on subscription
+    if subscription:
+        discount = SUBSCRIPTION_PLANS[subscription.plan]['discount']
+        cost = round(base_cost * (1 - discount), 2)
     else:
-        tier_multiplier = PRICING_TIERS['pay_as_you_go']
-    
-    cost = round(base_cost * tier_multiplier, 2)
+        # No subscription = Starter plan (no discount)
+        cost = base_cost
     
     # Check if user has free verifications or credits
     if user.free_verifications >= 1:
@@ -1393,8 +1433,30 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
     )
     db.add(transaction)
     
-    # Create verification
-    verification_id = tv_client.create_verification(req.service_name, req.capability)
+    # Check subscription for filtering permissions
+    subscription = db.query(Subscription).filter(
+        Subscription.user_id == user.id,
+        Subscription.status == "active"
+    ).first()
+    
+    # Validate filtering permissions
+    if req.area_code and subscription:
+        plan = SUBSCRIPTION_PLANS[subscription.plan]
+        if not plan['area_code']:
+            raise HTTPException(status_code=403, detail="Area code selection requires Pro or Turbo plan")
+    
+    if req.carrier and subscription:
+        plan = SUBSCRIPTION_PLANS[subscription.plan]
+        if not plan['carrier']:
+            raise HTTPException(status_code=403, detail="Carrier selection requires Turbo plan")
+    
+    # Create verification with filters
+    verification_id = tv_client.create_verification(
+        req.service_name, 
+        req.capability,
+        area_code=req.area_code,
+        carrier=req.carrier
+    )
     details = tv_client.get_verification(verification_id)
     
     verification = Verification(
@@ -1963,6 +2025,155 @@ async def track_activity(request: Request, db: Session = Depends(get_db)):
     except Exception as e:
         print(f"Track error: {e}")
         return {"status": "error"}
+
+@app.get("/subscription/plans", tags=["Subscription"], summary="Get Available Plans")
+def get_subscription_plans():
+    """Get all available subscription plans"""
+    return {
+        "plans": [
+            {
+                "id": "starter",
+                "name": "Starter",
+                "price": 0,
+                "price_usd": 0,
+                "discount": "0%",
+                "features": [
+                    "Random phone numbers",
+                    "Random carriers",
+                    "Pay per verification",
+                    "Basic support"
+                ]
+            },
+            {
+                "id": "pro",
+                "name": "Pro",
+                "price": 25.0,
+                "price_usd": 50,
+                "discount": "20%",
+                "features": [
+                    "Choose area code",
+                    "20% discount on all verifications",
+                    "Priority support",
+                    "API access"
+                ]
+            },
+            {
+                "id": "turbo",
+                "name": "Turbo",
+                "price": 100.0,
+                "price_usd": 200,
+                "discount": "35%",
+                "features": [
+                    "Choose area code",
+                    "Choose carrier (Verizon, AT&T, T-Mobile)",
+                    "35% discount on all verifications",
+                    "Premium support",
+                    "Advanced API access"
+                ]
+            }
+        ]
+    }
+
+@app.post("/subscription/subscribe", tags=["Subscription"], summary="Subscribe to Plan")
+def subscribe_to_plan(req: SubscribeRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Subscribe to Pro or Turbo plan"""
+    if req.plan not in ['pro', 'turbo']:
+        raise HTTPException(status_code=400, detail="Invalid plan. Choose 'pro' or 'turbo'")
+    
+    plan = SUBSCRIPTION_PLANS[req.plan]
+    
+    # Check if user has enough credits
+    if user.credits < plan['price']:
+        raise HTTPException(status_code=402, detail=f"Insufficient credits. Need N{plan['price']}, have N{user.credits}")
+    
+    # Check existing subscription
+    existing = db.query(Subscription).filter(Subscription.user_id == user.id).first()
+    
+    if existing:
+        # Upgrade/downgrade
+        existing.plan = req.plan
+        existing.price = plan['price']
+        existing.discount = plan['discount']
+        existing.status = "active"
+        existing.next_billing_date = datetime.now(timezone.utc) + timedelta(days=30)
+        existing.updated_at = datetime.now(timezone.utc)
+    else:
+        # New subscription
+        subscription = Subscription(
+            id=f"sub_{datetime.now(timezone.utc).timestamp()}",
+            user_id=user.id,
+            plan=req.plan,
+            price=plan['price'],
+            discount=plan['discount'],
+            status="active",
+            next_billing_date=datetime.now(timezone.utc) + timedelta(days=30)
+        )
+        db.add(subscription)
+    
+    # Deduct first month payment
+    user.credits -= plan['price']
+    
+    # Create transaction
+    db.add(Transaction(
+        id=f"txn_{datetime.now(timezone.utc).timestamp()}",
+        user_id=user.id,
+        amount=-plan['price'],
+        type="debit",
+        description=f"Subscription: {plan['name']} plan (monthly)"
+    ))
+    
+    db.commit()
+    
+    return {
+        "message": f"Successfully subscribed to {plan['name']} plan!",
+        "plan": req.plan,
+        "next_billing_date": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
+        "remaining_credits": user.credits
+    }
+
+@app.get("/subscription/current", tags=["Subscription"], summary="Get Current Subscription")
+def get_current_subscription(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get user's current subscription"""
+    subscription = db.query(Subscription).filter(Subscription.user_id == user.id).first()
+    
+    if not subscription:
+        return {
+            "plan": "starter",
+            "name": "Starter",
+            "status": "active",
+            "features": SUBSCRIPTION_PLANS['starter']
+        }
+    
+    return {
+        "plan": subscription.plan,
+        "name": SUBSCRIPTION_PLANS[subscription.plan]['name'],
+        "status": subscription.status,
+        "price": subscription.price,
+        "discount": f"{int(subscription.discount * 100)}%",
+        "next_billing_date": subscription.next_billing_date.isoformat() if subscription.next_billing_date else None,
+        "features": SUBSCRIPTION_PLANS[subscription.plan]
+    }
+
+@app.post("/subscription/cancel", tags=["Subscription"], summary="Cancel Subscription")
+def cancel_subscription(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Cancel active subscription"""
+    subscription = db.query(Subscription).filter(
+        Subscription.user_id == user.id,
+        Subscription.status == "active"
+    ).first()
+    
+    if not subscription:
+        raise HTTPException(status_code=404, detail="No active subscription found")
+    
+    subscription.status = "cancelled"
+    subscription.cancelled_at = datetime.now(timezone.utc)
+    db.commit()
+    
+    return {
+        "message": "Subscription cancelled. You'll be downgraded to Starter plan at the end of billing period.",
+        "plan": subscription.plan,
+        "active_until": subscription.next_billing_date.isoformat() if subscription.next_billing_date else None
+    }
 
 @app.get("/admin/stats", tags=["Admin"], summary="Get Platform Statistics")
 def get_stats(period: str = "30", admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
@@ -2773,9 +2984,31 @@ def create_rental(req: CreateRentalRequest, user: User = Depends(get_current_use
     # Deduct credits
     user.credits -= cost
     
+    # Check subscription for filtering permissions
+    subscription = db.query(Subscription).filter(
+        Subscription.user_id == user.id,
+        Subscription.status == "active"
+    ).first()
+    
+    # Validate filtering permissions
+    if req.area_code and subscription:
+        plan = SUBSCRIPTION_PLANS[subscription.plan]
+        if not plan['area_code']:
+            raise HTTPException(status_code=403, detail="Area code selection requires Pro or Turbo plan")
+    
+    if req.carrier and subscription:
+        plan = SUBSCRIPTION_PLANS[subscription.plan]
+        if not plan['carrier']:
+            raise HTTPException(status_code=403, detail="Carrier selection requires Turbo plan")
+    
     # Create verification for rental
     try:
-        verification_id = tv_client.create_verification(req.service_name, "sms")
+        verification_id = tv_client.create_verification(
+            req.service_name, 
+            "sms",
+            area_code=req.area_code,
+            carrier=req.carrier
+        )
         details = tv_client.get_verification(verification_id)
         phone_number = details.get("number")
         
