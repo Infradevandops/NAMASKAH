@@ -127,20 +127,7 @@ function showTab(tab) {
     }
 }
 
-async function checkEmailVerification() {
-    try {
-        const res = await fetch(`${API_BASE}/auth/me`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-        
-        if (!data.email_verified) {
-            document.getElementById('email-verification-banner').classList.remove('hidden');
-        }
-    } catch (error) {
-        console.error('Email verification check failed:', error);
-    }
-}
+// Email verification no longer required - removed
 
 async function resendVerificationEmail() {
     try {
