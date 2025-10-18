@@ -880,6 +880,37 @@ def health():
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
+@app.post("/emergency-admin-reset", tags=["System"], summary="Emergency Admin Reset")
+def emergency_admin_reset(secret: str, db: Session = Depends(get_db)):
+    """Emergency endpoint to reset admin password - remove after use"""
+    if secret != "NAMASKAH_EMERGENCY_2024":
+        raise HTTPException(status_code=403, detail="Invalid secret")
+    
+    try:
+        admin = db.query(User).filter(User.email == "admin@namaskah.app").first()
+        if admin:
+            admin.password_hash = bcrypt.hashpw(b"Namaskah@Admin2024", bcrypt.gensalt()).decode()
+            admin.is_admin = True
+            admin.email_verified = True
+            db.commit()
+            return {"status": "success", "message": "Admin password reset to Namaskah@Admin2024"}
+        else:
+            import secrets
+            admin = User(
+                id=f"user_{datetime.now(timezone.utc).timestamp()}",
+                email="admin@namaskah.app",
+                password_hash=bcrypt.hashpw(b"Namaskah@Admin2024", bcrypt.gensalt()).decode(),
+                credits=100.0,
+                is_admin=True,
+                email_verified=True,
+                referral_code=secrets.token_urlsafe(6)
+            )
+            db.add(admin)
+            db.commit()
+            return {"status": "success", "message": "Admin user created with password Namaskah@Admin2024"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/services/list", tags=["System"], summary="List All Services")
 def get_services_list():
     """Get complete list of supported services with categories and pricing
