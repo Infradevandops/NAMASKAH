@@ -138,6 +138,125 @@ function stopCountdown() {
     document.getElementById('timer-row').style.display = 'none';
 }
 
+function showRetryModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 500px;">
+            <h2>No SMS Received</h2>
+            <p style="color: #6b7280; margin-bottom: 20px;">The verification code was not received. Choose an option:</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <button onclick="retryWithVoice()" style="background: #10b981; padding: 15px; font-size: 16px; font-weight: 600;">
+                    📞 Try Voice Verification
+                    <div style="font-size: 13px; opacity: 0.9; margin-top: 5px;">SMS refunded, voice charged after code arrives</div>
+                </button>
+                
+                <button onclick="retryWithSame()" style="background: #667eea; padding: 15px; font-size: 16px; font-weight: 600;">
+                    🔄 Retry Same Number
+                    <div style="font-size: 13px; opacity: 0.9; margin-top: 5px;">Try again with current number</div>
+                </button>
+                
+                <button onclick="retryWithNew()" style="background: #f59e0b; padding: 15px; font-size: 16px; font-weight: 600;">
+                    🆕 Get New Number
+                    <div style="font-size: 13px; opacity: 0.9; margin-top: 5px;">Request different number</div>
+                </button>
+                
+                <button onclick="closeRetryModal()" style="background: #ef4444; padding: 12px;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function closeRetryModal() {
+    const modal = document.querySelector('.modal');
+    if (modal) modal.remove();
+}
+
+async function retryWithVoice() {
+    closeRetryModal();
+    showLoading(true);
+    
+    try {
+        const res = await fetch(`${API_BASE}/verify/${currentVerificationId}/retry?retry_type=voice`, {
+            method: 'POST',
+            headers: {'Authorization': `Bearer ${token}`}
+        });
+        
+        const data = await res.json();
+        showLoading(false);
+        
+        if (res.ok) {
+            currentVerificationId = data.id;
+            displayVerification(data);
+            showNotification('Switched to voice verification', 'success');
+            startAutoRefresh();
+        } else {
+            showNotification(data.detail || 'Failed to switch to voice', 'error');
+        }
+    } catch (err) {
+        showLoading(false);
+        showNotification('Network error', 'error');
+    }
+}
+
+async function retryWithSame() {
+    closeRetryModal();
+    showLoading(true);
+    
+    try {
+        const res = await fetch(`${API_BASE}/verify/${currentVerificationId}/retry?retry_type=same`, {
+            method: 'POST',
+            headers: {'Authorization': `Bearer ${token}`}
+        });
+        
+        const data = await res.json();
+        showLoading(false);
+        
+        if (res.ok) {
+            displayVerification(data);
+            showNotification('Retrying with same number', 'success');
+            startAutoRefresh();
+        } else {
+            showNotification(data.detail || 'Failed to retry', 'error');
+        }
+    } catch (err) {
+        showLoading(false);
+        showNotification('Network error', 'error');
+    }
+}
+
+async function retryWithNew() {
+    closeRetryModal();
+    showLoading(true);
+    
+    try {
+        const res = await fetch(`${API_BASE}/verify/${currentVerificationId}/retry?retry_type=new`, {
+            method: 'POST',
+            headers: {'Authorization': `Bearer ${token}`}
+        });
+        
+        const data = await res.json();
+        showLoading(false);
+        
+        if (res.ok) {
+            currentVerificationId = data.id;
+            displayVerification(data);
+            showNotification('New number assigned', 'success');
+            startAutoRefresh();
+        } else {
+            showNotification(data.detail || 'Failed to get new number', 'error');
+        }
+    } catch (err) {
+        showLoading(false);
+        showNotification('Network error', 'error');
+    }
+}
+
 async function autoCancel() {
     if (!currentVerificationId) return;
     
@@ -157,26 +276,9 @@ async function autoCancel() {
         }
     } catch (err) {}
     
-    showNotification('No SMS in 45s - Auto-cancelling...', 'error');
-    
-    try {
-        const res = await fetch(`${API_BASE}/verify/${currentVerificationId}`, {
-            method: 'DELETE',
-            headers: {'Authorization': `Bearer ${token}`}
-        });
-        
-        if (res.ok) {
-            const data = await res.json();
-            document.getElementById('user-credits').textContent = data.new_balance.toFixed(2);
-            showNotification(`Auto-cancelled! Refunded ₵${data.refunded.toFixed(2)}`, 'success');
-            document.getElementById('retry-btn').classList.remove('hidden');
-            stopAutoRefresh();
-            stopCountdown();
-            loadTransactions(true);
-        }
-    } catch (err) {
-        showNotification('Auto-cancel failed', 'error');
-    }
+    stopAutoRefresh();
+    stopCountdown();
+    showRetryModal();
 }
 
 async function retryVerification() {
@@ -278,18 +380,20 @@ async function checkMessages(silent = false) {
             stopAutoRefresh();
             
             messagesList.innerHTML = `
-                <div style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); padding: 25px; border-radius: 12px; margin-bottom: 20px; border: 3px solid #10b981; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); animation: pulse 2s infinite;">
-                    <h2 style="color: #065f46; margin: 0 0 12px 0; font-size: 24px; text-align: center;">🎉🎊 VERIFICATION SUCCESS! 🎊🎉</h2>
-                    <p style="color: #047857; margin: 0; font-size: 18px; text-align: center; font-weight: 600;">✨ SMS code received! ✨</p>
-                    <p style="color: #059669; margin: 10px 0 0 0; text-align: center; font-size: 16px;">🔥 Wanna try another service? 🔥</p>
+                <div style="background: #10b981; color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                    <h2 style="margin: 0 0 8px 0; font-size: 20px;">Verification Code Received</h2>
+                    <p style="margin: 0; opacity: 0.9;">Your verification code has arrived successfully</p>
                 </div>
-                <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; border-left: 4px solid #22c55e; margin-bottom: 15px;">
-                    <h4 style="color: #166534; margin: 0 0 10px 0;">📱 Your SMS Messages:</h4>
+                <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; border: 2px solid #10b981; margin-bottom: 15px;">
+                    <h4 style="color: #166534; margin: 0 0 10px 0;">SMS Messages:</h4>
                     ${data.messages.map(msg => 
-                        `<div class="message-item" style="background: white; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #bbf7d0; font-family: monospace; font-size: 15px; color: #166534;">${msg}</div>`
+                        `<div style="background: white; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #d1fae5; display: flex; justify-content: space-between; align-items: center;">
+                            <code style="font-family: monospace; font-size: 15px; color: #166534; flex: 1;">${msg}</code>
+                            <button onclick="copyCode('${msg}')" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; margin-left: 10px;">Copy</button>
+                        </div>`
                     ).join('')}
                 </div>
-                <button onclick="tryAnotherService()" style="margin-top: 15px; width: 100%; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; padding: 14px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4); transition: all 0.3s;">🚀 Try Another Service</button>
+                <button onclick="tryAnotherService()" style="margin-top: 15px; width: 100%; background: #667eea; color: white; padding: 14px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer;">Try Another Service</button>
             `;
             
             if (!silent) {
@@ -307,11 +411,16 @@ async function checkMessages(silent = false) {
     }
 }
 
+function copyCode(code) {
+    navigator.clipboard.writeText(code);
+    showNotification('Code copied to clipboard', 'success');
+}
+
 function tryAnotherService() {
     clearSession();
     document.getElementById('service-select').scrollIntoView({ behavior: 'smooth' });
     document.getElementById('service-select').focus();
-    showNotification('Select a new service to verify!', 'success');
+    showNotification('Select a new service to verify', 'success');
 }
 
 async function cancelVerification() {
