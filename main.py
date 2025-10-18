@@ -3355,30 +3355,11 @@ def create_rental(req: CreateRentalRequest, user: User = Depends(get_current_use
     # Deduct credits
     user.credits -= cost
     
-    # Check subscription for filtering permissions
-    subscription = db.query(Subscription).filter(
-        Subscription.user_id == user.id,
-        Subscription.status == "active"
-    ).first()
-    
-    # Validate filtering permissions
-    if req.area_code and subscription:
-        plan = SUBSCRIPTION_PLANS[subscription.plan]
-        if not plan['area_code']:
-            raise HTTPException(status_code=403, detail="Area code selection requires Pro or Turbo plan")
-    
-    if req.carrier and subscription:
-        plan = SUBSCRIPTION_PLANS[subscription.plan]
-        if not plan['carrier']:
-            raise HTTPException(status_code=403, detail="Carrier selection requires Turbo plan")
-    
     # Create verification for rental
     try:
         verification_id = tv_client.create_verification(
             req.service_name, 
-            "sms",
-            area_code=req.area_code,
-            carrier=req.carrier
+            "sms"
         )
         details = tv_client.get_verification(verification_id)
         phone_number = details.get("number")
