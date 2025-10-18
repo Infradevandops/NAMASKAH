@@ -1470,10 +1470,26 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
     if user.free_verifications >= 1:
         user.free_verifications -= 1
         cost = 0  # Free verification
+        # Track free verification in transactions
+        db.add(Transaction(
+            id=f"txn_{datetime.now(timezone.utc).timestamp()}",
+            user_id=user.id,
+            amount=0,
+            type="debit",
+            description=f"Free verification for {req.service_name}"
+        ))
     elif user.credits < cost:
         raise HTTPException(status_code=402, detail=f"Insufficient credits. Need N{cost}, have N{user.credits}")
     else:
         user.credits -= cost
+        # Create transaction for paid verification
+        db.add(Transaction(
+            id=f"txn_{datetime.now(timezone.utc).timestamp()}",
+            user_id=user.id,
+            amount=-cost,
+            type="debit",
+            description=f"Verification for {req.service_name}"
+        ))
     
     # Check low balance and send notification
     settings = db.query(NotificationSettings).filter(NotificationSettings.user_id == user.id).first()
@@ -1488,16 +1504,6 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
             <p>Fund your wallet to continue using Namaskah SMS.</p>
             <p><a href="{BASE_URL}/app">Fund Wallet Now</a></p>"""
         )
-    
-    # Create transaction
-    transaction = Transaction(
-        id=f"txn_{datetime.now(timezone.utc).timestamp()}",
-        user_id=user.id,
-        amount=-VERIFICATION_COST,
-        type="debit",
-        description=f"Verification for {req.service_name}"
-    )
-    db.add(transaction)
     
     # Check subscription for filtering permissions
     subscription = db.query(Subscription).filter(
@@ -2351,6 +2357,9 @@ def get_stats(period: str = "30", admin: User = Depends(get_admin_user), db: Ses
 @app.post("/wallet/paystack/initialize", tags=["Wallet"], summary="Initialize Paystack Payment")
 def initialize_paystack(req: FundWalletRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Initialize Paystack payment with detailed transaction info"""
+    if req.amount < 2.5:
+        raise HTTPException(status_code=400, detail="Minimum funding amount is N2.50 ($5 USD)")
+    
     if req.amount < 5:
         raise HTTPException(status_code=400, detail="Minimum funding amount is $5 USD")
     
@@ -2527,6 +2536,41 @@ async def paystack_webhook(request: Request, db: Session = Depends(get_db)):
         # Log activity
         log_activity(db, user_id=user.id, email=user.email, action="payment_completed", 
                     status="success", details=f"Credited N{namaskah_amount:.2f} from {reference}")
+        
+        # Check and process referral rewards (if user was referred and funded N2.50+)
+        if user.referred_by and namaskah_amount >= 2.5:
+            referrer = db.query(User).filter(User.id == user.referred_by).first()
+            if referrer:
+                # Check if referral reward already given
+                existing_referral = db.query(Referral).filter(
+                    Referral.referrer_id == referrer.id,
+                    Referral.referred_id == user.id
+                ).first()
+                
+                if existing_referral and existing_referral.reward_amount == 0:
+                    # Give referrer 1 free verification
+                    referrer.free_verifications += 1
+                    referrer.referral_earnings += 1.0
+                    existing_referral.reward_amount = 1.0
+                    
+                    # Create transaction for referrer
+                    db.add(Transaction(
+                        id=f"txn_{datetime.now(timezone.utc).timestamp()}",
+                        user_id=referrer.id,
+                        amount=0,
+                        type="credit",
+                        description=f"Referral bonus: {user.email} funded account"
+                    ))
+                    
+                    # Notify referrer
+                    send_email(
+                        referrer.email,
+                        "🎁 Referral Reward - Namaskah SMS",
+                        f"""<h2>You earned a referral reward!</h2>
+                        <p><strong>{user.email}</strong> funded their account.</p>
+                        <p>You received: <strong>1 Free Verification</strong></p>
+                        <p><a href="{BASE_URL}/app">Use Your Free Verification</a></p>"""
+                    )
         
         db.commit()
         
