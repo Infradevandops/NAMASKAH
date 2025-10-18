@@ -322,6 +322,17 @@ class PaymentLog(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime)
 
+class BannedNumber(Base):
+    __tablename__ = "banned_numbers"
+    id = Column(String, primary_key=True)
+    phone_number = Column(String, nullable=False)
+    service_name = Column(String, nullable=False)
+    area_code = Column(String)
+    carrier = Column(String)
+    fail_count = Column(Float, default=1)
+    last_failed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
 Base.metadata.create_all(bind=engine)
 
 # Create database indexes for performance
@@ -1633,6 +1644,171 @@ def get_voice_call(verification_id: str, user: User = Depends(get_current_user),
         "received_at": verification.completed_at.isoformat() if verification.completed_at else None
     }
 
+@app.post("/verify/{verification_id}/retry", tags=["Verification"], summary="Retry Verification")
+def retry_verification(verification_id: str, retry_type: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Retry verification with voice, same number, or new number
+    
+    - **retry_type**: 'voice', 'same', 'new'
+    """
+    verification = db.query(Verification).filter(
+        Verification.id == verification_id,
+        Verification.user_id == user.id
+    ).first()
+    
+    if not verification:
+        raise HTTPException(status_code=404, detail="Verification not found")
+    
+    # Refund original SMS cost
+    user.credits += verification.cost
+    db.add(Transaction(
+        id=f"txn_{datetime.now(timezone.utc).timestamp()}",
+        user_id=user.id,
+        amount=verification.cost,
+        type="credit",
+        description=f"Refund for failed {verification.service_name} verification"
+    ))
+    
+    # Mark number as banned if no SMS received
+    banned = db.query(BannedNumber).filter(
+        BannedNumber.phone_number == verification.phone_number,
+        BannedNumber.service_name == verification.service_name
+    ).first()
+    
+    if banned:
+        banned.fail_count += 1
+        banned.last_failed_at = datetime.now(timezone.utc)
+    else:
+        banned = BannedNumber(
+            id=f"banned_{datetime.now(timezone.utc).timestamp()}",
+            phone_number=verification.phone_number,
+            service_name=verification.service_name,
+            area_code=getattr(verification, 'area_code', None),
+            carrier=getattr(verification, 'carrier', None)
+        )
+        db.add(banned)
+    
+    verification.status = "cancelled"
+    
+    if retry_type == "voice":
+        # Create voice verification
+        cost = SMS_PRICING['popular'] + VOICE_PREMIUM
+        if user.credits < cost:
+            raise HTTPException(status_code=402, detail=f"Insufficient credits for voice. Need N{cost}")
+        
+        user.credits -= cost
+        
+        try:
+            new_verification_id = tv_client.create_verification(
+                verification.service_name,
+                "voice"
+            )
+            details = tv_client.get_verification(new_verification_id)
+            
+            new_verification = Verification(
+                id=new_verification_id,
+                user_id=user.id,
+                service_name=verification.service_name,
+                phone_number=details.get("number"),
+                capability="voice",
+                status="pending",
+                cost=cost
+            )
+            db.add(new_verification)
+            db.add(Transaction(
+                id=f"txn_{datetime.now(timezone.utc).timestamp()}",
+                user_id=user.id,
+                amount=-cost,
+                type="debit",
+                description=f"Voice verification for {verification.service_name}"
+            ))
+            db.commit()
+            
+            return {
+                "id": new_verification.id,
+                "phone_number": new_verification.phone_number,
+                "capability": "voice",
+                "status": "pending",
+                "cost": cost,
+                "message": "Switched to voice verification"
+            }
+        except Exception as e:
+            user.credits += cost
+            db.rollback()
+            raise HTTPException(status_code=503, detail=f"Voice verification failed: {str(e)}")
+    
+    elif retry_type == "same":
+        # Retry with same number
+        cost = verification.cost
+        if user.credits < cost:
+            raise HTTPException(status_code=402, detail=f"Insufficient credits. Need N{cost}")
+        
+        user.credits -= cost
+        verification.status = "pending"
+        db.add(Transaction(
+            id=f"txn_{datetime.now(timezone.utc).timestamp()}",
+            user_id=user.id,
+            amount=-cost,
+            type="debit",
+            description=f"Retry {verification.service_name} with same number"
+        ))
+        db.commit()
+        
+        return {
+            "id": verification.id,
+            "phone_number": verification.phone_number,
+            "status": "pending",
+            "message": "Retrying with same number"
+        }
+    
+    elif retry_type == "new":
+        # Get new number
+        cost = verification.cost
+        if user.credits < cost:
+            raise HTTPException(status_code=402, detail=f"Insufficient credits. Need N{cost}")
+        
+        user.credits -= cost
+        
+        try:
+            new_verification_id = tv_client.create_verification(
+                verification.service_name,
+                verification.capability
+            )
+            details = tv_client.get_verification(new_verification_id)
+            
+            new_verification = Verification(
+                id=new_verification_id,
+                user_id=user.id,
+                service_name=verification.service_name,
+                phone_number=details.get("number"),
+                capability=verification.capability,
+                status="pending",
+                cost=cost
+            )
+            db.add(new_verification)
+            db.add(Transaction(
+                id=f"txn_{datetime.now(timezone.utc).timestamp()}",
+                user_id=user.id,
+                amount=-cost,
+                type="debit",
+                description=f"New number for {verification.service_name}"
+            ))
+            db.commit()
+            
+            return {
+                "id": new_verification.id,
+                "phone_number": new_verification.phone_number,
+                "status": "pending",
+                "cost": cost,
+                "message": "New number assigned"
+            }
+        except Exception as e:
+            user.credits += cost
+            db.rollback()
+            raise HTTPException(status_code=503, detail=f"Failed to get new number: {str(e)}")
+    
+    else:
+        raise HTTPException(status_code=400, detail="Invalid retry_type. Use 'voice', 'same', or 'new'")
+
 @app.delete("/verify/{verification_id}", tags=["Verification"], summary="Cancel Verification")
 def cancel_verification(verification_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Cancel active verification and refund credits to wallet"""
@@ -2252,6 +2428,26 @@ def cancel_subscription(user: User = Depends(get_current_user), db: Session = De
         "message": "Subscription cancelled. You'll be downgraded to Starter plan when it expires.",
         "plan": subscription.plan,
         "active_until": subscription.expires_at.isoformat() if subscription.expires_at else "Lifetime (no refund)"
+    }
+
+@app.get("/admin/banned-numbers", tags=["Admin"], summary="Get Banned Numbers")
+def get_banned_numbers(admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Get list of banned numbers (admin only)"""
+    banned = db.query(BannedNumber).order_by(BannedNumber.fail_count.desc()).all()
+    
+    return {
+        "banned_numbers": [
+            {
+                "phone_number": b.phone_number,
+                "service_name": b.service_name,
+                "area_code": b.area_code,
+                "carrier": b.carrier,
+                "fail_count": b.fail_count,
+                "last_failed_at": b.last_failed_at.isoformat(),
+                "created_at": b.created_at.isoformat()
+            }
+            for b in banned
+        ]
     }
 
 @app.get("/admin/stats", tags=["Admin"], summary="Get Platform Statistics")
