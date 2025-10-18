@@ -2194,6 +2194,42 @@ def get_affiliate_stats(admin: User = Depends(get_admin_user), db: Session = Dep
         ]
     }
 
+@app.get("/admin/subscriptions/stats", tags=["Admin"], summary="Get Subscription Statistics")
+def get_subscription_stats(admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Get subscription tier distribution (admin only)"""
+    from sqlalchemy import func
+    
+    # Get users with total funded amount
+    users_with_funding = db.query(
+        User.id,
+        func.sum(Transaction.amount).label('total_funded')
+    ).join(Transaction, User.id == Transaction.user_id).filter(
+        Transaction.type == "credit"
+    ).group_by(User.id).all()
+    
+    pay_as_you_go = 0
+    developer = 0
+    enterprise = 0
+    
+    for user_funding in users_with_funding:
+        if user_funding.total_funded >= 100:
+            enterprise += 1
+        elif user_funding.total_funded >= 25:
+            developer += 1
+        else:
+            pay_as_you_go += 1
+    
+    # Users with no funding are pay-as-you-go
+    total_users = db.query(User).count()
+    pay_as_you_go += total_users - len(users_with_funding)
+    
+    return {
+        "pay_as_you_go": pay_as_you_go,
+        "developer": developer,
+        "enterprise": enterprise,
+        "total": total_users
+    }
+
 @app.get("/admin/analytics/summary", tags=["Admin"], summary="Get Analytics Summary")
 def get_analytics_summary(email: str = None, days: int = 7, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Get analytics summary for user or all users"""
