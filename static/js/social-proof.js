@@ -1,9 +1,9 @@
 // Social Proof System - Live Stats, Activity Feed, Trust Indicators
 
-const CITIES = ['Lagos', 'Abuja', 'Port Harcourt', 'Ibadan', 'Kano'];
+const CITIES = ['New York', 'London', 'Tokyo', 'Singapore', 'Dubai', 'Toronto', 'Sydney', 'Mumbai', 'Berlin', 'Paris'];
 const FIELDS = ['Software Dev', 'Digital Marketing', 'Fintech', 'E-commerce', 'Crypto Trading'];
 const SERVICES = ['WhatsApp', 'Telegram', 'Binance', 'Instagram', 'Tinder', 'Facebook', 'Discord', 'Coinbase'];
-const NAMES = ['Chidi', 'Amina', 'Tunde', 'Ngozi', 'Ibrahim', 'Blessing', 'Emeka', 'Fatima', 'Ade', 'Zainab'];
+const NAMES = ['John Davidson', 'Sarah Mitchell', 'Michael Kumar', 'Emma Chen', 'David Rodriguez', 'Lisa Anderson', 'James Wilson', 'Maria Garcia', 'Robert Taylor', 'Jennifer Lee'];
 
 // Live Stats Counter
 class LiveStatsCounter {

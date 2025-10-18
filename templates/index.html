@@ -12,9 +12,17 @@
     <title>Namaskah SMS - Verification Service</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/mobile.css">
+    <style>
+        /* Anti-flicker */
+        html { visibility: visible; opacity: 1; }
+        body { opacity: 0; transition: opacity 0.3s ease-in; }
+        body.loaded { opacity: 1; }
+        #google-auth-btn { opacity: 0; transition: opacity 0.3s ease-in; }
+        #google-auth-btn.loaded { opacity: 1; }
+    </style>
     <script src="/track.js"></script>
 </head>
-<body>
+<body class="loaded">
     <div class="top-nav">
         <div style="display: flex; align-items: center; gap: 10px;">
             <div class="hamburger" onclick="toggleMobileMenu()">

@@ -7,6 +7,11 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="/static/js/social-proof.js"></script>
     <style>
+        /* Anti-flicker */
+        html { visibility: visible !important; opacity: 1 !important; }
+        body { opacity: 0; transition: opacity 0.2s ease-in; }
+        body.loaded { opacity: 1; }
+        /* End Anti-flicker */
         :root {
             --primary: #667eea;
             --primary-dark: #5568d3;
@@ -102,6 +107,10 @@
             font-size: 1.2rem;
             font-weight: bold;
             color: var(--text-primary);
+            transition: transform 0.3s ease;
+        }
+        .landing-nav .logo:hover {
+            transform: scale(1.05);
         }
         .landing-nav button {
             padding: 8px 16px;
@@ -254,6 +263,7 @@
         }
     </style>
     <script src="/track.js"></script>
+    <script>document.addEventListener('DOMContentLoaded', () => document.body.classList.add('loaded'));</script>
 </head>
 <body>
     <div class="landing-nav">
@@ -624,23 +634,13 @@
 
     <div style="background: var(--bg-primary); padding: 40px 15px;">
         <div style="max-width: 1200px; margin: 0 auto;">
-        <h2 style="text-align: center; font-size: 1.8rem; margin-bottom: 30px; color: var(--text-primary);">📂 Categories</h2>
+        <h2 style="text-align: center; font-size: 1.8rem; margin-bottom: 30px; color: var(--text-primary);">Categories</h2>
         <style>
             @media (min-width: 768px) {
                 .categories-section h2 { font-size: 2.5rem !important; }
             }
         </style>
         <div style="max-width: 1400px; margin: 0 auto; padding: 0 15px;">
-            <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center;">
-                <span style="background: var(--accent); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">📱 Social</span>
-                <span style="background: var(--accent); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">💬 Messaging</span>
-                <span style="background: var(--accent); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">💕 Dating</span>
-                <span style="background: var(--accent); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">💰 Finance</span>
-                <span style="background: var(--accent); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">🛒 Shopping</span>
-                <span style="background: var(--accent); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">🍔 Food</span>
-                <span style="background: var(--accent); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">🎮 Gaming</span>
-                <span style="background: var(--accent); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">₿ Crypto</span>
-            </div>
             <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
                 <style>
                     @media (min-width: 480px) {
@@ -880,14 +880,15 @@
     <!-- Navigation Menu -->
     <div class="nav-menu" id="navMenu">
         <h3 style="margin-bottom: 20px; color: var(--accent);">Menu</h3>
-        <a href="/app">🏠 Dashboard</a>
-        <a href="/app">🔐 Login / Register</a>
-        <a href="/about">ℹ️ About Us</a>
-        <a href="/faq">❓ FAQ</a>
-        <a href="/status">🟢 Service Status</a>
-        <a href="/reviews">⭐ Reviews</a>
-        <a href="/api-docs">📚 API Docs</a>
-        <a href="#" onclick="showSupportModal(); return false;">💬 Support</a>
+        <a href="/">Home</a>
+        <a href="/app">Login / Register</a>
+        <a href="/about">About Us</a>
+        <a href="/faq">FAQ</a>
+        <a href="/reviews">Reviews</a>
+        <a href="/status">Service Status</a>
+        <a href="/api-docs">API Docs</a>
+        <a href="#" onclick="showSupportModal(); return false;">Support</a>
+        <a href="/admin">Admin</a>
     </div>
     
     <script>
