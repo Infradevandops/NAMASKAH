@@ -770,8 +770,6 @@ async def tracking_script():
     script = """
 (function() {
     const API_BASE = '';
-    const sessionId = sessionStorage.getItem('session_id') || Math.random().toString(36).substr(2, 9);
-    sessionStorage.setItem('session_id', sessionId);
     
     function track(action, element, details) {
         const token = localStorage.getItem('token') || localStorage.getItem('admin_token');
@@ -782,7 +780,6 @@ async def tracking_script():
                 'Authorization': token ? `Bearer ${token}` : ''
             },
             body: JSON.stringify({
-                session_id: sessionId,
                 page: window.location.pathname,
                 action: action,
                 element: element,
@@ -1969,7 +1966,6 @@ def get_analytics_summary(email: str = None, days: int = 7, admin: User = Depend
     total_activities = query.count()
     
     # Unique sessions
-    unique_sessions = db.query(func.count(func.distinct(ActivityLog.session_id))).filter(
         ActivityLog.created_at >= start_date
     )
     if email:
@@ -2022,7 +2018,6 @@ def get_payment_logs(email: str = None, reference: str = None, admin: User = Dep
     }
 
 @app.get("/admin/activity-logs", tags=["Admin"], summary="Get Activity Logs")
-def get_activity_logs(email: str = None, page: str = None, action: str = None, session_id: str = None, limit: int = 100, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Get activity logs for user tracking (admin only)"""
     query = db.query(ActivityLog)
     
@@ -2032,8 +2027,6 @@ def get_activity_logs(email: str = None, page: str = None, action: str = None, s
         query = query.filter(ActivityLog.page == page)
     if action:
         query = query.filter(ActivityLog.action == action)
-    if session_id:
-        query = query.filter(ActivityLog.session_id == session_id)
     
     logs = query.order_by(ActivityLog.created_at.desc()).limit(limit).all()
     
@@ -2042,7 +2035,6 @@ def get_activity_logs(email: str = None, page: str = None, action: str = None, s
             {
                 "id": log.id,
                 "email": log.email or "anonymous",
-                "session_id": log.session_id,
                 "page": log.page,
                 "action": log.action,
                 "element": log.element,
