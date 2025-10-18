@@ -1528,13 +1528,21 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
             raise HTTPException(status_code=403, detail="Carrier selection requires Turbo plan")
     
     # Create verification with filters
-    verification_id = tv_client.create_verification(
-        req.service_name, 
-        req.capability,
-        area_code=req.area_code,
-        carrier=req.carrier
-    )
-    details = tv_client.get_verification(verification_id)
+    try:
+        verification_id = tv_client.create_verification(
+            req.service_name, 
+            req.capability,
+            area_code=req.area_code,
+            carrier=req.carrier
+        )
+        details = tv_client.get_verification(verification_id)
+    except Exception as e:
+        # Refund if TextVerified API fails
+        if cost > 0:
+            user.credits += cost
+            db.rollback()
+        print(f"TextVerified API error: {e}")
+        raise HTTPException(status_code=503, detail=f"Verification service unavailable: {str(e)}")
     
     verification = Verification(
         id=verification_id,
