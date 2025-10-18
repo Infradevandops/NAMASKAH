@@ -3291,7 +3291,8 @@ RENTAL_GENERAL_USE = {
 
 # Rental modes
 RENTAL_MODES = {
-    'always_active': 1.0,   # Full price - always active
+    'always_ready': 1.0,    # Full price - always active
+    'always_active': 1.0,   # Alias
     'manual': 0.7           # 30% discount - needs activation
 }
 
@@ -3337,8 +3338,8 @@ def create_rental(req: CreateRentalRequest, user: User = Depends(get_current_use
     if not user.email_verified:
         raise HTTPException(status_code=403, detail="Email verification required for number rentals. Please verify your email first.")
     
-    # Default to always_active mode if not specified
-    mode = getattr(req, 'mode', 'always_active')
+    # Default to always_ready mode if not specified
+    mode = getattr(req, 'mode', 'always_ready')
     cost = calculate_rental_cost(req.duration_hours, req.service_name, mode)
     
     if user.credits < cost:
