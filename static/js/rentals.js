@@ -188,9 +188,20 @@ async function toggleRentalMessages(rentalId) {
                     if (data.messages.length === 0) {
                         content.innerHTML = '<div style="color: var(--text-secondary); font-style: italic;">No messages yet</div>';
                     } else {
-                        content.innerHTML = data.messages.map(msg => 
-                            `<div style="padding: 8px; background: var(--bg-secondary); border-radius: 4px; margin-bottom: 6px; border-left: 3px solid #667eea;">${msg}</div>`
-                        ).join('');
+                        content.innerHTML = data.messages.map(msg => {
+                            const codeMatch = msg.match(/\b\d{4,8}\b/);
+                            const code = codeMatch ? codeMatch[0] : msg;
+                            return `<div style="padding: 8px; background: var(--bg-secondary); border-radius: 4px; margin-bottom: 6px; border-left: 3px solid #667eea;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                    <strong style="font-size: 16px; color: var(--text-primary);">${code}</strong>
+                                    <button onclick="copyCode('${code}')" style="background: #10b981; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">Copy</button>
+                                </div>
+                                <details style="font-size: 12px; color: var(--text-secondary);">
+                                    <summary style="cursor: pointer;">Full message</summary>
+                                    <div style="margin-top: 4px;">${msg}</div>
+                                </details>
+                            </div>`;
+                        }).join('');
                     }
                 } else {
                     content.innerHTML = '<div style="color: #ef4444;">Failed to load messages</div>';
@@ -202,9 +213,20 @@ async function toggleRentalMessages(rentalId) {
             if (rentalMessagesCache[rentalId].length === 0) {
                 content.innerHTML = '<div style="color: var(--text-secondary); font-style: italic;">No messages yet</div>';
             } else {
-                content.innerHTML = rentalMessagesCache[rentalId].map(msg => 
-                    `<div style="padding: 8px; background: var(--bg-secondary); border-radius: 4px; margin-bottom: 6px; border-left: 3px solid #667eea;">${msg}</div>`
-                ).join('');
+                content.innerHTML = rentalMessagesCache[rentalId].map(msg => {
+                    const codeMatch = msg.match(/\b\d{4,8}\b/);
+                    const code = codeMatch ? codeMatch[0] : msg;
+                    return `<div style="padding: 8px; background: var(--bg-secondary); border-radius: 4px; margin-bottom: 6px; border-left: 3px solid #667eea;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <strong style="font-size: 16px; color: var(--text-primary);">${code}</strong>
+                            <button onclick="copyCode('${code}')" style="background: #10b981; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">Copy</button>
+                        </div>
+                        <details style="font-size: 12px; color: var(--text-secondary);">
+                            <summary style="cursor: pointer;">Full message</summary>
+                            <div style="margin-top: 4px;">${msg}</div>
+                        </details>
+                    </div>`;
+                }).join('');
             }
         }
     } else {

@@ -379,6 +379,11 @@ async function checkMessages(silent = false) {
             stopCountdown();
             stopAutoRefresh();
             
+            const extractedCodes = data.messages.map(msg => {
+                const codeMatch = msg.match(/\b\d{4,8}\b/);
+                return codeMatch ? codeMatch[0] : msg;
+            });
+            
             messagesList.innerHTML = `
                 <div style="background: #10b981; color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
                     <h2 style="margin: 0 0 8px 0; font-size: 20px;">Verification Code Received</h2>
@@ -386,12 +391,20 @@ async function checkMessages(silent = false) {
                 </div>
                 <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; border: 2px solid #10b981; margin-bottom: 15px;">
                     <h4 style="color: #166534; margin: 0 0 10px 0;">SMS Messages:</h4>
-                    ${data.messages.map(msg => 
-                        `<div style="background: white; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #d1fae5; display: flex; justify-content: space-between; align-items: center;">
-                            <code style="font-family: monospace; font-size: 15px; color: #166534; flex: 1;">${msg}</code>
-                            <button onclick="copyCode('${msg}')" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; margin-left: 10px;">Copy</button>
-                        </div>`
-                    ).join('')}
+                    ${data.messages.map((msg, idx) => {
+                        const code = extractedCodes[idx];
+                        return `<div style="background: white; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #d1fae5;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <strong style="color: #166534;">Code:</strong>
+                                <button onclick="copyCode('${code}')" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">Copy Code</button>
+                            </div>
+                            <code style="font-family: monospace; font-size: 18px; color: #166534; display: block; background: #f0fdf4; padding: 10px; border-radius: 4px; text-align: center; font-weight: bold;">${code}</code>
+                            <details style="margin-top: 8px;">
+                                <summary style="cursor: pointer; color: #6b7280; font-size: 13px;">Full message</summary>
+                                <div style="margin-top: 8px; font-size: 13px; color: #6b7280;">${msg}</div>
+                            </details>
+                        </div>`;
+                    }).join('')}
                 </div>
                 <button onclick="tryAnotherService()" style="margin-top: 15px; width: 100%; background: #667eea; color: white; padding: 14px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer;">Try Another Service</button>
             `;
@@ -412,8 +425,11 @@ async function checkMessages(silent = false) {
 }
 
 function copyCode(code) {
-    navigator.clipboard.writeText(code);
-    showNotification('Code copied to clipboard', 'success');
+    navigator.clipboard.writeText(code).then(() => {
+        showNotification(`Code ${code} copied to clipboard`, 'success');
+    }).catch(() => {
+        showNotification('Failed to copy code', 'error');
+    });
 }
 
 function tryAnotherService() {
@@ -472,15 +488,30 @@ async function checkVoiceCall() {
             const data = await res.json();
             const messagesList = document.getElementById('messages-list');
             
+            const transcriptionCode = data.transcription ? data.transcription.match(/\b\d{4,8}\b/)?.[0] : null;
+            
             messagesList.innerHTML = `
-                <div style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); padding: 25px; border-radius: 12px; margin-bottom: 20px; border: 3px solid #10b981;">
-                    <h2 style="color: #065f46; margin: 0 0 12px 0; font-size: 24px; text-align: center;">📞 Voice Call Details</h2>
+                <div style="background: #10b981; color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                    <h2 style="margin: 0 0 8px 0; font-size: 20px;">Voice Call Details</h2>
+                    <p style="margin: 0; opacity: 0.9;">Your voice verification has been received</p>
                 </div>
-                <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; border-left: 4px solid #22c55e; margin-bottom: 15px;">
+                <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; border: 2px solid #10b981; margin-bottom: 15px;">
                     <div style="margin-bottom: 10px;"><strong>Phone:</strong> ${formatPhoneNumber(data.phone_number)}</div>
                     <div style="margin-bottom: 10px;"><strong>Duration:</strong> ${data.call_duration || 'N/A'}</div>
-                    ${data.transcription ? `<div style="margin-bottom: 10px;"><strong>Transcription:</strong> ${data.transcription}</div>` : ''}
-                    ${data.audio_url ? `<div><audio controls src="${data.audio_url}" style="width: 100%;"></audio></div>` : ''}
+                    ${data.transcription ? `
+                        <div style="background: white; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #d1fae5;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <strong style="color: #166534;">Code:</strong>
+                                <button onclick="copyCode('${transcriptionCode || data.transcription}')" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">Copy Code</button>
+                            </div>
+                            <code style="font-family: monospace; font-size: 18px; color: #166534; display: block; background: #f0fdf4; padding: 10px; border-radius: 4px; text-align: center; font-weight: bold;">${transcriptionCode || data.transcription}</code>
+                            <details style="margin-top: 8px;">
+                                <summary style="cursor: pointer; color: #6b7280; font-size: 13px;">Full transcription</summary>
+                                <div style="margin-top: 8px; font-size: 13px; color: #6b7280;">${data.transcription}</div>
+                            </details>
+                        </div>
+                    ` : ''}
+                    ${data.audio_url ? `<div style="margin-top: 10px;"><audio controls src="${data.audio_url}" style="width: 100%;"></audio></div>` : ''}
                 </div>
             `;
             
