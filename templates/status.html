@@ -30,31 +30,62 @@
         .status-down { background: #ef4444; color: white; }
         
         .category-section {
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            transition: all 0.3s ease;
+        }
+        .category-section:hover {
+            border-color: #667eea;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
+            transform: translateY(-2px);
+        }
+        [data-theme="dark"] .category-section {
             background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid var(--border);
+            border-color: var(--border);
         }
         .category-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 15px;
-            color: var(--accent);
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 18px;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         .service-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 10px;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+        }
+        @media (max-width: 768px) {
+            .service-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            }
         }
         .service-item {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 12px;
+            padding: 12px 14px;
+            background: #f8fafc;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .service-item:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            transform: translateX(4px);
+        }
+        [data-theme="dark"] .service-item {
             background: var(--bg);
-            border-radius: 8px;
-            border: 1px solid var(--border);
+            border-color: var(--border);
         }
         .status-dot {
             width: 12px;
@@ -196,14 +227,30 @@
         function renderStatus(data) {
             let html = '';
             
+            const categoryIcons = {
+                'Social': '📱',
+                'Messaging': '💬',
+                'Dating': '💕',
+                'Finance': '💰',
+                'Shopping': '🛒',
+                'Food': '🍔',
+                'Gaming': '🎮',
+                'Crypto': '₿'
+            };
+            
             const categoryOrder = ['Social', 'Messaging', 'Dating', 'Finance', 'Shopping', 'Food', 'Gaming', 'Crypto'];
             
             categoryOrder.forEach(category => {
                 if (data.categories && data.categories[category]) {
                     const services = data.categories[category];
+                    const icon = categoryIcons[category] || '📂';
                     html += `
                         <div class="category-section">
-                            <div class="category-title">${category}</div>
+                            <div class="category-title">
+                                <span style="font-size: 24px;">${icon}</span>
+                                <span>${category}</span>
+                                <span style="margin-left: auto; font-size: 14px; color: #64748b; font-weight: 500;">${services.length} services</span>
+                            </div>
                             <div class="service-grid">
                                 ${services.map(service => {
                                     const status = getServiceStatus(service, data.status);
@@ -223,7 +270,11 @@
             // Add Unlisted Services
             html += `
                 <div class="category-section">
-                    <div class="category-title">Unlisted Services</div>
+                    <div class="category-title">
+                        <span style="font-size: 24px;">🌐</span>
+                        <span>General / Unlisted</span>
+                        <span style="margin-left: auto; font-size: 14px; color: #64748b; font-weight: 500;">1,500+ services</span>
+                    </div>
                     <div class="service-grid">
                         <div class="service-item">
                             <div class="status-dot dot-operational"></div>
