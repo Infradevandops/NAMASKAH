@@ -5,13 +5,191 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - Namaskah SMS</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/mobile.css">
     <script src="/track.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            color: #1e293b;
+        }
+        .container {
+            background: #f1f5f9;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+            padding: 35px;
+            max-width: 1400px;
+            margin: 30px auto;
+        }
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            border: 1px solid #e2e8f0;
+        }
+        header h1 {
+            color: #0f172a;
+            margin: 0 0 8px 0;
+            font-size: 32px;
+            font-weight: 700;
+        }
+        header p {
+            color: #64748b;
+            margin: 0;
+            font-size: 15px;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            border: 1px solid #e2e8f0;
+        }
+        .card h2 {
+            color: #0f172a;
+            font-size: 22px;
+            margin: 0 0 24px 0;
+            font-weight: 700;
+        }
+        .verification-item {
+            background: #f8fafc;
+            padding: 18px;
+            border-radius: 12px;
+            margin-bottom: 14px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+        }
+        .verification-item:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transform: translateY(-2px);
+        }
+        button, .btn-small {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 11px 22px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        button:hover, .btn-small:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
+        .btn-danger:hover {
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+        }
+        input[type="text"], input[type="email"], input[type="password"], input[type="number"], select, textarea {
+            background: white;
+            border: 2px solid #e2e8f0;
+            padding: 11px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            color: #0f172a;
+            font-family: inherit;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            background: #fafbfc;
+        }
+        .user-info {
+            background: white;
+            padding: 18px 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            border: 1px solid #e2e8f0;
+        }
+        .user-info span {
+            color: #0f172a;
+            font-weight: 600;
+            font-size: 15px;
+        }
+        code {
+            background: #f1f5f9;
+            color: #667eea;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            border: 1px solid #e2e8f0;
+        }
+        .notification {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            padding: 18px 28px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 1000;
+            font-weight: 600;
+            font-size: 15px;
+        }
+        .notification.success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        .notification.error {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+        .hidden { display: none !important; }
+        strong { font-weight: 600; }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 15px; margin: 10px; border-radius: 12px; }
+            header { padding: 20px; }
+            header h1 { font-size: 24px; }
+            .card { padding: 18px; }
+            .card h2 { font-size: 18px; }
+            #stats { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            #stats > div { padding: 18px; }
+            #stats > div > div:first-child { font-size: 28px; }
+            .verification-item { padding: 14px; flex-direction: column; align-items: flex-start !important; gap: 12px; }
+            .verification-item > div:last-child { width: 100%; display: flex; gap: 8px; }
+            .verification-item button { flex: 1; }
+            input[type="text"], input[type="email"], input[type="password"], input[type="number"], select {
+                width: 100% !important;
+                font-size: 16px;
+            }
+            button, .btn-small { min-height: 44px; font-size: 15px; }
+            .user-info { flex-direction: column; gap: 12px; align-items: flex-start; }
+            .notification { top: 10px; right: 10px; left: 10px; }
+            code { font-size: 11px; padding: 3px 6px; }
+        }
+        
+        @media (max-width: 480px) {
+            #stats { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🔧 Admin Panel</h1>
-            <p>Manage Users & Credits</p>
+            <h1>Admin Panel</h1>
+            <p>Manage platform users, statistics, funding, and support</p>
         </header>
 
         <div id="auth-section">
@@ -30,9 +208,9 @@
             </div>
 
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 style="margin: 0;">📊 Statistics</h2>
-                    <select id="period-select" onchange="loadStats()" style="padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 6px; background: white;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <h2 style="margin: 0;">Statistics</h2>
+                    <select id="period-select" onchange="loadStats()">
                         <option value="7">Last 7 Days</option>
                         <option value="14">Last 14 Days</option>
                         <option value="30" selected>Last 30 Days</option>
@@ -41,38 +219,56 @@
                         <option value="all">All Time</option>
                     </select>
                 </div>
-                <div id="stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px;">
-                        <div style="font-size: 28px; font-weight: bold;" id="total-users">0</div>
-                        <div style="opacity: 0.9;">Total Users</div>
+                <div id="stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; margin-bottom: 24px;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px; border-radius: 14px; box-shadow: 0 6px 16px rgba(102, 126, 234, 0.35);">
+                        <div style="font-size: 36px; font-weight: 700;" id="total-users">0</div>
+                        <div style="opacity: 0.95; font-size: 14px; margin-top: 6px; font-weight: 500;">Total Users</div>
                     </div>
-                    <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 20px; border-radius: 8px;">
-                        <div style="font-size: 28px; font-weight: bold;" id="new-users">0</div>
-                        <div style="opacity: 0.9;">New Users</div>
+                    <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 24px; border-radius: 14px; box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);">
+                        <div style="font-size: 36px; font-weight: 700;" id="new-users">0</div>
+                        <div style="opacity: 0.95; font-size: 14px; margin-top: 6px; font-weight: 500;">New Users</div>
                     </div>
-                    <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 20px; border-radius: 8px;">
-                        <div style="font-size: 28px; font-weight: bold;" id="total-verifications">0</div>
-                        <div style="opacity: 0.9;">Verifications</div>
+                    <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 24px; border-radius: 14px; box-shadow: 0 6px 16px rgba(245, 158, 11, 0.35);">
+                        <div style="font-size: 36px; font-weight: 700;" id="total-verifications">0</div>
+                        <div style="opacity: 0.95; font-size: 14px; margin-top: 6px; font-weight: 500;">Verifications</div>
                     </div>
-                    <div style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; padding: 20px; border-radius: 8px;">
-                        <div style="font-size: 28px; font-weight: bold;" id="total-revenue">$0</div>
-                        <div style="opacity: 0.9;">Revenue</div>
+                    <div style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; padding: 24px; border-radius: 14px; box-shadow: 0 6px 16px rgba(139, 92, 246, 0.35);">
+                        <div style="font-size: 36px; font-weight: 700;" id="total-revenue">$0</div>
+                        <div style="opacity: 0.95; font-size: 14px; margin-top: 6px; font-weight: 500;">Revenue</div>
                     </div>
                 </div>
                 
-                <div style="background: #f9fafb; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb;">
-                    <h3 style="margin: 0 0 15px 0;">🔥 Most Used Services</h3>
+                <div style="background: #f8fafc; padding: 22px; border-radius: 14px; border: 1px solid #e2e8f0; margin-bottom: 24px;">
+                    <h3 style="margin: 0 0 18px 0; color: #0f172a; font-size: 18px; font-weight: 700;">Most Used Services</h3>
                     <div id="popular-services"></div>
+                </div>
+                
+                <div style="background: #f8fafc; padding: 22px; border-radius: 14px; border: 1px solid #e2e8f0;">
+                    <h3 style="margin: 0 0 18px 0; color: #0f172a; font-size: 18px; font-weight: 700;">Verification Success Report</h3>
+                    <div id="verification-report"></div>
                 </div>
             </div>
 
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h2 style="margin: 0;">👥 Users</h2>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="text" id="user-search" placeholder="Search users..." style="padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 6px;" oninput="searchUsers()">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                    <h2 style="margin: 0;">Users</h2>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <select id="balance-filter" onchange="filterUsers()">
+                            <option value="all">All Balances</option>
+                            <option value="high">High (>N10)</option>
+                            <option value="medium">Medium (N2-N10)</option>
+                            <option value="low">Low (<N2)</option>
+                            <option value="zero">Zero</option>
+                        </select>
+                        <select id="sort-order" onchange="filterUsers()">
+                            <option value="newest">Newest First</option>
+                            <option value="oldest">Oldest First</option>
+                            <option value="balance-high">Highest Balance</option>
+                            <option value="balance-low">Lowest Balance</option>
+                        </select>
+                        <input type="text" id="user-search" placeholder="Search email..." oninput="filterUsers()" style="width: 200px;">
                         <button onclick="loadUsers()" class="btn-small">Refresh</button>
-                        <button onclick="exportUsers()" class="btn-small" style="background: #10b981;">📄 Export CSV</button>
+                        <button onclick="exportUsers()" class="btn-small" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);">Export CSV</button>
                     </div>
                 </div>
                 <div id="users-list"></div>
@@ -80,7 +276,22 @@
             </div>
 
             <div class="card">
-                <h2>🎫 Support Tickets</h2>
+                <h2>Funding Attempts</h2>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;">
+                    <select id="funding-status-filter" onchange="loadFundingAttempts()">
+                        <option value="all">All Status</option>
+                        <option value="completed">Successful</option>
+                        <option value="initialized">Pending</option>
+                        <option value="failed">Failed</option>
+                    </select>
+                    <input type="text" id="funding-search" placeholder="Search email or reference..." oninput="loadFundingAttempts()" style="width: 280px;">
+                    <button onclick="loadFundingAttempts()" class="btn-small">Refresh</button>
+                </div>
+                <div id="funding-list"></div>
+            </div>
+
+            <div class="card">
+                <h2>Support Tickets</h2>
                 <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                     <button onclick="loadTickets('open')" class="btn-small">Open</button>
                     <button onclick="loadTickets('resolved')" class="btn-small">Resolved</button>
@@ -106,8 +317,11 @@
 
             <div id="add-credits-modal" class="card hidden">
                 <h2>Add Credits</h2>
-                <p><strong>User:</strong> <span id="selected-user-email"></span></p>
-                <input type="number" id="credits-amount" placeholder="Amount" step="0.50" min="0.50">
+                <div style="background: #f9fafb; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
+                    <strong>User:</strong><br>
+                    <span id="selected-user-email"></span>
+                </div>
+                <input type="number" id="credits-amount" placeholder="Amount (N)" step="0.50" min="0.50">
                 <div style="display: flex; gap: 10px; margin-top: 15px;">
                     <button onclick="addCredits()">Add Credits</button>
                     <button onclick="closeModal()" class="btn-danger">Cancel</button>
@@ -188,6 +402,7 @@
             document.getElementById('admin-section').classList.remove('hidden');
             loadStats();
             loadUsers();
+            loadFundingAttempts();
             loadTickets();
         }
 
@@ -216,20 +431,48 @@
                     const servicesList = document.getElementById('popular-services');
                     if (data.popular_services && data.popular_services.length > 0) {
                         servicesList.innerHTML = data.popular_services.map((s, i) => `
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 6px; margin-bottom: 8px;">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <span style="font-size: 20px;">${['🥇', '🥈', '🥉', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'][i] || '📱'}</span>
-                                    <strong style="text-transform: capitalize;">${s.service}</strong>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: white; border-radius: 10px; margin-bottom: 12px; border: 1px solid #e2e8f0; transition: all 0.2s ease; cursor: pointer;" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='none'; this.style.transform='translateY(0)'">
+                                <div style="display: flex; align-items: center; gap: 14px;">
+                                    <span style="font-weight: 700; color: #667eea; min-width: 35px; font-size: 17px;">#${i + 1}</span>
+                                    <strong style="text-transform: capitalize; color: #0f172a; font-size: 15px;">${s.service}</strong>
                                 </div>
-                                <div style="display: flex; align-items: center; gap: 15px;">
-                                    <span style="background: #667eea; color: white; padding: 4px 12px; border-radius: 12px; font-size: 14px; font-weight: 600;">${s.count} uses</span>
-                                    <span style="color: #10b981; font-weight: 600;">$${s.revenue.toFixed(2)}</span>
+                                <div style="display: flex; align-items: center; gap: 16px;">
+                                    <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);">${s.count} uses</span>
+                                    <span style="color: #10b981; font-weight: 700; font-size: 16px;">$${s.revenue.toFixed(2)}</span>
                                 </div>
                             </div>
                         `).join('');
                     } else {
-                        servicesList.innerHTML = '<p style="color: #6b7280; text-align: center;">No data available</p>';
+                        servicesList.innerHTML = '<p style="color: #64748b; text-align: center; padding: 20px; font-size: 14px;">No services data available for this period</p>';
                     }
+                    
+                    // Verification report
+                    const reportDiv = document.getElementById('verification-report');
+                    const completed = data.completed_verifications || 0;
+                    const cancelled = data.cancelled_verifications || 0;
+                    const pending = data.pending_verifications || 0;
+                    const successRate = data.success_rate || 0;
+                    
+                    reportDiv.innerHTML = `
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
+                            <div style="background: white; padding: 20px; border-radius: 12px; text-align: center; border: 2px solid #e2e8f0; transition: all 0.2s ease; cursor: pointer;" onmouseover="this.style.borderColor='#10b981'; this.style.boxShadow='0 6px 16px rgba(16, 185, 129, 0.25)'; this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'; this.style.transform='translateY(0)'">
+                                <div style="font-size: 32px; font-weight: 700; color: #10b981;">${completed}</div>
+                                <div style="color: #64748b; font-size: 13px; margin-top: 8px; font-weight: 600;">Successful</div>
+                            </div>
+                            <div style="background: white; padding: 20px; border-radius: 12px; text-align: center; border: 2px solid #e2e8f0; transition: all 0.2s ease; cursor: pointer;" onmouseover="this.style.borderColor='#ef4444'; this.style.boxShadow='0 6px 16px rgba(239, 68, 68, 0.25)'; this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'; this.style.transform='translateY(0)'">
+                                <div style="font-size: 32px; font-weight: 700; color: #ef4444;">${cancelled}</div>
+                                <div style="color: #64748b; font-size: 13px; margin-top: 8px; font-weight: 600;">Failed/Cancelled</div>
+                            </div>
+                            <div style="background: white; padding: 20px; border-radius: 12px; text-align: center; border: 2px solid #e2e8f0; transition: all 0.2s ease; cursor: pointer;" onmouseover="this.style.borderColor='#f59e0b'; this.style.boxShadow='0 6px 16px rgba(245, 158, 11, 0.25)'; this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'; this.style.transform='translateY(0)'">
+                                <div style="font-size: 32px; font-weight: 700; color: #f59e0b;">${pending}</div>
+                                <div style="color: #64748b; font-size: 13px; margin-top: 8px; font-weight: 600;">Pending</div>
+                            </div>
+                            <div style="background: white; padding: 20px; border-radius: 12px; text-align: center; border: 2px solid #e2e8f0; transition: all 0.2s ease; cursor: pointer;" onmouseover="this.style.borderColor='#667eea'; this.style.boxShadow='0 6px 16px rgba(102, 126, 234, 0.25)'; this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'; this.style.transform='translateY(0)'">
+                                <div style="font-size: 32px; font-weight: 700; color: #667eea;">${successRate}%</div>
+                                <div style="color: #64748b; font-size: 13px; margin-top: 8px; font-weight: 600;">Success Rate</div>
+                            </div>
+                        </div>
+                    `;
                 }
             } catch (err) {
                 showNotification('Failed to load stats', 'error');
@@ -245,7 +488,7 @@
                 if (res.ok) {
                     const data = await res.json();
                     allUsers = data.users;
-                    renderUsers(allUsers);
+                    filterUsers();
                     /*
                     const list = document.getElementById('users-list');
                     list.innerHTML = data.users.map(u => `
@@ -274,7 +517,7 @@
 
         function openAddCredits(userId, email) {
             selectedUserId = userId;
-            document.getElementById('selected-user-email').textContent = email;
+            document.getElementById('selected-user-email').innerHTML = `${email}<br><small style="color: #6b7280;">User ID: ${userId}</small>`;
             document.getElementById('add-credits-modal').classList.remove('hidden');
         }
 
@@ -318,33 +561,69 @@
         let allUsers = [];
         let currentTicketId = null;
 
-        function searchUsers() {
+        function filterUsers() {
             const query = document.getElementById('user-search').value.toLowerCase();
-            const filtered = allUsers.filter(u => 
-                u.email.toLowerCase().includes(query) || u.id.includes(query)
-            );
+            const balanceFilter = document.getElementById('balance-filter').value;
+            const sortOrder = document.getElementById('sort-order').value;
+            
+            let filtered = allUsers.filter(u => u.email.toLowerCase().includes(query));
+            
+            // Balance filter
+            if (balanceFilter === 'high') {
+                filtered = filtered.filter(u => u.credits > 10);
+            } else if (balanceFilter === 'medium') {
+                filtered = filtered.filter(u => u.credits >= 2 && u.credits <= 10);
+            } else if (balanceFilter === 'low') {
+                filtered = filtered.filter(u => u.credits > 0 && u.credits < 2);
+            } else if (balanceFilter === 'zero') {
+                filtered = filtered.filter(u => u.credits === 0);
+            }
+            
+            // Sort
+            if (sortOrder === 'newest') {
+                filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            } else if (sortOrder === 'oldest') {
+                filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            } else if (sortOrder === 'balance-high') {
+                filtered.sort((a, b) => b.credits - a.credits);
+            } else if (sortOrder === 'balance-low') {
+                filtered.sort((a, b) => a.credits - b.credits);
+            }
+            
             renderUsers(filtered);
         }
 
         function renderUsers(users) {
             const list = document.getElementById('users-list');
-            list.innerHTML = users.map(u => `
-                <div class="verification-item" style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <strong>${u.email}</strong>
-                        <div style="font-size: 14px; color: #6b7280;">
-                            Credits: $${u.credits.toFixed(2)} | Free: ${u.free_verifications || 0} ${u.is_admin ? '| 👑 Admin' : ''}
+            if (users.length === 0) {
+                list.innerHTML = '<p style="color: #64748b; text-align: center; padding: 40px;">No users found</p>';
+                return;
+            }
+            list.innerHTML = users.map(u => {
+                const balanceColor = u.credits > 10 ? '#10b981' : u.credits > 2 ? '#f59e0b' : u.credits > 0 ? '#ef4444' : '#94a3b8';
+                return `
+                    <div class="verification-item" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                                <strong style="font-size: 16px; color: #0f172a;">${u.email}</strong>
+                                ${u.is_admin ? '<span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">ADMIN</span>' : ''}
+                            </div>
+                            <div style="font-size: 14px; color: #475569; margin-bottom: 5px;">
+                                Balance: <strong style="color: ${balanceColor}; font-size: 15px;">N${u.credits.toFixed(2)}</strong> | 
+                                Free: <strong>${u.free_verifications || 0}</strong>
+                            </div>
+                            <div style="font-size: 12px; color: #94a3b8;">
+                                ID: <code>${u.id}</code> | 
+                                Joined: ${new Date(u.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                            </div>
                         </div>
-                        <div style="font-size: 12px; color: #9ca3af;">
-                            Joined: ${new Date(u.created_at).toLocaleDateString()}
+                        <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                            <button onclick="viewUserDetails('${u.id}')" class="btn-small" style="padding: 9px 18px;">View</button>
+                            <button onclick="openAddCredits('${u.id}', '${u.email}')" class="btn-small" style="padding: 9px 18px;">Add Credits</button>
                         </div>
                     </div>
-                    <div style="display: flex; gap: 8px;">
-                        <button onclick="viewUserDetails('${u.id}')" class="btn-small">View</button>
-                        <button onclick="openAddCredits('${u.id}', '${u.email}')" class="btn-small">Add Credits</button>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         async function viewUserDetails(userId) {
@@ -384,6 +663,69 @@
                 showNotification('Users exported successfully!', 'success');
             } catch (error) {
                 showNotification('Failed to export users', 'error');
+            }
+        }
+
+        async function loadFundingAttempts() {
+            try {
+                const statusFilter = document.getElementById('funding-status-filter').value;
+                const search = document.getElementById('funding-search').value;
+                
+                let url = `${API_BASE}/admin/payment-logs?`;
+                if (search) url += `email=${encodeURIComponent(search)}&`;
+                
+                const res = await fetch(url, {
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    let logs = data.logs;
+                    
+                    // Filter by status
+                    if (statusFilter !== 'all') {
+                        logs = logs.filter(l => l.status === statusFilter);
+                    }
+                    
+                    // Filter by search
+                    if (search) {
+                        logs = logs.filter(l => 
+                            (l.email && l.email.toLowerCase().includes(search.toLowerCase())) ||
+                            (l.reference && l.reference.toLowerCase().includes(search.toLowerCase()))
+                        );
+                    }
+                    
+                    const list = document.getElementById('funding-list');
+                    if (logs.length === 0) {
+                        list.innerHTML = '<p style="color: #6b7280; text-align: center;">No funding attempts found</p>';
+                    } else {
+                        list.innerHTML = logs.map(l => {
+                            const statusColor = l.status === 'completed' ? '#10b981' : l.status === 'failed' ? '#ef4444' : '#f59e0b';
+                            const statusBg = l.status === 'completed' ? '#d1fae5' : l.status === 'failed' ? '#fee2e2' : '#fef3c7';
+                            return `
+                                <div class="verification-item" style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="flex: 1;">
+                                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                                            <strong style="font-size: 15px;">${l.email || 'Unknown'}</strong>
+                                            <span style="background: ${statusBg}; color: ${statusColor}; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">${l.status.toUpperCase()}</span>
+                                        </div>
+                                        <div style="font-size: 14px; color: #6b7280; margin-bottom: 3px;">
+                                            Amount: <strong>N${(l.namaskah_amount || 0).toFixed(2)}</strong> (₦${(l.amount_ngn || 0).toFixed(2)}) | 
+                                            Webhook: ${l.webhook_received ? '✓' : '✗'} | Credited: ${l.credited ? '✓' : '✗'}
+                                        </div>
+                                        <div style="font-size: 12px; color: #9ca3af;">
+                                            Reference: <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 3px;">${l.reference}</code> | 
+                                            ${new Date(l.created_at).toLocaleString()}
+                                        </div>
+                                        ${l.error_message ? `<div style="font-size: 12px; color: #ef4444; margin-top: 3px;">Error: ${l.error_message}</div>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                }
+            } catch (err) {
+                showNotification('Failed to load funding attempts', 'error');
             }
         }
 

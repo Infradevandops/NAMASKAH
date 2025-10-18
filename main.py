@@ -2539,6 +2539,24 @@ def get_stats(period: str = "30", admin: User = Depends(get_admin_user), db: Ses
         Verification.created_at >= start_date
     ).count()
     
+    # Success/Failure stats
+    completed_verifications = db.query(Verification).filter(
+        Verification.created_at >= start_date,
+        Verification.status == "completed"
+    ).count()
+    
+    cancelled_verifications = db.query(Verification).filter(
+        Verification.created_at >= start_date,
+        Verification.status == "cancelled"
+    ).count()
+    
+    pending_verifications = db.query(Verification).filter(
+        Verification.created_at >= start_date,
+        Verification.status == "pending"
+    ).count()
+    
+    success_rate = (completed_verifications / total_verifications * 100) if total_verifications > 0 else 0
+    
     # Revenue in period (sum of all debit transactions)
     total_revenue = db.query(func.sum(Transaction.amount)).filter(
         Transaction.type == "debit",
@@ -2588,6 +2606,10 @@ def get_stats(period: str = "30", admin: User = Depends(get_admin_user), db: Ses
         "new_users": new_users,
         "active_users": active_users,
         "total_verifications": total_verifications,
+        "completed_verifications": completed_verifications,
+        "cancelled_verifications": cancelled_verifications,
+        "pending_verifications": pending_verifications,
+        "success_rate": round(success_rate, 1),
         "total_revenue": total_revenue,
         "plan_distribution": {
             "pay_as_you_go": pay_as_you_go,
