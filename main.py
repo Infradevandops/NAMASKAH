@@ -1503,6 +1503,22 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
         print(f"Credit deduction error: {e}")
         raise HTTPException(status_code=500, detail=f"Credit processing error: {str(e)}")
     
+    # Process affiliate commission (10% of spending)
+    if user.referred_by and cost > 0:
+        referrer = db.query(User).filter(User.id == user.referred_by).first()
+        if referrer:
+            commission = round(cost * 0.10, 2)
+            referrer.credits += commission
+            referrer.referral_earnings += commission
+            
+            db.add(Transaction(
+                id=f"txn_{datetime.now(timezone.utc).timestamp()}_aff",
+                user_id=referrer.id,
+                amount=commission,
+                type="credit",
+                description=f"Affiliate commission: {user.email} spent N{cost}"
+            ))
+    
     # Check low balance and send notification
     try:
         settings = db.query(NotificationSettings).filter(NotificationSettings.user_id == user.id).first()
@@ -2113,6 +2129,70 @@ def add_credits(req: AddCreditsRequest, admin: User = Depends(get_admin_user), d
     db.commit()
     
     return {"message": f"Added N{req.amount} credits", "new_balance": user.credits}
+
+@app.post("/admin/credits/deduct", tags=["Admin"], summary="Deduct Credits from User")
+def deduct_credits(req: AddCreditsRequest, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Manually deduct credits from user wallet (admin only)"""
+    user = db.query(User).filter(User.id == req.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user.credits < req.amount:
+        raise HTTPException(status_code=400, detail=f"Insufficient balance. User has N{user.credits}")
+    
+    user.credits -= req.amount
+    
+    transaction = Transaction(
+        id=f"txn_{datetime.now(timezone.utc).timestamp()}",
+        user_id=user.id,
+        amount=-req.amount,
+        type="debit",
+        description=f"Admin deducted credits"
+    )
+    db.add(transaction)
+    db.commit()
+    
+    return {"message": f"Deducted N{req.amount} credits", "new_balance": user.credits}
+
+@app.get("/admin/affiliates/stats", tags=["Admin"], summary="Get Affiliate Statistics")
+def get_affiliate_stats(admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Get affiliate program statistics (admin only)"""
+    from sqlalchemy import func
+    
+    # Total affiliates (users with referrals)
+    total_affiliates = db.query(func.count(func.distinct(Referral.referrer_id))).scalar() or 0
+    
+    # Active affiliates (earned commissions)
+    active_affiliates = db.query(func.count(func.distinct(User.id))).filter(
+        User.referral_earnings > 0
+    ).scalar() or 0
+    
+    # Total commissions paid
+    total_commissions = db.query(func.sum(User.referral_earnings)).scalar() or 0
+    
+    # Top affiliates
+    top_affiliates = db.query(User).filter(
+        User.referral_earnings > 0
+    ).order_by(User.referral_earnings.desc()).limit(10).all()
+    
+    # Total referrals
+    total_referrals = db.query(Referral).count()
+    
+    return {
+        "total_affiliates": total_affiliates,
+        "active_affiliates": active_affiliates,
+        "total_referrals": total_referrals,
+        "total_commissions_paid": total_commissions,
+        "top_affiliates": [
+            {
+                "email": u.email,
+                "referral_code": u.referral_code,
+                "earnings": u.referral_earnings,
+                "referral_count": db.query(Referral).filter(Referral.referrer_id == u.id).count()
+            }
+            for u in top_affiliates
+        ]
+    }
 
 @app.get("/admin/analytics/summary", tags=["Admin"], summary="Get Analytics Summary")
 def get_analytics_summary(email: str = None, days: int = 7, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
@@ -2812,36 +2892,33 @@ async def paystack_webhook(request: Request, db: Session = Depends(get_db)):
         log_activity(db, user_id=user.id, email=user.email, action="payment_completed", 
                     status="success", details=f"Credited N{namaskah_amount:.2f} from {reference}")
         
-        # Check and process referral rewards (if user was referred and funded N2.50+)
-        if user.referred_by and namaskah_amount >= 2.5:
+        # Process affiliate commission (10% of all spending)
+        if user.referred_by:
             referrer = db.query(User).filter(User.id == user.referred_by).first()
             if referrer:
-                # Check if referral reward already given
+                # Check if first-time funding bonus (N2.50+)
                 existing_referral = db.query(Referral).filter(
                     Referral.referrer_id == referrer.id,
                     Referral.referred_id == user.id
                 ).first()
                 
-                if existing_referral and existing_referral.reward_amount == 0:
-                    # Give referrer 1 free verification
+                if existing_referral and existing_referral.reward_amount == 0 and namaskah_amount >= 2.5:
+                    # Give referrer 1 free verification (one-time bonus)
                     referrer.free_verifications += 1
-                    referrer.referral_earnings += 1.0
                     existing_referral.reward_amount = 1.0
                     
-                    # Create transaction for referrer
                     db.add(Transaction(
                         id=f"txn_{datetime.now(timezone.utc).timestamp()}",
                         user_id=referrer.id,
                         amount=0,
                         type="credit",
-                        description=f"Referral bonus: {user.email} funded account"
+                        description=f"Referral signup bonus: {user.email}"
                     ))
                     
-                    # Notify referrer
                     send_email(
                         referrer.email,
-                        "🎁 Referral Reward - Namaskah SMS",
-                        f"""<h2>You earned a referral reward!</h2>
+                        "🎁 Referral Bonus - Namaskah SMS",
+                        f"""<h2>Referral Signup Bonus!</h2>
                         <p><strong>{user.email}</strong> funded their account.</p>
                         <p>You received: <strong>1 Free Verification</strong></p>
                         <p><a href="{BASE_URL}/app">Use Your Free Verification</a></p>"""
