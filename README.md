@@ -1,263 +1,335 @@
-# Namaskah SMS
+# Namaskah SMS Verification Platform
 
-**Enterprise SMS Verification Platform**
+Enterprise-grade SMS verification service providing instant temporary phone numbers for 1,807+ online platforms with guaranteed delivery and automatic refunds.
 
-Namaskah SMS provides instant phone number verification services for 1,807+ online platforms. Our infrastructure delivers temporary phone numbers for SMS and voice verification with guaranteed delivery and automatic refunds.
+## Core Features
 
----
-
-## Services
-
-### SMS Verification
-Instant temporary phone numbers for receiving SMS verification codes across 1,807+ supported services including:
-
-- **Social Media**: Instagram, Facebook, Twitter/X, TikTok, Snapchat, LinkedIn
-- **Messaging**: WhatsApp, Telegram, Discord, Signal, WeChat, Viber
-- **Dating**: Tinder, Bumble, Hinge, OkCupid, Match, POF
-- **Finance**: PayPal, Venmo, CashApp, Revolut, Wise, Coinbase
-- **E-commerce**: Amazon, eBay, Alibaba, Etsy, Shopify
-- **Food Delivery**: Uber Eats, DoorDash, Grubhub, Postmates
-- **Gaming**: Steam, Roblox, Twitch, Epic Games
-- **Cryptocurrency**: Binance, Kraken, Crypto.com, Gemini
-- **General Use**: Any unlisted service
+### SMS Verification Service
+- Instant temporary phone numbers for receiving SMS verification codes
+- Support for 1,807+ services including WhatsApp, Telegram, Instagram, Facebook, Discord
+- 60-120 second average delivery time
+- 95%+ success rate with automatic refunds
+- Service-specific timers for optimal delivery
 
 ### Voice Verification
-Voice call verification with transcription and audio recording for services requiring phone call confirmation.
+- Voice call verification with transcription and audio recording
+- Support for services requiring phone call confirmation
+- Premium pricing: SMS price + N0.25
 
 ### Number Rentals
-Long-term phone number rentals (minimum 7 days) for sustained verification needs:
+- Long-term phone number rentals (7-365 days)
+- Two rental types: Service-specific or General use
+- Two modes: Always Active (24/7) or Manual (30% discount)
+- Auto-billing with payment method on file
 
-**Rental Types:**
-- **Service-Specific**: Dedicated to one service (e.g., WhatsApp only)
-- **General Use**: Can receive messages from any service
+### Payment System
+- Multi-currency support: Paystack (NGN), Bitcoin, Ethereum, Solana, USDT
+- Tiered pricing: Pay-as-You-Go, Developer (20% off), Enterprise (35% off)
+- Automatic refund system for failed verifications
+- Real-time payment tracking and webhook notifications
 
-**Rental Modes:**
-- **Always Active**: Number remains active 24/7 for instant SMS reception
-- **Manual Mode**: 30% discount, requires manual activation before use
+### User Management
+- JWT-based authentication with Google OAuth integration
+- Email verification system
+- Referral program (1 free verification per referral)
+- API key management for developers
+- Webhook integration for SMS notifications
 
-**Duration Options:**
-- 7, 14, 30, 60, 90, 365 days
+### Admin Dashboard
+- Real-time platform statistics and analytics
+- User management with balance filtering
+- Payment tracking with status monitoring
+- Verification success/failure reports
+- Support ticket management
 
----
+## Technical Stack
 
-## Pricing
+### Backend
+- **Framework**: FastAPI (Python 3.9+)
+- **Database**: SQLite with SQLAlchemy ORM
+- **Authentication**: JWT tokens, Google OAuth 2.0
+- **Payment**: Paystack API, Cryptocurrency integrations
+- **SMS Provider**: TextVerified API
 
-### Currency
-- **Symbol**: N (Namaskah Coin)
-- **Exchange Rate**: 1N = $2 USD
+### Frontend
+- **Architecture**: Vanilla JavaScript (modular)
+- **Styling**: CSS3 with CSS Variables for theming
+- **PWA**: Service Worker, Web App Manifest
+- **Mobile**: Responsive design, touch-optimized UI
 
-### SMS Verification
-
-| Service Type | Price | USD Equivalent |
-|-------------|-------|----------------|
-| **Popular Services** (WhatsApp, Instagram, Facebook, Telegram, etc.) | N1 | $2.00 |
-| **General Purpose** (Unlisted Services) | N1.25 | $2.50 |
-
-### Voice Verification
-- **Formula**: SMS Price + N0.25
-- **Popular Services**: N1.25 ($2.50)
-- **General Purpose**: N1.50 ($3.00)
-
-### Pricing Tiers
-
-| Plan | Discount | Minimum Funded | Example: Popular SMS |
-|------|----------|----------------|----------------------|
-| **Pay-as-You-Go** | — | None | N1.00 ($2.00) |
-| **Developer** | 20% | N25 ($50) | N0.80 ($1.60) |
-| **Enterprise** | 35% | N100 ($200) | N0.65 ($1.30) |
-
-### Number Rentals
-
-**Service-Specific Rentals** (for single service like WhatsApp):
-
-| Duration | Always Active | Manual Mode (30% off) |
-|----------|--------------|----------------------|
-| 7 days | N5 ($10) | N3.50 ($7) |
-| 14 days | N9 ($18) | N6.30 ($12.60) |
-| 30 days | N16 ($32) | N11.20 ($22.40) |
-| 60 days | N28 ($56) | N19.60 ($39.20) |
-| 90 days | N38 ($76) | N26.60 ($53.20) |
-| 365 days | N50 ($100) | N35 ($70) |
-
-**General Use Rentals** (can receive from any service):
-
-| Duration | Always Active | Manual Mode (30% off) |
-|----------|--------------|----------------------|
-| 7 days | N6 ($12) | N4.20 ($8.40) |
-| 14 days | N11 ($22) | N7.70 ($15.40) |
-| 30 days | N20 ($40) | N14 ($28) |
-| 60 days | N35 ($70) | N24.50 ($49) |
-| 90 days | N48 ($96) | N33.60 ($67.20) |
-| 365 days | N80 ($160) | N56 ($112) |
-
-**Rental Modes:**
-- **Always Active**: Number remains active 24/7 for instant SMS reception
-- **Manual Mode**: 30% discount, requires manual activation before use
-
-**Rental Requirements:**
-- Payment method (debit card/BTC wallet) must be added for auto-billing
-- Minimum rental period: 7 days
-
----
-
-## Features
-
-### Core Platform
-- 🔐 Secure authentication (JWT + Google OAuth)
-- 💰 Multi-currency wallet system (Paystack, Bitcoin, Ethereum, Solana, USDT)
-- 📊 Real-time analytics dashboard
-- 🔔 Webhook notifications for SMS delivery
-- 🎁 Referral program (1 free verification per referral)
-- 🔑 API access for developers
-- 📱 Responsive web interface with dark/light themes
-
-### Security & Compliance
-- End-to-end encryption
+### Security
 - HTTPS enforcement
 - Rate limiting (100 requests/minute)
-- Email verification
-- Secure password reset
+- End-to-end encryption
+- Secure password hashing (bcrypt)
 - Request ID tracking
-- GDPR compliant
+- CORS protection
 
-### Developer Tools
-- RESTful API
-- API key management
-- Webhook integration
-- Comprehensive documentation
-- Code examples (Python, JavaScript, cURL)
+## Project Structure
 
----
-
-## API Overview
-
-### Authentication
 ```
-POST /auth/register    - Create account
-POST /auth/login       - User login
-POST /auth/google      - Google OAuth
-GET  /auth/me          - Get user profile
-```
-
-### Verification
-```
-POST   /verify/create           - Create verification
-GET    /verify/{id}             - Check status
-GET    /verify/{id}/messages    - Retrieve SMS
-DELETE /verify/{id}             - Cancel & refund
+Namaskah. app/
+├── main.py                 # FastAPI application entry point
+├── requirements.txt        # Python dependencies
+├── static/
+│   ├── css/               # Stylesheets (style.css, mobile.css)
+│   ├── js/                # Modular JavaScript files
+│   ├── icons/             # PWA icons
+│   ├── manifest.json      # PWA manifest
+│   └── sw.js              # Service worker
+├── templates/             # HTML templates
+│   ├── index.html         # Main application
+│   ├── landing.html       # Landing page
+│   ├── admin.html         # Admin dashboard
+│   └── ...
+├── tests/                 # Test suite
+├── docs/                  # Documentation
+└── scripts/               # Deployment scripts
 ```
 
-### Rentals
+## Installation
+
+### Prerequisites
+- Python 3.9 or higher
+- pip package manager
+- SQLite3
+
+### Setup
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/namaskah-app.git
+cd namaskah-app
 ```
-POST /rentals/create        - Rent number
-GET  /rentals/active        - List active rentals
-POST /rentals/{id}/extend   - Extend duration
-POST /rentals/{id}/release  - Early release (50% refund)
+
+2. Create virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
-### Wallet
-```
-POST /wallet/fund                    - Add funds
-POST /wallet/paystack/initialize     - Payment gateway
-GET  /wallet/paystack/verify/{ref}   - Verify payment
+3. Install dependencies:
+```bash
+pip install -r requirements.txt
 ```
 
-**Full API Documentation**: Available at `/docs` endpoint
+4. Configure environment variables:
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
 
----
+5. Initialize database:
+```bash
+python reset_db.py
+python create_admin.py
+```
 
-## Service Guarantees
+6. Run the application:
+```bash
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
 
-### Delivery Assurance
-- **SMS Delivery**: 60-120 seconds average
-- **Automatic Refunds**: Full refund if SMS not received
-- **Success Rate**: 95%+ across all services
-- **Uptime**: 99.9% platform availability
+Access the application at `http://localhost:8000`
 
-### Support
-- **Response Time**: Within 24 hours
-- **Channels**: Email, in-app support tickets
-- **Coverage**: 24/7 automated systems, business hours for human support
+## Configuration
 
----
+### Environment Variables
 
-## Payment Methods
+```env
+# Application
+SECRET_KEY=your-secret-key-here
+ENVIRONMENT=development
 
-- **Paystack**: Bank transfer, card, USSD
-- **Cryptocurrency**: Bitcoin (BTC), Ethereum (ETH), Solana (SOL), Tether (USDT)
+# Database
+DATABASE_URL=sqlite:///./namaskah.db
 
-*All payments are final. Funded balances are for service usage only and cannot be withdrawn.*
+# SMS Provider
+TEXTVERIFIED_API_KEY=your-textverified-api-key
 
----
+# Payment
+PAYSTACK_SECRET_KEY=your-paystack-secret-key
+PAYSTACK_PUBLIC_KEY=your-paystack-public-key
 
-## Getting Started
+# OAuth
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
 
-1. **Create Account**: Register at the platform
-2. **Fund Wallet**: Minimum N2.50 ($5 USD) deposit
-3. **Select Service**: Choose from 1,807+ services
-4. **Receive Number**: Get temporary phone number instantly
-5. **Get Code**: SMS delivered within 60-120 seconds
+# Email
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+```
 
-**New User Bonus**: 1 free verification on signup
+## API Documentation
 
-### Admin Access
+### Authentication Endpoints
 
-For administrative functions, use the admin panel at `/admin`:
+```
+POST /auth/register        # Create new account
+POST /auth/login           # User login
+POST /auth/google          # Google OAuth login
+GET  /auth/me              # Get user profile
+POST /auth/verify-email    # Verify email address
+POST /auth/forgot-password # Request password reset
+```
 
+### Verification Endpoints
+
+```
+POST   /verify/create           # Create verification
+GET    /verify/{id}             # Check verification status
+GET    /verify/{id}/messages    # Retrieve SMS messages
+DELETE /verify/{id}             # Cancel verification (refund)
+```
+
+### Rental Endpoints
+
+```
+POST /rentals/create        # Rent phone number
+GET  /rentals/active        # List active rentals
+POST /rentals/{id}/extend   # Extend rental duration
+POST /rentals/{id}/release  # Release rental (50% refund)
+```
+
+### Wallet Endpoints
+
+```
+POST /wallet/fund                    # Initialize funding
+POST /wallet/paystack/initialize     # Paystack payment
+GET  /wallet/paystack/verify/{ref}   # Verify payment
+GET  /wallet/transactions            # Transaction history
+```
+
+### Admin Endpoints
+
+```
+GET  /admin/stats           # Platform statistics
+GET  /admin/users           # User management
+GET  /admin/payments        # Payment tracking
+POST /admin/credit/{user}   # Add credits to user
+```
+
+Full API documentation available at `/docs` (Swagger UI) and `/redoc` (ReDoc).
+
+## Deployment
+
+### Production Deployment
+
+1. Set environment to production:
+```bash
+export ENVIRONMENT=production
+```
+
+2. Configure production database and secrets
+
+3. Deploy using provided script:
+```bash
+chmod +x deploy.sh
+./deploy.sh
+```
+
+### Docker Deployment
+
+```bash
+docker build -t namaskah-app .
+docker run -p 8000:8000 --env-file .env namaskah-app
+```
+
+### Platform-Specific
+
+- **Render**: Use `render.yaml` configuration
+- **Railway**: Use `railway.json` configuration
+- **Heroku**: Use `Procfile` (create if needed)
+
+## Testing
+
+Run the test suite:
+
+```bash
+# Install test dependencies
+pip install -r requirements-test.txt
+
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=. --cov-report=html
+
+# Run specific test file
+pytest tests/test_auth.py
+```
+
+## Admin Access
+
+Default admin credentials:
 ```
 Email: admin@namaskah.app
 Password: Namaskah@Admin2024
 ```
 
-**Admin Features:**
-- View platform statistics (users, revenue, verifications)
-- Filter data by time period (7/14/30/60/90 days or all time)
-- Monitor most used services
-- Manage user accounts
-- Add credits to user wallets
-- View support tickets and respond to users
+Change these credentials immediately after first login.
 
----
+## Pricing Structure
 
-## Business Inquiries
+### Currency
+- Symbol: N (Namaskah Coin)
+- Exchange Rate: 1N = $2 USD
 
-### Enterprise Solutions
-Custom pricing and dedicated support available for high-volume users.
+### Verification Pricing
+- Popular Services: N1 ($2.00)
+- General Purpose: N1.25 ($2.50)
+- Voice Verification: +N0.25 additional
 
-### Partnership Opportunities
-API reseller and white-label solutions available.
+### Pricing Tiers
+- Pay-as-You-Go: Standard pricing
+- Developer: 20% discount (min. N25 funded)
+- Enterprise: 35% discount (min. N100 funded)
+
+### Rental Pricing
+Service-specific rentals start at N5 ($10) for 7 days.
+General use rentals start at N6 ($12) for 7 days.
+Manual mode offers 30% discount.
+
+## Support
+
+### Documentation
+- API Documentation: `/docs`
+- User Guides: `/docs/guides/`
+- Testing Guide: `/docs/testing/`
 
 ### Contact
-- **Email**: support@namaskah.app
-- **Website**: https://namaskah.app
-- **Documentation**: https://namaskah.app/docs
-
----
+- Email: support@namaskah.app
+- In-app support tickets
+- Response time: Within 24 hours
 
 ## License
 
-MIT License
+MIT License - See LICENSE file for details
 
-Copyright (c) 2024 Namaskah
+## Contributing
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open Pull Request
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+## Security
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Report security vulnerabilities to: security@namaskah.app
+
+## Changelog
+
+### Version 2.1.0 (2025-01-18)
+- Admin panel enhancements with verification reports
+- Mobile responsive design improvements
+- Professional UI theme updates
+- Documentation consolidation
+- Performance optimizations
 
 ---
 
-**Namaskah SMS** • Enterprise-Grade Verification Platform • Version 2.1.0
+**Namaskah SMS** - Enterprise SMS Verification Platform
+Version 2.1.0 | Production Ready

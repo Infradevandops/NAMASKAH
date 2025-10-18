@@ -7,9 +7,84 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="/static/js/social-proof.js"></script>
     <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --secondary: #764ba2;
+            --success: #10b981;
+            --accent: #667eea;
+        }
         @keyframes slideIn {
             from { opacity: 0; transform: translateX(-20px); }
             to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes phoneRing {
+            0%, 100% { transform: rotate(0deg); }
+            10%, 30% { transform: rotate(-10deg); }
+            20%, 40% { transform: rotate(10deg); }
+            50% { transform: rotate(0deg); }
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7); }
+            50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(102, 126, 234, 0); }
+        }
+        .pulse-btn {
+            animation: pulse 2s infinite;
+        }
+        .login-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        .login-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        .hamburger-menu.active span:nth-child(1) {
+            transform: rotate(45deg) translate(8px, 8px);
+        }
+        .hamburger-menu.active span:nth-child(2) {
+            opacity: 0;
+        }
+        .hamburger-menu.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+        .nav-menu {
+            position: fixed;
+            top: 60px;
+            right: -300px;
+            width: 280px;
+            height: calc(100vh - 60px);
+            background: var(--bg-secondary);
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            transition: right 0.3s ease;
+            z-index: 999;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .nav-menu.active {
+            right: 0;
+        }
+        .nav-menu a {
+            display: block;
+            padding: 12px 16px;
+            color: var(--text-primary);
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+        .nav-menu a:hover {
+            background: var(--accent);
+            color: white;
+            transform: translateX(5px);
         }
         body { padding: 0; }
         .landing-nav {
@@ -168,6 +243,11 @@
         footer a {
             color: var(--accent);
             text-decoration: none;
+            transition: all 0.2s;
+        }
+        footer a:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
         }
         @media (min-width: 768px) {
             footer { padding: 40px 20px; }
@@ -177,14 +257,28 @@
 </head>
 <body>
     <div class="landing-nav">
-        <div class="logo" onclick="window.location.href='/'" style="cursor: pointer;">Namaskah</div>
+        <div class="logo" onclick="window.location.href='/'" style="cursor: pointer; position: relative;">
+            Namaskah
+            <svg width="80" height="8" style="position: absolute; bottom: -5px; left: 0;">
+                <path d="M 0 4 Q 20 0, 40 4 T 80 4" stroke="#667eea" stroke-width="2" fill="none" stroke-linecap="round">
+                    <animate attributeName="d" 
+                        values="M 0 4 Q 20 0, 40 4 T 80 4; M 0 4 Q 20 8, 40 4 T 80 4; M 0 4 Q 20 0, 40 4 T 80 4" 
+                        dur="2s" repeatCount="indefinite"/>
+                </path>
+            </svg>
+        </div>
         <div style="flex: 1; overflow: hidden; margin: 0 20px;">
             <div style="animation: scroll-left 15s linear infinite; white-space: nowrap; font-weight: 700; font-size: 16px; background: linear-gradient(90deg, #667eea, #764ba2, #667eea); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
                 🎁 Get 1 FREE Verification on Signup! 🎁 Get 1 FREE Verification on Signup! 🎁 Get 1 FREE Verification on Signup! 🎁 Get 1 FREE Verification on Signup!
             </div>
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
-            <button onclick="window.location.href='/app'" style="background: var(--accent);">Login</button>
+            <button class="hamburger-menu" onclick="toggleMenu()" style="background: none; border: none; padding: 8px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; width: 30px;">
+                <span style="width: 100%; height: 3px; background: var(--text-primary); border-radius: 2px; transition: all 0.3s;"></span>
+                <span style="width: 100%; height: 3px; background: var(--text-primary); border-radius: 2px; transition: all 0.3s;"></span>
+                <span style="width: 100%; height: 3px; background: var(--text-primary); border-radius: 2px; transition: all 0.3s;"></span>
+            </button>
+            <button onclick="window.location.href='/app'" class="login-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); position: relative; overflow: hidden;">Login</button>
             <div class="theme-toggle" onclick="toggleTheme()"></div>
         </div>
     </div>
@@ -235,7 +329,10 @@
             <h1>Namaskah SMS</h1>
             <p>Instant SMS Verification for 1,807+ Services</p>
             <p style="font-size: 0.85rem; margin-bottom: 30px;">WhatsApp • Telegram • Google • Discord • Instagram • Facebook • 1,800+ more</p>
-            <button class="cta-button" onclick="window.location.href='/app'">Get Started Free</button>
+            <button class="cta-button pulse-btn" onclick="window.location.href='/app'">
+                <span class="phone-icon" style="display: inline-block; margin-right: 8px; animation: phoneRing 1s ease-in-out infinite;">📱</span>
+                Get Started Free
+            </button>
             <button class="cta-button secondary" onclick="window.location.href='/app'">Login</button>
         </div>
     </div>
@@ -303,7 +400,15 @@
 
     <!-- Trust Badges -->
     <div style="background: var(--bg-secondary); padding: 30px 20px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
-        <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; text-align: center;">
+        <style>
+            @media (min-width: 480px) {
+                .trust-badges-grid { grid-template-columns: repeat(2, 1fr) !important; }
+            }
+            @media (min-width: 768px) {
+                .trust-badges-grid { grid-template-columns: repeat(4, 1fr) !important; }
+            }
+        </style>
+        <div class="trust-badges-grid" style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 20px; text-align: center;">
             <div style="padding: 15px;">
                 <div style="font-size: 32px; margin-bottom: 8px;">🔒</div>
                 <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Secure Payment</div>
@@ -441,7 +546,7 @@
         <h2>💎 Simple Pricing</h2>
         <p style="color: var(--text-secondary); margin-bottom: 30px; font-size: 0.95rem;">Choose the plan that fits your needs • Save up to 35%</p>
             
-        <div style="max-width: 1200px; margin: 0 auto; padding: 0 15px; display: grid; grid-template-columns: 1fr; gap: 15px;">
+        <div style="max-width: 1200px; margin: 0 auto; padding: 0 15px; display: grid; grid-template-columns: 1fr; gap: 20px;">
             <style>
                 @media (min-width: 768px) {
                     .pricing > div { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important; gap: 30px !important; }
@@ -537,7 +642,15 @@
                 <span style="background: var(--accent); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">₿ Crypto</span>
             </div>
             <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px;">
+                <style>
+                    @media (min-width: 480px) {
+                        .categories-grid { grid-template-columns: repeat(2, 1fr) !important; }
+                    }
+                    @media (min-width: 768px) {
+                        .categories-grid { grid-template-columns: repeat(4, 1fr) !important; }
+                    }
+                </style>
+                <div class="categories-grid" style="display: grid; grid-template-columns: 1fr; gap: 20px;">
                     <div>
                         <h4 style="color: var(--accent); font-size: 0.9rem; margin: 0 0 10px 0;">📱 Social</h4>
                         <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.75rem; color: var(--text-secondary);">
@@ -764,6 +877,19 @@
         </div>
     </div>
     
+    <!-- Navigation Menu -->
+    <div class="nav-menu" id="navMenu">
+        <h3 style="margin-bottom: 20px; color: var(--accent);">Menu</h3>
+        <a href="/app">🏠 Dashboard</a>
+        <a href="/app">🔐 Login / Register</a>
+        <a href="/about">ℹ️ About Us</a>
+        <a href="/faq">❓ FAQ</a>
+        <a href="/status">🟢 Service Status</a>
+        <a href="/reviews">⭐ Reviews</a>
+        <a href="/api-docs">📚 API Docs</a>
+        <a href="#" onclick="showSupportModal(); return false;">💬 Support</a>
+    </div>
+    
     <script>
         const theme = localStorage.getItem('theme') || 'dark';
         document.documentElement.setAttribute('data-theme', theme);
@@ -774,6 +900,23 @@
             document.documentElement.setAttribute('data-theme', next);
             localStorage.setItem('theme', next);
         }
+        
+        function toggleMenu() {
+            const menu = document.getElementById('navMenu');
+            const hamburger = document.querySelector('.hamburger-menu');
+            menu.classList.toggle('active');
+            hamburger.classList.toggle('active');
+        }
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('navMenu');
+            const hamburger = document.querySelector('.hamburger-menu');
+            if (!menu.contains(event.target) && !hamburger.contains(event.target)) {
+                menu.classList.remove('active');
+                hamburger.classList.remove('active');
+            }
+        });
         
         function showSupportModal() {
             document.getElementById('support-modal').classList.remove('hidden');
@@ -809,6 +952,12 @@
                 alert('❌ Network error. Please try again.');
             }
         }
+        
+        // Add phone animation to feature cards
+        document.querySelectorAll('.feature-card').forEach((card, index) => {
+            card.style.animationDelay = `${index * 0.1}s`;
+            card.style.animation = 'slideIn 0.5s ease-out forwards';
+        });
     </script>
 </body>
 </html>
