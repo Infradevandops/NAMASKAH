@@ -101,3 +101,12 @@ TESTING_CHECKLIST.md
 TESTING_GUIDE.md
 USER_ACTIVITY_GUIDE.md
 COMMIT_MESSAGE.txt
+
+# Documentation (keep organized structure)
+!docs/
+!docs/**/*.md
+
+# Temporary test files
+test_*.py
+!tests/test_*.py
+test_results.json
