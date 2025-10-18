@@ -430,8 +430,9 @@ async def check_textverified_health_loop():
 
 # Email Helper
 def send_email(to_email: str, subject: str, body: str):
-    """Send email notification"""
+    """Send email notification - fails silently if not configured"""
     if not SMTP_HOST or not SMTP_USER:
+        print(f"Email not configured, skipping: {subject}")
         return  # Email not configured
     
     try:
@@ -449,8 +450,9 @@ def send_email(to_email: str, subject: str, body: str):
             server.starttls()
             server.login(SMTP_USER, SMTP_PASSWORD)
             server.send_message(msg)
+        print(f"Email sent: {subject} to {to_email}")
     except Exception as e:
-        print(f"Email error: {e}")
+        print(f"Email error (non-critical): {e}")
 
 # Activity Logging Helper
 def log_activity(db: Session, user_id=None, email=None, page=None, action=None, element=None, status=None, details=None, error=None, ip=None, user_agent=None):
@@ -1496,14 +1498,17 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
     threshold = settings.low_balance_threshold if settings else 1.0
     
     if user.credits <= threshold and (not settings or settings.email_on_low_balance):
-        send_email(
-            user.email,
-            "⚠️ Low Balance Alert - Namaskah SMS",
-            f"""<h2>⚠️ Low Balance Alert</h2>
-            <p>Your wallet balance is low: <strong>N{user.credits:.2f}</strong></p>
-            <p>Fund your wallet to continue using Namaskah SMS.</p>
-            <p><a href="{BASE_URL}/app">Fund Wallet Now</a></p>"""
-        )
+        try:
+            send_email(
+                user.email,
+                "⚠️ Low Balance Alert - Namaskah SMS",
+                f"""<h2>⚠️ Low Balance Alert</h2>
+                <p>Your wallet balance is low: <strong>N{user.credits:.2f}</strong></p>
+                <p>Fund your wallet to continue using Namaskah SMS.</p>
+                <p><a href="{BASE_URL}/app">Fund Wallet Now</a></p>"""
+            )
+        except:
+            pass  # Don't fail verification if email fails
     
     # Check subscription for filtering permissions
     subscription = db.query(Subscription).filter(
