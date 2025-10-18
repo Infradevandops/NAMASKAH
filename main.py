@@ -1965,16 +1965,18 @@ def get_analytics_summary(email: str = None, days: int = 7, admin: User = Depend
     # Total activities
     total_activities = query.count()
     
-    # Unique sessions
-        ActivityLog.created_at >= start_date
+    # Unique users
+    unique_users = db.query(func.count(func.distinct(ActivityLog.user_id))).filter(
+        ActivityLog.created_at >= start_date,
+        ActivityLog.user_id.isnot(None)
     )
     if email:
-        unique_sessions = unique_sessions.filter(ActivityLog.email == email)
-    unique_sessions = unique_sessions.scalar() or 0
+        unique_users = unique_users.filter(ActivityLog.email == email)
+    unique_users = unique_users.scalar() or 0
     
     return {
         "total_activities": total_activities,
-        "unique_sessions": unique_sessions,
+        "unique_users": unique_users,
         "page_views": [
             {"page": p[0], "count": p[1]}
             for p in page_views
@@ -2018,6 +2020,7 @@ def get_payment_logs(email: str = None, reference: str = None, admin: User = Dep
     }
 
 @app.get("/admin/activity-logs", tags=["Admin"], summary="Get Activity Logs")
+def get_activity_logs(email: str = None, page: str = None, action: str = None, limit: int = 100, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Get activity logs for user tracking (admin only)"""
     query = db.query(ActivityLog)
     
