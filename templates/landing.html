@@ -5,7 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Namaskah SMS - SMS Verification for 1,807+ Services</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/social-proof.js"></script>
     <style>
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
         body { padding: 0; }
         .landing-nav {
             display: flex;
@@ -189,6 +194,24 @@
             100% { transform: translateX(-33.33%); }
         }
     </style>
+    <!-- Live Stats Bar -->
+    <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 12px 20px; text-align: center; font-size: 14px; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 18px;">👥</span>
+                <span id="active-users-count">5,247</span> active users
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 18px;">✅</span>
+                <span id="verifications-count">15,234</span> verifications today
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 18px;">⚡</span>
+                <span id="last-verification">Last: 12s ago</span>
+            </div>
+        </div>
+    </div>
+    
     <div class="hero" style="background: linear-gradient(135deg, #6d5a1e 0%, #8b6914 25%, #5d4a1a 50%, #7a5c1f 75%, #4a3a15 100%); position: relative; overflow: hidden; clip-path: polygon(0 0, 100% 0, 100% 95%, 0 100%);">
         <!-- Animated Background -->
         <div class="hero-animation">
@@ -277,6 +300,106 @@
             }
         }
     </style>
+
+    <!-- Trust Badges -->
+    <div style="background: var(--bg-secondary); padding: 30px 20px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+        <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; text-align: center;">
+            <div style="padding: 15px;">
+                <div style="font-size: 32px; margin-bottom: 8px;">🔒</div>
+                <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Secure Payment</div>
+                <div style="font-size: 13px; color: var(--text-secondary);">256-bit SSL Encryption</div>
+            </div>
+            <div style="padding: 15px;">
+                <div style="font-size: 32px; margin-bottom: 8px;">⚡</div>
+                <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">99.9% Uptime</div>
+                <div style="font-size: 13px; color: var(--text-secondary);">Always Available</div>
+            </div>
+            <div style="padding: 15px;">
+                <div style="font-size: 32px; margin-bottom: 8px;">💰</div>
+                <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Auto-Refund</div>
+                <div style="font-size: 13px; color: var(--text-secondary);">Money-Back Guarantee</div>
+            </div>
+            <div style="padding: 15px;">
+                <div style="font-size: 32px; margin-bottom: 8px;">📊</div>
+                <div style="font-weight: 700; color: #10b981; margin-bottom: 4px; font-size: 24px;">95%</div>
+                <div style="font-size: 13px; color: var(--text-secondary);">Success Rate</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real-time Activity Feed -->
+    <div style="background: var(--bg-primary); padding: 40px 20px;">
+        <div style="max-width: 1200px; margin: 0 auto;">
+            <div style="display: grid; grid-template-columns: 1fr; gap: 30px;">
+                <style>
+                    @media (min-width: 768px) {
+                        .activity-grid { grid-template-columns: 2fr 1fr !important; }
+                    }
+                </style>
+                <div class="activity-grid" style="display: grid; grid-template-columns: 1fr; gap: 30px;">
+                    <div>
+                        <h2 style="font-size: 24px; margin-bottom: 20px; color: var(--text-primary);">🔥 Live Activity</h2>
+                        <div id="activity-feed" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 15px; min-height: 200px;">
+                            <!-- Activity items will be inserted here -->
+                        </div>
+                        <div style="margin-top: 15px; padding: 12px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; text-align: center;">
+                            <span style="color: var(--text-secondary); font-size: 13px;" id="current-viewers">23 people viewing this page</span>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 style="font-size: 20px; margin-bottom: 15px; color: var(--text-primary);">📈 Popular Services</h3>
+                        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 15px;">
+                            <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-weight: 600; color: var(--text-primary);">WhatsApp</span>
+                                    <span style="color: #10b981; font-weight: 700;">1,234</span>
+                                </div>
+                                <div style="background: #e5e7eb; height: 6px; border-radius: 3px; margin-top: 6px; overflow: hidden;">
+                                    <div style="background: linear-gradient(90deg, #10b981, #059669); height: 100%; width: 95%; border-radius: 3px;"></div>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-weight: 600; color: var(--text-primary);">Telegram</span>
+                                    <span style="color: #10b981; font-weight: 700;">987</span>
+                                </div>
+                                <div style="background: #e5e7eb; height: 6px; border-radius: 3px; margin-top: 6px; overflow: hidden;">
+                                    <div style="background: linear-gradient(90deg, #667eea, #764ba2); height: 100%; width: 80%; border-radius: 3px;"></div>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-weight: 600; color: var(--text-primary);">Binance</span>
+                                    <span style="color: #10b981; font-weight: 700;">856</span>
+                                </div>
+                                <div style="background: #e5e7eb; height: 6px; border-radius: 3px; margin-top: 6px; overflow: hidden;">
+                                    <div style="background: linear-gradient(90deg, #f59e0b, #d97706); height: 100%; width: 70%; border-radius: 3px;"></div>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-weight: 600; color: var(--text-primary);">Instagram</span>
+                                    <span style="color: #10b981; font-weight: 700;">743</span>
+                                </div>
+                                <div style="background: #e5e7eb; height: 6px; border-radius: 3px; margin-top: 6px; overflow: hidden;">
+                                    <div style="background: linear-gradient(90deg, #ec4899, #be185d); height: 100%; width: 60%; border-radius: 3px;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-weight: 600; color: var(--text-primary);">Tinder</span>
+                                    <span style="color: #10b981; font-weight: 700;">621</span>
+                                </div>
+                                <div style="background: #e5e7eb; height: 6px; border-radius: 3px; margin-top: 6px; overflow: hidden;">
+                                    <div style="background: linear-gradient(90deg, #ef4444, #dc2626); height: 100%; width: 50%; border-radius: 3px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="features">
         <h2>Why Choose Namaskah?</h2>
