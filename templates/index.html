@@ -17,8 +17,8 @@
         html { visibility: visible; opacity: 1; }
         body { opacity: 0; transition: opacity 0.3s ease-in; }
         body.loaded { opacity: 1; }
-        #google-auth-btn { opacity: 1 !important; transition: opacity 0.3s ease-in; }
-        #google-auth-btn.loaded { opacity: 1 !important; }
+        #google-auth-btn { opacity: 1; transition: opacity 0.3s ease-in; }
+        #google-auth-btn.loaded { opacity: 1; }
     </style>
     <script src="/track.js"></script>
 </head>
@@ -818,6 +818,7 @@
                             text: 'continue_with',
                             shape: 'rectangular'
                         });
+                        container.classList.add('loaded');
                         container.style.display = 'flex';
                         separator.style.display = 'block';
                     }
