@@ -52,6 +52,10 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+test_tv.py
+test_copy_flow.py
+test_all_features.py
+test_results.json
 
 # Deployment
 *.pid
