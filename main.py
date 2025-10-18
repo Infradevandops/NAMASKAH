@@ -370,7 +370,7 @@ def create_admin_if_not_exists():
             admin = User(
                 id=f"user_{datetime.now(timezone.utc).timestamp()}",
                 email="admin@namaskah.app",
-                password_hash=bcrypt.hashpw(b"Admin@2024!", bcrypt.gensalt()).decode(),
+                password_hash=bcrypt.hashpw(b"Namaskah@Admin2024", bcrypt.gensalt()).decode(),
                 credits=100.0,
                 free_verifications=0.0,
                 is_admin=True,
@@ -733,10 +733,10 @@ async def startup_event():
         admin = db.query(User).filter(User.email == "admin@namaskah.app").first()
         if admin:
             try:
-                bcrypt.checkpw(b"Admin@2024!", admin.password_hash.encode('utf-8'))
+                bcrypt.checkpw(b"Namaskah@Admin2024", admin.password_hash.encode('utf-8'))
                 print("✅ Admin password OK")
             except:
-                admin.password_hash = bcrypt.hashpw(b"Admin@2024!", bcrypt.gensalt()).decode()
+                admin.password_hash = bcrypt.hashpw(b"Namaskah@Admin2024", bcrypt.gensalt()).decode()
                 admin.is_admin = True
                 db.commit()
                 print("✅ Admin password auto-fixed")
@@ -746,7 +746,7 @@ async def startup_event():
             admin = User(
                 id=f"user_{datetime.now(timezone.utc).timestamp()}",
                 email="admin@namaskah.app",
-                password_hash=bcrypt.hashpw(b"Admin@2024!", bcrypt.gensalt()).decode(),
+                password_hash=bcrypt.hashpw(b"Namaskah@Admin2024", bcrypt.gensalt()).decode(),
                 credits=100.0,
                 is_admin=True,
                 email_verified=True,

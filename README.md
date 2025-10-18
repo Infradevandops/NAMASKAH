@@ -206,7 +206,7 @@ For administrative functions, use the admin panel at `/admin`:
 
 ```
 Email: admin@namaskah.app
-Password: Admin@2024!
+Password: Namaskah@Admin2024
 ```
 
 **Admin Features:**
