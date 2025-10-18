@@ -325,13 +325,13 @@ class PaymentLog(Base):
 class BannedNumber(Base):
     __tablename__ = "banned_numbers"
     id = Column(String, primary_key=True)
-    phone_number = Column(String, nullable=False)
-    service_name = Column(String, nullable=False)
+    phone_number = Column(String, nullable=False, index=True)
+    service_name = Column(String, nullable=False, index=True)
     area_code = Column(String)
-    carrier = Column(String)
+    carrier = Column(String)  # ISP/Carrier (Verizon, AT&T, T-Mobile, etc)
     fail_count = Column(Float, default=1)
     last_failed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
 
 Base.metadata.create_all(bind=engine)
 
@@ -1669,6 +1669,17 @@ def retry_verification(verification_id: str, retry_type: str, user: User = Depen
     ))
     
     # Mark number as banned if no SMS received
+    # Extract area code and carrier from phone number
+    area_code = verification.phone_number[:3] if verification.phone_number and len(verification.phone_number) >= 10 else None
+    
+    # Try to get carrier info from TextVerified
+    carrier = None
+    try:
+        details = tv_client.get_verification(verification_id)
+        carrier = details.get('carrier') or details.get('network')
+    except:
+        pass
+    
     banned = db.query(BannedNumber).filter(
         BannedNumber.phone_number == verification.phone_number,
         BannedNumber.service_name == verification.service_name
@@ -1677,13 +1688,15 @@ def retry_verification(verification_id: str, retry_type: str, user: User = Depen
     if banned:
         banned.fail_count += 1
         banned.last_failed_at = datetime.now(timezone.utc)
+        if carrier:
+            banned.carrier = carrier
     else:
         banned = BannedNumber(
             id=f"banned_{datetime.now(timezone.utc).timestamp()}",
             phone_number=verification.phone_number,
             service_name=verification.service_name,
-            area_code=getattr(verification, 'area_code', None),
-            carrier=getattr(verification, 'carrier', None)
+            area_code=area_code,
+            carrier=carrier
         )
         db.add(banned)
     
@@ -2431,18 +2444,63 @@ def cancel_subscription(user: User = Depends(get_current_user), db: Session = De
     }
 
 @app.get("/admin/banned-numbers", tags=["Admin"], summary="Get Banned Numbers")
-def get_banned_numbers(admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
-    """Get list of banned numbers (admin only)"""
-    banned = db.query(BannedNumber).order_by(BannedNumber.fail_count.desc()).all()
+def get_banned_numbers(
+    service: str = None,
+    area_code: str = None,
+    carrier: str = None,
+    min_fails: int = 1,
+    limit: int = 100,
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Get list of banned numbers with filtering (admin only)
+    
+    - **service**: Filter by service name
+    - **area_code**: Filter by area code
+    - **carrier**: Filter by ISP/carrier
+    - **min_fails**: Minimum fail count
+    - **limit**: Max results (default 100)
+    """
+    query = db.query(BannedNumber)
+    
+    if service:
+        query = query.filter(BannedNumber.service_name == service)
+    if area_code:
+        query = query.filter(BannedNumber.area_code == area_code)
+    if carrier:
+        query = query.filter(BannedNumber.carrier.contains(carrier))
+    if min_fails > 1:
+        query = query.filter(BannedNumber.fail_count >= min_fails)
+    
+    banned = query.order_by(BannedNumber.fail_count.desc()).limit(limit).all()
+    
+    # Get statistics
+    from sqlalchemy import func
+    total_banned = db.query(func.count(BannedNumber.id)).scalar()
+    by_service = db.query(
+        BannedNumber.service_name,
+        func.count(BannedNumber.id).label('count')
+    ).group_by(BannedNumber.service_name).order_by(func.count(BannedNumber.id).desc()).limit(10).all()
+    
+    by_carrier = db.query(
+        BannedNumber.carrier,
+        func.count(BannedNumber.id).label('count')
+    ).filter(BannedNumber.carrier.isnot(None)).group_by(BannedNumber.carrier).order_by(func.count(BannedNumber.id).desc()).limit(10).all()
     
     return {
+        "total_banned": total_banned,
+        "stats": {
+            "by_service": [{"service": s[0], "count": s[1]} for s in by_service],
+            "by_carrier": [{"carrier": c[0], "count": c[1]} for c in by_carrier]
+        },
         "banned_numbers": [
             {
+                "id": b.id,
                 "phone_number": b.phone_number,
                 "service_name": b.service_name,
-                "area_code": b.area_code,
-                "carrier": b.carrier,
-                "fail_count": b.fail_count,
+                "area_code": b.area_code or "Unknown",
+                "carrier": b.carrier or "Unknown",
+                "fail_count": int(b.fail_count),
                 "last_failed_at": b.last_failed_at.isoformat(),
                 "created_at": b.created_at.isoformat()
             }
