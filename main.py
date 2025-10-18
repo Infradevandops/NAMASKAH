@@ -1455,23 +1455,8 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
         if req.capability == 'voice':
             base_cost += VOICE_PREMIUM
         
-        # Get user's subscription plan
-        try:
-            subscription = db.query(Subscription).filter(
-                Subscription.user_id == user.id,
-                Subscription.status == "active"
-            ).first()
-        except Exception as e:
-            print(f"Subscription query error: {e}")
-            subscription = None
-        
-        # Apply discount based on subscription
-        if subscription:
-            discount = SUBSCRIPTION_PLANS[subscription.plan]['discount']
-            cost = round(base_cost * (1 - discount), 2)
-        else:
-            # No subscription = Starter plan (no discount)
-            cost = base_cost
+        # No subscription discounts for now
+        cost = base_cost
     except Exception as e:
         print(f"Pricing calculation error: {e}")
         raise HTTPException(status_code=500, detail=f"Pricing error: {str(e)}")
@@ -1527,23 +1512,6 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
     except Exception as e:
         print(f"Notification check error (non-critical): {e}")
         pass  # Don't fail verification if notification check fails
-    
-    # Check subscription for filtering permissions
-    subscription = db.query(Subscription).filter(
-        Subscription.user_id == user.id,
-        Subscription.status == "active"
-    ).first()
-    
-    # Validate filtering permissions
-    if req.area_code and subscription:
-        plan = SUBSCRIPTION_PLANS[subscription.plan]
-        if not plan['area_code']:
-            raise HTTPException(status_code=403, detail="Area code selection requires Pro or Turbo plan")
-    
-    if req.carrier and subscription:
-        plan = SUBSCRIPTION_PLANS[subscription.plan]
-        if not plan['carrier']:
-            raise HTTPException(status_code=403, detail="Carrier selection requires Turbo plan")
     
     # Create verification with filters
     try:
