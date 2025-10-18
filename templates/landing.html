@@ -279,17 +279,17 @@
         </div>
         <div style="flex: 1; overflow: hidden; margin: 0 20px;">
             <div style="animation: scroll-left 15s linear infinite; white-space: nowrap; font-weight: 700; font-size: 16px; background: linear-gradient(90deg, #667eea, #764ba2, #667eea); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-                🎁 Get 1 FREE Verification on Signup! 🎁 Get 1 FREE Verification on Signup! 🎁 Get 1 FREE Verification on Signup! 🎁 Get 1 FREE Verification on Signup!
+                Get 1 FREE Verification on Signup! • Earn 10% with Affiliate Program! • Get 1 FREE Verification on Signup! • Earn 10% with Affiliate Program!
             </div>
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
+            <button onclick="window.location.href='/app'" class="login-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); position: relative; overflow: hidden;">Login</button>
+            <div class="theme-toggle" onclick="toggleTheme()"></div>
             <button class="hamburger-menu" onclick="toggleMenu()" style="background: none; border: none; padding: 8px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; width: 30px;">
                 <span style="width: 100%; height: 3px; background: var(--text-primary); border-radius: 2px; transition: all 0.3s;"></span>
                 <span style="width: 100%; height: 3px; background: var(--text-primary); border-radius: 2px; transition: all 0.3s;"></span>
                 <span style="width: 100%; height: 3px; background: var(--text-primary); border-radius: 2px; transition: all 0.3s;"></span>
             </button>
-            <button onclick="window.location.href='/app'" class="login-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); position: relative; overflow: hidden;">Login</button>
-            <div class="theme-toggle" onclick="toggleTheme()"></div>
         </div>
     </div>
     <style>
@@ -340,11 +340,10 @@
             <p>Instant SMS Verification for 1,807+ Services</p>
             <p style="font-size: 0.85rem; margin-bottom: 30px;">WhatsApp • Telegram • Google • Discord • Instagram • Facebook • 1,800+ more</p>
             <button class="cta-button pulse-btn" onclick="window.location.href='/app'">
-                <span class="phone-icon" style="display: inline-block; margin-right: 8px; animation: phoneRing 1s ease-in-out infinite;">📱</span>
                 Get Started Free
             </button>
             <button class="cta-button secondary" onclick="window.location.href='/app'">Login</button>
-            <button class="cta-button secondary" onclick="window.location.href='/app#affiliates'" style="background: #10b981; border-color: #10b981; color: white;">Earn 10% - Affiliate Program</button>
+            <button class="cta-button secondary" onclick="window.location.href='/app#affiliates'">Affiliate Program</button>
         </div>
     </div>
     
@@ -519,36 +518,76 @@
 
     <div class="features">
         <h2>Why Choose Namaskah?</h2>
-        <div class="feature-grid">
-            <div class="feature-card">
-                <div style="font-size: 3rem;">⚡</div>
-                <h3>Lightning Fast</h3>
-                <p>Get SMS codes in 60-120 seconds. Service-specific timers ensure optimal delivery.</p>
+        <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 20px;">
+            <style>
+                @media (min-width: 768px) {
+                    .features > div { grid-template-columns: repeat(2, 1fr) !important; }
+                }
+                @media (min-width: 1024px) {
+                    .features > div { grid-template-columns: repeat(3, 1fr) !important; }
+                }
+                .feature-card-enhanced {
+                    background: var(--bg-card);
+                    padding: 30px;
+                    border-radius: 16px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                    text-align: center;
+                    border: 2px solid var(--border);
+                    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                    animation: fadeInUp 0.6s ease-out forwards;
+                    opacity: 0;
+                }
+                .feature-card-enhanced:nth-child(1) { animation-delay: 0.1s; }
+                .feature-card-enhanced:nth-child(2) { animation-delay: 0.2s; }
+                .feature-card-enhanced:nth-child(3) { animation-delay: 0.3s; }
+                .feature-card-enhanced:nth-child(4) { animation-delay: 0.4s; }
+                .feature-card-enhanced:nth-child(5) { animation-delay: 0.5s; }
+                .feature-card-enhanced:nth-child(6) { animation-delay: 0.6s; }
+                .feature-card-enhanced:hover {
+                    transform: translateY(-8px) scale(1.02);
+                    box-shadow: 0 12px 24px rgba(102, 126, 234, 0.2);
+                    border-color: var(--accent);
+                }
+                @keyframes fadeInUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(30px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+            </style>
+            <div class="feature-card-enhanced">
+                <div style="font-size: 3.5rem; margin-bottom: 15px;">⚡</div>
+                <h3 style="font-size: 1.3rem; margin: 15px 0; color: var(--text-primary);">Lightning Fast</h3>
+                <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">Get SMS codes in 60-120 seconds. Service-specific timers ensure optimal delivery.</p>
             </div>
-            <div class="feature-card">
-                <div style="font-size: 3rem;">📱</div>
-                <h3>1,807 Services</h3>
-                <p>Verify any service: WhatsApp, Telegram, Google, Discord, Instagram, and 1,800+ more.</p>
+            <div class="feature-card-enhanced">
+                <div style="font-size: 3.5rem; margin-bottom: 15px;">📱</div>
+                <h3 style="font-size: 1.3rem; margin: 15px 0; color: var(--text-primary);">1,807 Services</h3>
+                <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">Verify any service: WhatsApp, Telegram, Google, Discord, Instagram, and 1,800+ more.</p>
             </div>
-            <div class="feature-card">
-                <div style="font-size: 3rem;">💰</div>
-                <h3>Pay As You Go</h3>
-                <p>Only N0.50 per verification. No subscriptions. No hidden fees.</p>
+            <div class="feature-card-enhanced">
+                <div style="font-size: 3.5rem; margin-bottom: 15px;">💰</div>
+                <h3 style="font-size: 1.3rem; margin: 15px 0; color: var(--text-primary);">Pay As You Go</h3>
+                <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">Only N1 per verification. No subscriptions. No hidden fees.</p>
             </div>
-            <div class="feature-card">
-                <div style="font-size: 3rem;">🔒</div>
-                <h3>Secure & Private</h3>
-                <p>Your data is encrypted. Numbers are temporary and disposable.</p>
+            <div class="feature-card-enhanced">
+                <div style="font-size: 3.5rem; margin-bottom: 15px;">🔒</div>
+                <h3 style="font-size: 1.3rem; margin: 15px 0; color: var(--text-primary);">Secure & Private</h3>
+                <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">Your data is encrypted. Numbers are temporary and disposable.</p>
             </div>
-            <div class="feature-card">
-                <div style="font-size: 3rem;">🔄</div>
-                <h3>Auto-Refund</h3>
-                <p>No SMS? Get automatic refund. Risk-free verification.</p>
+            <div class="feature-card-enhanced">
+                <div style="font-size: 3.5rem; margin-bottom: 15px;">🔄</div>
+                <h3 style="font-size: 1.3rem; margin: 15px 0; color: var(--text-primary);">Auto-Refund</h3>
+                <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">No SMS? Get automatic refund. Risk-free verification.</p>
             </div>
-            <div class="feature-card">
-                <div style="font-size: 3rem;">🌍</div>
-                <h3>Global Coverage</h3>
-                <p>International numbers. Works worldwide. Multiple payment methods.</p>
+            <div class="feature-card-enhanced">
+                <div style="font-size: 3.5rem; margin-bottom: 15px;">🌍</div>
+                <h3 style="font-size: 1.3rem; margin: 15px 0; color: var(--text-primary);">Global Coverage</h3>
+                <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">International numbers. Works worldwide. Multiple payment methods.</p>
             </div>
         </div>
     </div>

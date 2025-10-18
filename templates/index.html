@@ -30,7 +30,7 @@
                 <span></span>
                 <span></span>
             </div>
-            <div style="font-size: 1.2rem; font-weight: bold; color: var(--text-primary); cursor: pointer;" onclick="window.location.href='/'">Namaskah</div>
+            <div style="font-size: 1.2rem; font-weight: bold; color: var(--text-primary); cursor: pointer; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onclick="window.location.href='/'">Namaskah</div>
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
             <button id="top-logout-btn" onclick="logout()" class="hidden" style="padding: 6px 12px; font-size: 13px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer;">Logout</button>
@@ -109,8 +109,8 @@
                 </div>
                 
                 <!-- Single persistent Google button container -->
-                <div id="google-separator" style="text-align: center; color: var(--text-primary); margin: 20px 0; font-size: 14px; font-weight: 600; display: none;">or</div>
-                <div id="google-auth-btn" style="display: none; justify-content: center; align-items: center; min-height: 50px; margin-bottom: 15px;"></div>
+                <div id="google-separator" style="text-align: center; color: var(--text-primary); margin: 20px 0; font-size: 14px; font-weight: 600;">or</div>
+                <div id="google-auth-btn" style="display: flex; justify-content: center; align-items: center; min-height: 50px; margin-bottom: 15px;"></div>
                 
                 <p id="login-hint" style="font-size: 13px; color: var(--text-primary); margin-top: 10px; text-align: center; font-weight: 600;">💡 Press Enter to login</p>
                 <p id="register-hint" class="hidden" style="font-size: 14px; color: #10b981; margin-top: 10px; text-align: center; font-weight: 700;">🎁 Get <span style="font-size: 16px;">1 FREE</span> verification on signup!</p>
