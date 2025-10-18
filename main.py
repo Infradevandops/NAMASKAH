@@ -1445,70 +1445,88 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
     Pricing: Popular services N1 ($2), General N1.25 ($2.50), Voice +N0.25
     Tiers: Pay-as-You-Go (no discount), Developer (20% off, min N25), Enterprise (35% off, min N100)
     """
-    # Determine base price (popular vs general)
-    popular_services = ['whatsapp', 'instagram', 'facebook', 'telegram', 'twitter', 'tiktok', 'snapchat', 'google']
-    is_popular = req.service_name.lower() in popular_services
-    base_cost = SMS_PRICING['popular'] if is_popular else SMS_PRICING['general']
-    
-    # Add voice premium if voice verification
-    if req.capability == 'voice':
-        base_cost += VOICE_PREMIUM
-    
-    # Get user's subscription plan
-    subscription = db.query(Subscription).filter(
-        Subscription.user_id == user.id,
-        Subscription.status == "active"
-    ).first()
-    
-    # Apply discount based on subscription
-    if subscription:
-        discount = SUBSCRIPTION_PLANS[subscription.plan]['discount']
-        cost = round(base_cost * (1 - discount), 2)
-    else:
-        # No subscription = Starter plan (no discount)
-        cost = base_cost
+    try:
+        # Determine base price (popular vs general)
+        popular_services = ['whatsapp', 'instagram', 'facebook', 'telegram', 'twitter', 'tiktok', 'snapchat', 'google']
+        is_popular = req.service_name.lower() in popular_services
+        base_cost = SMS_PRICING['popular'] if is_popular else SMS_PRICING['general']
+        
+        # Add voice premium if voice verification
+        if req.capability == 'voice':
+            base_cost += VOICE_PREMIUM
+        
+        # Get user's subscription plan
+        try:
+            subscription = db.query(Subscription).filter(
+                Subscription.user_id == user.id,
+                Subscription.status == "active"
+            ).first()
+        except Exception as e:
+            print(f"Subscription query error: {e}")
+            subscription = None
+        
+        # Apply discount based on subscription
+        if subscription:
+            discount = SUBSCRIPTION_PLANS[subscription.plan]['discount']
+            cost = round(base_cost * (1 - discount), 2)
+        else:
+            # No subscription = Starter plan (no discount)
+            cost = base_cost
+    except Exception as e:
+        print(f"Pricing calculation error: {e}")
+        raise HTTPException(status_code=500, detail=f"Pricing error: {str(e)}")
     
     # Check if user has free verifications or credits
-    if user.free_verifications >= 1:
-        user.free_verifications -= 1
-        cost = 0  # Free verification
-        # Track free verification in transactions
-        db.add(Transaction(
-            id=f"txn_{datetime.now(timezone.utc).timestamp()}",
-            user_id=user.id,
-            amount=0,
-            type="debit",
-            description=f"Free verification for {req.service_name}"
-        ))
-    elif user.credits < cost:
-        raise HTTPException(status_code=402, detail=f"Insufficient credits. Need N{cost}, have N{user.credits}")
-    else:
-        user.credits -= cost
-        # Create transaction for paid verification
-        db.add(Transaction(
-            id=f"txn_{datetime.now(timezone.utc).timestamp()}",
-            user_id=user.id,
-            amount=-cost,
-            type="debit",
-            description=f"Verification for {req.service_name}"
-        ))
+    try:
+        if user.free_verifications >= 1:
+            user.free_verifications -= 1
+            cost = 0  # Free verification
+            # Track free verification in transactions
+            db.add(Transaction(
+                id=f"txn_{datetime.now(timezone.utc).timestamp()}",
+                user_id=user.id,
+                amount=0,
+                type="debit",
+                description=f"Free verification for {req.service_name}"
+            ))
+        elif user.credits < cost:
+            raise HTTPException(status_code=402, detail=f"Insufficient credits. Need N{cost}, have N{user.credits}")
+        else:
+            user.credits -= cost
+            # Create transaction for paid verification
+            db.add(Transaction(
+                id=f"txn_{datetime.now(timezone.utc).timestamp()}",
+                user_id=user.id,
+                amount=-cost,
+                type="debit",
+                description=f"Verification for {req.service_name}"
+            ))
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Credit deduction error: {e}")
+        raise HTTPException(status_code=500, detail=f"Credit processing error: {str(e)}")
     
     # Check low balance and send notification
-    settings = db.query(NotificationSettings).filter(NotificationSettings.user_id == user.id).first()
-    threshold = settings.low_balance_threshold if settings else 1.0
-    
-    if user.credits <= threshold and (not settings or settings.email_on_low_balance):
-        try:
-            send_email(
-                user.email,
-                "⚠️ Low Balance Alert - Namaskah SMS",
-                f"""<h2>⚠️ Low Balance Alert</h2>
-                <p>Your wallet balance is low: <strong>N{user.credits:.2f}</strong></p>
-                <p>Fund your wallet to continue using Namaskah SMS.</p>
-                <p><a href="{BASE_URL}/app">Fund Wallet Now</a></p>"""
-            )
-        except:
-            pass  # Don't fail verification if email fails
+    try:
+        settings = db.query(NotificationSettings).filter(NotificationSettings.user_id == user.id).first()
+        threshold = settings.low_balance_threshold if settings else 1.0
+        
+        if user.credits <= threshold and (not settings or settings.email_on_low_balance):
+            try:
+                send_email(
+                    user.email,
+                    "⚠️ Low Balance Alert - Namaskah SMS",
+                    f"""<h2>⚠️ Low Balance Alert</h2>
+                    <p>Your wallet balance is low: <strong>N{user.credits:.2f}</strong></p>
+                    <p>Fund your wallet to continue using Namaskah SMS.</p>
+                    <p><a href="{BASE_URL}/app">Fund Wallet Now</a></p>"""
+                )
+            except:
+                pass  # Don't fail verification if email fails
+    except Exception as e:
+        print(f"Notification check error (non-critical): {e}")
+        pass  # Don't fail verification if notification check fails
     
     # Check subscription for filtering permissions
     subscription = db.query(Subscription).filter(
