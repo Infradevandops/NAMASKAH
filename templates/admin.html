@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/mobile.css">
     <script src="/track.js"></script>
+    <script src="/static/js/home-button.js" defer></script>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -255,8 +256,55 @@
             </div>
 
             <div class="card">
+                <h2>User Account Management</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                    <button onclick="showUserSection('list')" class="btn-small">User List</button>
+                    <button onclick="showUserSection('suspend')" class="btn-small" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">Suspend/Activate</button>
+                    <button onclick="showUserSection('delete')" class="btn-small" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">Delete Users</button>
+                </div>
+                <div id="user-management-section"></div>
+            </div>
+
+            <div class="card">
+                <h2>Verification Management</h2>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <button onclick="loadActiveVerifications()" class="btn-small">Active Verifications</button>
+                    <button onclick="loadFailedVerifications()" class="btn-small" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">Failed</button>
+                </div>
+                <div id="verifications-management"></div>
+            </div>
+
+            <div class="card">
+                <h2>Service Pricing Management</h2>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <button onclick="loadServicePricing()" class="btn-small">View Pricing</button>
+                    <button onclick="showSetPricing()" class="btn-small" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">Set Price</button>
+                    <button onclick="showBulkPricing()" class="btn-small" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">Bulk Update</button>
+                </div>
+                <div id="pricing-management"></div>
+            </div>
+
+            <div class="card">
+                <h2>Rental Management</h2>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <button onclick="loadActiveRentals()" class="btn-small">Active Rentals</button>
+                    <button onclick="loadExpiringSoon()" class="btn-small" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">Expiring Soon</button>
+                </div>
+                <div id="rentals-management"></div>
+            </div>
+
+            <div class="card">
+                <h2>System Configuration</h2>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <button onclick="loadSystemConfig()" class="btn-small">View Config</button>
+                    <button onclick="showSetConfig()" class="btn-small" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">Set Config</button>
+                </div>
+                <div id="system-config"></div>
+            </div>
+
+            <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-                    <h2 style="margin: 0;">Users</h2>
+                    <h2 style="margin: 0;">All Users</h2>
                     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                         <select id="balance-filter" onchange="filterUsers()">
                             <option value="all">All Balances</option>
@@ -982,6 +1030,439 @@
             setTimeout(() => {
                 notification.classList.add('hidden');
             }, 3000);
+        }
+
+        // User Management Functions
+        function showUserSection(section) {
+            const container = document.getElementById('user-management-section');
+            if (section === 'list') {
+                container.innerHTML = '<p style="color: #64748b;">Use the "All Users" section below for full user list</p>';
+            } else if (section === 'suspend') {
+                container.innerHTML = `
+                    <div style="background: #f8fafc; padding: 20px; border-radius: 12px;">
+                        <h3 style="margin: 0 0 15px 0;">Suspend/Activate User</h3>
+                        <input type="text" id="suspend-user-id" placeholder="User ID" style="width: 100%; margin-bottom: 10px;">
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="suspendUser()" class="btn-danger">Suspend</button>
+                            <button onclick="activateUser()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">Activate</button>
+                        </div>
+                    </div>
+                `;
+            } else if (section === 'delete') {
+                container.innerHTML = `
+                    <div style="background: #fee2e2; padding: 20px; border-radius: 12px; border: 2px solid #ef4444;">
+                        <h3 style="margin: 0 0 10px 0; color: #ef4444;">⚠️ Delete User (Permanent)</h3>
+                        <p style="color: #991b1b; margin-bottom: 15px;">This action cannot be undone. All user data will be permanently deleted.</p>
+                        <input type="text" id="delete-user-id" placeholder="User ID" style="width: 100%; margin-bottom: 10px;">
+                        <button onclick="deleteUser()" class="btn-danger">Delete Permanently</button>
+                    </div>
+                `;
+            }
+        }
+
+        async function suspendUser() {
+            const userId = document.getElementById('suspend-user-id').value;
+            if (!userId) return showNotification('Enter user ID', 'error');
+            
+            try {
+                const res = await fetch(`${API_BASE}/admin/users/${userId}/suspend`, {
+                    method: 'POST',
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showNotification(data.message, 'success');
+                    loadUsers();
+                } else {
+                    showNotification(data.detail || 'Failed', 'error');
+                }
+            } catch (err) {
+                showNotification('Network error', 'error');
+            }
+        }
+
+        async function activateUser() {
+            const userId = document.getElementById('suspend-user-id').value;
+            if (!userId) return showNotification('Enter user ID', 'error');
+            
+            try {
+                const res = await fetch(`${API_BASE}/admin/users/${userId}/activate`, {
+                    method: 'POST',
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showNotification(data.message, 'success');
+                    loadUsers();
+                } else {
+                    showNotification(data.detail || 'Failed', 'error');
+                }
+            } catch (err) {
+                showNotification('Network error', 'error');
+            }
+        }
+
+        async function deleteUser() {
+            const userId = document.getElementById('delete-user-id').value;
+            if (!userId) return showNotification('Enter user ID', 'error');
+            
+            if (!confirm('Are you ABSOLUTELY sure? This will permanently delete all user data!')) return;
+            
+            try {
+                const res = await fetch(`${API_BASE}/admin/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showNotification(data.message, 'success');
+                    loadUsers();
+                    loadStats();
+                } else {
+                    showNotification(data.detail || 'Failed', 'error');
+                }
+            } catch (err) {
+                showNotification('Network error', 'error');
+            }
+        }
+
+        // Verification Management
+        async function loadActiveVerifications() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/verifications/active`, {
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                const data = await res.json();
+                const container = document.getElementById('verifications-management');
+                
+                if (data.verifications.length === 0) {
+                    container.innerHTML = '<p style="color: #64748b; text-align: center;">No active verifications</p>';
+                } else {
+                    container.innerHTML = data.verifications.map(v => `
+                        <div class="verification-item" style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>${v.user_email}</strong> - ${v.service_name}
+                                <div style="font-size: 14px; color: #6b7280;">
+                                    Phone: ${v.phone_number} | Cost: N${v.cost}
+                                </div>
+                                <div style="font-size: 12px; color: #9ca3af;">
+                                    ${new Date(v.created_at).toLocaleString()}
+                                </div>
+                            </div>
+                            <button onclick="cancelVerification('${v.id}')" class="btn-danger btn-small">Cancel & Refund</button>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                showNotification('Failed to load verifications', 'error');
+            }
+        }
+
+        async function cancelVerification(verificationId) {
+            if (!confirm('Cancel this verification and refund the user?')) return;
+            
+            try {
+                const res = await fetch(`${API_BASE}/admin/verifications/${verificationId}/cancel`, {
+                    method: 'POST',
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showNotification(data.message, 'success');
+                    loadActiveVerifications();
+                } else {
+                    showNotification(data.detail || 'Failed', 'error');
+                }
+            } catch (err) {
+                showNotification('Network error', 'error');
+            }
+        }
+
+        // Service Pricing Management
+        async function loadServicePricing() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/pricing/services`, {
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                const data = await res.json();
+                const container = document.getElementById('pricing-management');
+                
+                container.innerHTML = `
+                    <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 15px;">
+                        <h3 style="margin: 0 0 10px 0;">Default Pricing</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px;">
+                            <div style="background: white; padding: 15px; border-radius: 8px; text-align: center;">
+                                <div style="font-size: 24px; font-weight: 700; color: #667eea;">N${data.default_popular}</div>
+                                <div style="color: #64748b; font-size: 13px; margin-top: 5px;">Popular Services</div>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 8px; text-align: center;">
+                                <div style="font-size: 24px; font-weight: 700; color: #f59e0b;">N${data.default_general}</div>
+                                <div style="color: #64748b; font-size: 13px; margin-top: 5px;">General Services</div>
+                            </div>
+                        </div>
+                    </div>
+                    ${data.custom_pricing.length > 0 ? `
+                        <div style="background: #f8fafc; padding: 20px; border-radius: 12px;">
+                            <h3 style="margin: 0 0 15px 0;">Custom Pricing (${data.custom_pricing.length} services)</h3>
+                            ${data.custom_pricing.map(p => `
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px; margin-bottom: 8px;">
+                                    <div>
+                                        <strong style="text-transform: capitalize;">${p.service_name}</strong>
+                                        ${p.is_popular ? '<span style="background: #667eea; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 8px;">POPULAR</span>' : ''}
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <strong style="color: #10b981;">N${p.price}</strong>
+                                        <button onclick="removeCustomPricing('${p.service_name}')" class="btn-danger btn-small">Remove</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : '<p style="color: #64748b; text-align: center;">No custom pricing set</p>'}
+                `;
+            } catch (err) {
+                showNotification('Failed to load pricing', 'error');
+            }
+        }
+
+        function showSetPricing() {
+            const container = document.getElementById('pricing-management');
+            container.innerHTML = `
+                <div style="background: #f8fafc; padding: 20px; border-radius: 12px;">
+                    <h3 style="margin: 0 0 15px 0;">Set Service Price</h3>
+                    <input type="text" id="price-service-name" placeholder="Service name (e.g., whatsapp)" style="width: 100%; margin-bottom: 10px;">
+                    <input type="number" id="price-amount" placeholder="Price (N)" step="0.25" min="0.50" style="width: 100%; margin-bottom: 10px;">
+                    <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                        <input type="checkbox" id="price-is-popular">
+                        <span>Mark as popular service</span>
+                    </label>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="setServicePrice()">Set Price</button>
+                        <button onclick="loadServicePricing()" class="btn-danger">Cancel</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function setServicePrice() {
+            const serviceName = document.getElementById('price-service-name').value.toLowerCase().trim();
+            const price = parseFloat(document.getElementById('price-amount').value);
+            const isPopular = document.getElementById('price-is-popular').checked;
+            
+            if (!serviceName || !price || price < 0.5) {
+                return showNotification('Invalid input', 'error');
+            }
+            
+            try {
+                const res = await fetch(`${API_BASE}/admin/pricing/services/${serviceName}?price=${price}&is_popular=${isPopular}`, {
+                    method: 'POST',
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showNotification(data.message, 'success');
+                    loadServicePricing();
+                } else {
+                    showNotification(data.detail || 'Failed', 'error');
+                }
+            } catch (err) {
+                showNotification('Network error', 'error');
+            }
+        }
+
+        async function removeCustomPricing(serviceName) {
+            if (!confirm(`Remove custom pricing for ${serviceName}?`)) return;
+            
+            try {
+                const res = await fetch(`${API_BASE}/admin/pricing/services/${serviceName}`, {
+                    method: 'DELETE',
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showNotification(data.message, 'success');
+                    loadServicePricing();
+                } else {
+                    showNotification(data.detail || 'Failed', 'error');
+                }
+            } catch (err) {
+                showNotification('Network error', 'error');
+            }
+        }
+
+        function showBulkPricing() {
+            const container = document.getElementById('pricing-management');
+            container.innerHTML = `
+                <div style="background: #f8fafc; padding: 20px; border-radius: 12px;">
+                    <h3 style="margin: 0 0 10px 0;">Bulk Update Pricing</h3>
+                    <p style="color: #64748b; margin-bottom: 15px; font-size: 14px;">Enter one service per line in format: service_name=price</p>
+                    <textarea id="bulk-pricing-input" rows="10" placeholder="whatsapp=1.00\ntelegram=1.00\ninstagram=1.25" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-family: monospace; margin-bottom: 15px;"></textarea>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="bulkUpdatePricing()">Update All</button>
+                        <button onclick="loadServicePricing()" class="btn-danger">Cancel</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function bulkUpdatePricing() {
+            const input = document.getElementById('bulk-pricing-input').value;
+            const lines = input.split('\n').filter(l => l.trim());
+            
+            const services = {};
+            for (const line of lines) {
+                const [service, price] = line.split('=').map(s => s.trim());
+                if (service && price) {
+                    services[service.toLowerCase()] = parseFloat(price);
+                }
+            }
+            
+            if (Object.keys(services).length === 0) {
+                return showNotification('No valid entries', 'error');
+            }
+            
+            try {
+                const res = await fetch(`${API_BASE}/admin/pricing/bulk`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(services)
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showNotification(data.message, 'success');
+                    loadServicePricing();
+                } else {
+                    showNotification(data.detail || 'Failed', 'error');
+                }
+            } catch (err) {
+                showNotification('Network error', 'error');
+            }
+        }
+
+        // Rental Management
+        async function loadActiveRentals() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/rentals/active`, {
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                const data = await res.json();
+                const container = document.getElementById('rentals-management');
+                
+                if (data.rentals.length === 0) {
+                    container.innerHTML = '<p style="color: #64748b; text-align: center;">No active rentals</p>';
+                } else {
+                    container.innerHTML = data.rentals.map(r => `
+                        <div class="verification-item" style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>${r.user_email}</strong> - ${r.service_name}
+                                <div style="font-size: 14px; color: #6b7280;">
+                                    Phone: ${r.phone_number} | Cost: N${r.cost}
+                                </div>
+                                <div style="font-size: 12px; color: #9ca3af;">
+                                    Expires: ${new Date(r.expires_at).toLocaleString()}
+                                </div>
+                            </div>
+                            <button onclick="forceReleaseRental('${r.id}')" class="btn-danger btn-small">Force Release</button>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                showNotification('Failed to load rentals', 'error');
+            }
+        }
+
+        async function forceReleaseRental(rentalId) {
+            if (!confirm('Force release this rental?')) return;
+            
+            try {
+                const res = await fetch(`${API_BASE}/admin/rentals/${rentalId}/release`, {
+                    method: 'POST',
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showNotification(data.message, 'success');
+                    loadActiveRentals();
+                } else {
+                    showNotification(data.detail || 'Failed', 'error');
+                }
+            } catch (err) {
+                showNotification('Network error', 'error');
+            }
+        }
+
+        // System Configuration
+        async function loadSystemConfig() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/config`, {
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                const data = await res.json();
+                const container = document.getElementById('system-config');
+                
+                const configs = Object.entries(data.config);
+                if (configs.length === 0) {
+                    container.innerHTML = '<p style="color: #64748b; text-align: center;">No configuration set</p>';
+                } else {
+                    container.innerHTML = configs.map(([key, val]) => `
+                        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div>
+                                    <strong style="color: #667eea;">${key}</strong>
+                                    <div style="font-size: 14px; color: #6b7280; margin-top: 5px;">${val.value}</div>
+                                    ${val.description ? `<div style="font-size: 12px; color: #9ca3af; margin-top: 3px;">${val.description}</div>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                showNotification('Failed to load config', 'error');
+            }
+        }
+
+        function showSetConfig() {
+            const container = document.getElementById('system-config');
+            container.innerHTML = `
+                <div style="background: #f8fafc; padding: 20px; border-radius: 12px;">
+                    <h3 style="margin: 0 0 15px 0;">Set Configuration</h3>
+                    <input type="text" id="config-key" placeholder="Configuration key" style="width: 100%; margin-bottom: 10px;">
+                    <input type="text" id="config-value" placeholder="Value" style="width: 100%; margin-bottom: 10px;">
+                    <textarea id="config-description" rows="3" placeholder="Description (optional)" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; margin-bottom: 15px;"></textarea>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="setSystemConfig()">Set Config</button>
+                        <button onclick="loadSystemConfig()" class="btn-danger">Cancel</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function setSystemConfig() {
+            const key = document.getElementById('config-key').value.trim();
+            const value = document.getElementById('config-value').value.trim();
+            const description = document.getElementById('config-description').value.trim();
+            
+            if (!key || !value) {
+                return showNotification('Key and value required', 'error');
+            }
+            
+            try {
+                const res = await fetch(`${API_BASE}/admin/config/${key}?value=${encodeURIComponent(value)}&description=${encodeURIComponent(description)}`, {
+                    method: 'POST',
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showNotification(data.message, 'success');
+                    loadSystemConfig();
+                } else {
+                    showNotification(data.detail || 'Failed', 'error');
+                }
+            } catch (err) {
+                showNotification('Network error', 'error');
+            }
         }
     </script>
 </body>

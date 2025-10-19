@@ -1303,6 +1303,16 @@ def get_me(user: User = Depends(get_current_user)):
         except:
             pass
     
+    # Get subscription plan
+    subscription = db.query(Subscription).filter(
+        Subscription.user_id == user.id,
+        Subscription.status == "active"
+    ).first()
+    
+    plan = "starter"
+    if subscription:
+        plan = subscription.plan
+    
     return {
         "id": user.id,
         "email": user.email,
@@ -1310,7 +1320,8 @@ def get_me(user: User = Depends(get_current_user)):
         "free_verifications": user.free_verifications,
         "is_admin": user.is_admin,
         "email_verified": user.email_verified,
-        "created_at": user.created_at
+        "created_at": user.created_at,
+        "subscription_plan": plan
     }
 
 @app.get("/verifications/history", tags=["Verification"], summary="Get Verification History")
@@ -1457,17 +1468,34 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
     Tiers: Pay-as-You-Go (no discount), Developer (20% off, min N25), Enterprise (35% off, min N100)
     """
     try:
-        # Determine base price (popular vs general)
-        popular_services = ['whatsapp', 'instagram', 'facebook', 'telegram', 'twitter', 'tiktok', 'snapchat', 'google']
-        is_popular = req.service_name.lower() in popular_services
-        base_cost = SMS_PRICING['popular'] if is_popular else SMS_PRICING['general']
+        # Check for custom pricing first
+        custom_pricing = db.query(ServicePricing).filter(
+            ServicePricing.service_name == req.service_name.lower()
+        ).first()
+        
+        if custom_pricing:
+            base_cost = custom_pricing.price
+        else:
+            # Determine base price (popular vs general)
+            popular_services = ['whatsapp', 'instagram', 'facebook', 'telegram', 'twitter', 'tiktok', 'snapchat', 'google']
+            is_popular = req.service_name.lower() in popular_services
+            base_cost = SMS_PRICING['popular'] if is_popular else SMS_PRICING['general']
         
         # Add voice premium if voice verification
         if req.capability == 'voice':
             base_cost += VOICE_PREMIUM
         
-        # No subscription discounts for now
-        cost = base_cost
+        # Apply subscription discount
+        subscription = db.query(Subscription).filter(
+            Subscription.user_id == user.id,
+            Subscription.status == "active"
+        ).first()
+        
+        if subscription:
+            discount = subscription.discount
+            cost = base_cost * (1 - discount)
+        else:
+            cost = base_cost
     except Exception as e:
         print(f"Pricing calculation error: {e}")
         raise HTTPException(status_code=500, detail=f"Pricing error: {str(e)}")
@@ -2153,6 +2181,142 @@ def deduct_credits(req: AddCreditsRequest, admin: User = Depends(get_admin_user)
     db.commit()
     
     return {"message": f"Deducted N{req.amount} credits", "new_balance": user.credits}
+
+@app.post("/admin/users/{user_id}/suspend", tags=["Admin"], summary="Suspend User Account")
+def suspend_user(user_id: str, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Suspend user account (admin only)"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Add suspended flag to user model (would need migration)
+    # For now, set credits to negative to indicate suspension
+    user.email_verified = False
+    db.commit()
+    
+    return {"message": f"User {user.email} suspended"}
+
+@app.post("/admin/users/{user_id}/activate", tags=["Admin"], summary="Activate User Account")
+def activate_user(user_id: str, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Activate suspended user account (admin only)"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user.email_verified = True
+    db.commit()
+    
+    return {"message": f"User {user.email} activated"}
+
+@app.delete("/admin/users/{user_id}", tags=["Admin"], summary="Delete User Account")
+def delete_user(user_id: str, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Permanently delete user account (admin only)"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user.is_admin:
+        raise HTTPException(status_code=403, detail="Cannot delete admin account")
+    
+    # Delete related records
+    db.query(Verification).filter(Verification.user_id == user_id).delete()
+    db.query(Transaction).filter(Transaction.user_id == user_id).delete()
+    db.query(APIKey).filter(APIKey.user_id == user_id).delete()
+    db.query(Webhook).filter(Webhook.user_id == user_id).delete()
+    db.query(NumberRental).filter(NumberRental.user_id == user_id).delete()
+    db.query(Subscription).filter(Subscription.user_id == user_id).delete()
+    
+    db.delete(user)
+    db.commit()
+    
+    return {"message": f"User {user.email} deleted permanently"}
+
+@app.post("/admin/verifications/{verification_id}/cancel", tags=["Admin"], summary="Cancel Any Verification")
+def admin_cancel_verification(verification_id: str, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Cancel any user's verification and refund (admin only)"""
+    verification = db.query(Verification).filter(Verification.id == verification_id).first()
+    if not verification:
+        raise HTTPException(status_code=404, detail="Verification not found")
+    
+    if verification.status == "cancelled":
+        raise HTTPException(status_code=400, detail="Already cancelled")
+    
+    try:
+        tv_client.cancel_verification(verification_id)
+    except:
+        pass
+    
+    user = db.query(User).filter(User.id == verification.user_id).first()
+    user.credits += verification.cost
+    
+    transaction = Transaction(
+        id=f"txn_{datetime.now(timezone.utc).timestamp()}",
+        user_id=user.id,
+        amount=verification.cost,
+        type="credit",
+        description=f"Admin cancelled verification {verification_id}"
+    )
+    db.add(transaction)
+    
+    verification.status = "cancelled"
+    db.commit()
+    
+    return {"message": "Verification cancelled and refunded", "refunded": verification.cost}
+
+@app.get("/admin/verifications/active", tags=["Admin"], summary="Get All Active Verifications")
+def get_all_active_verifications(admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Get all active verifications system-wide (admin only)"""
+    verifications = db.query(Verification).filter(
+        Verification.status == "pending"
+    ).order_by(Verification.created_at.desc()).limit(100).all()
+    
+    return {
+        "verifications": [
+            {
+                "id": v.id,
+                "user_email": db.query(User).filter(User.id == v.user_id).first().email,
+                "service_name": v.service_name,
+                "phone_number": v.phone_number,
+                "cost": v.cost,
+                "created_at": v.created_at.isoformat()
+            }
+            for v in verifications
+        ]
+    }
+
+@app.get("/admin/rentals/active", tags=["Admin"], summary="Get All Active Rentals")
+def get_all_active_rentals(admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Get all active rentals system-wide (admin only)"""
+    rentals = db.query(NumberRental).filter(
+        NumberRental.status == "active"
+    ).order_by(NumberRental.expires_at).all()
+    
+    return {
+        "rentals": [
+            {
+                "id": r.id,
+                "user_email": db.query(User).filter(User.id == r.user_id).first().email,
+                "phone_number": r.phone_number,
+                "service_name": r.service_name,
+                "expires_at": r.expires_at.isoformat(),
+                "cost": r.cost
+            }
+            for r in rentals
+        ]
+    }
+
+@app.post("/admin/rentals/{rental_id}/release", tags=["Admin"], summary="Force Release Rental")
+def admin_release_rental(rental_id: str, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Force release any rental (admin only)"""
+    rental = db.query(NumberRental).filter(NumberRental.id == rental_id).first()
+    if not rental:
+        raise HTTPException(status_code=404, detail="Rental not found")
+    
+    rental.status = "released"
+    rental.released_at = datetime.now(timezone.utc)
+    db.commit()
+    
+    return {"message": "Rental released", "rental_id": rental_id}
 
 @app.get("/admin/affiliates/stats", tags=["Admin"], summary="Get Affiliate Statistics")
 def get_affiliate_stats(admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
@@ -3403,6 +3567,26 @@ def update_ticket_status(ticket_id: str, status: str, admin: User = Depends(get_
     
     return {"message": "Status updated", "ticket_id": ticket.id, "new_status": status}
 
+# Service Pricing Management (Dynamic)
+class ServicePricing(Base):
+    __tablename__ = "service_pricing"
+    id = Column(String, primary_key=True)
+    service_name = Column(String, nullable=False, unique=True)
+    price = Column(Float, nullable=False)
+    is_popular = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime)
+
+class SystemConfig(Base):
+    __tablename__ = "system_config"
+    id = Column(String, primary_key=True)
+    key = Column(String, nullable=False, unique=True)
+    value = Column(String, nullable=False)
+    description = Column(String)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+Base.metadata.create_all(bind=engine)
+
 # Rental Pricing (in Namaskah coins N)
 # Service-Specific Rentals (for single service like WhatsApp)
 RENTAL_SERVICE_SPECIFIC = {
@@ -3461,6 +3645,114 @@ def calculate_refund(rental: NumberRental) -> float:
     unused_hours = max(0, rental.duration_hours - used_hours)
     hourly_rate = rental.cost / rental.duration_hours
     return round((unused_hours * hourly_rate) * 0.5, 2)
+
+@app.get("/admin/pricing/services", tags=["Admin"], summary="Get All Service Pricing")
+def get_service_pricing(admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Get pricing for all services (admin only)"""
+    pricing = db.query(ServicePricing).all()
+    return {
+        "default_popular": SMS_PRICING['popular'],
+        "default_general": SMS_PRICING['general'],
+        "custom_pricing": [
+            {
+                "service_name": p.service_name,
+                "price": p.price,
+                "is_popular": p.is_popular
+            }
+            for p in pricing
+        ]
+    }
+
+@app.post("/admin/pricing/services/{service_name}", tags=["Admin"], summary="Set Service Price")
+def set_service_price(service_name: str, price: float, is_popular: bool = False, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Set custom price for specific service (admin only)"""
+    if price < 0.5:
+        raise HTTPException(status_code=400, detail="Minimum price is N0.50")
+    
+    pricing = db.query(ServicePricing).filter(ServicePricing.service_name == service_name).first()
+    
+    if pricing:
+        pricing.price = price
+        pricing.is_popular = is_popular
+        pricing.updated_at = datetime.now(timezone.utc)
+    else:
+        pricing = ServicePricing(
+            id=f"price_{datetime.now(timezone.utc).timestamp()}",
+            service_name=service_name,
+            price=price,
+            is_popular=is_popular
+        )
+        db.add(pricing)
+    
+    db.commit()
+    return {"message": f"Price set for {service_name}", "price": price}
+
+@app.post("/admin/pricing/bulk", tags=["Admin"], summary="Bulk Update Service Pricing")
+def bulk_update_pricing(services: dict, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Bulk update pricing for multiple services (admin only)"""
+    updated = []
+    for service_name, price in services.items():
+        if price < 0.5:
+            continue
+        
+        pricing = db.query(ServicePricing).filter(ServicePricing.service_name == service_name).first()
+        if pricing:
+            pricing.price = price
+            pricing.updated_at = datetime.now(timezone.utc)
+        else:
+            pricing = ServicePricing(
+                id=f"price_{datetime.now(timezone.utc).timestamp()}_{service_name}",
+                service_name=service_name,
+                price=price
+            )
+            db.add(pricing)
+        updated.append(service_name)
+    
+    db.commit()
+    return {"message": f"Updated {len(updated)} services", "services": updated}
+
+@app.delete("/admin/pricing/services/{service_name}", tags=["Admin"], summary="Remove Custom Pricing")
+def remove_custom_pricing(service_name: str, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Remove custom pricing for service (reverts to default) (admin only)"""
+    pricing = db.query(ServicePricing).filter(ServicePricing.service_name == service_name).first()
+    if pricing:
+        db.delete(pricing)
+        db.commit()
+        return {"message": f"Custom pricing removed for {service_name}"}
+    raise HTTPException(status_code=404, detail="No custom pricing found")
+
+@app.get("/admin/config", tags=["Admin"], summary="Get System Configuration")
+def get_system_config(admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Get all system configuration (admin only)"""
+    configs = db.query(SystemConfig).all()
+    return {
+        "config": {
+            c.key: {"value": c.value, "description": c.description}
+            for c in configs
+        }
+    }
+
+@app.post("/admin/config/{key}", tags=["Admin"], summary="Set System Configuration")
+def set_system_config(key: str, value: str, description: str = None, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Set system configuration value (admin only)"""
+    config = db.query(SystemConfig).filter(SystemConfig.key == key).first()
+    
+    if config:
+        config.value = value
+        if description:
+            config.description = description
+        config.updated_at = datetime.now(timezone.utc)
+    else:
+        config = SystemConfig(
+            id=f"config_{datetime.now(timezone.utc).timestamp()}",
+            key=key,
+            value=value,
+            description=description
+        )
+        db.add(config)
+    
+    db.commit()
+    return {"message": f"Configuration {key} updated", "value": value}
 
 # Rental Endpoints
 @app.post("/rentals/create", tags=["Rentals"], summary="Create Number Rental")

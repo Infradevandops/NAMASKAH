@@ -8,24 +8,27 @@
     <style>
         .docs-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
         .sidebar { position: sticky; top: 20px; background: var(--bg-card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
-        .sidebar a { display: block; padding: 8px 12px; color: var(--text-primary); text-decoration: none; border-radius: 6px; margin-bottom: 5px; transition: all 0.2s; }
-        .sidebar a:hover, .sidebar a.active { background: var(--accent); color: white; }
+        .sidebar h3 { color: var(--text-primary); font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; }
+        .sidebar a { display: block; padding: 10px 14px; color: var(--text-secondary); text-decoration: none; border-radius: 8px; margin-bottom: 4px; transition: all 0.2s; font-size: 14px; border-left: 3px solid transparent; }
+        .sidebar a:hover { background: var(--bg-secondary); color: var(--text-primary); border-left-color: var(--accent); transform: translateX(3px); }
+        .sidebar a.active { background: var(--accent); color: white; font-weight: 600; border-left-color: var(--accent); box-shadow: 0 2px 8px rgba(139, 105, 20, 0.3); }
         .endpoint { background: var(--bg-card); padding: 20px; margin-bottom: 20px; border-radius: 12px; border-left: 4px solid #667eea; border: 1px solid var(--border); }
         .method { display: inline-block; padding: 4px 12px; border-radius: 4px; font-weight: bold; color: white; margin-right: 10px; font-size: 12px; }
         .method.post { background: #10b981; }
         .method.get { background: #3b82f6; }
         .method.delete { background: #ef4444; }
         .method.put { background: #f59e0b; }
-        .code-block { background: #1f2937; color: #f3f4f6; padding: 15px; border-radius: 6px; overflow-x: auto; font-family: monospace; font-size: 13px; margin: 10px 0; }
+        .code-block { background: #1e293b; color: #e2e8f0; padding: 15px; border-radius: 8px; overflow-x: auto; font-family: 'Courier New', monospace; font-size: 13px; margin: 10px 0; border: 1px solid #334155; line-height: 1.6; }
         .param { background: var(--bg-secondary); padding: 12px; margin: 8px 0; border-radius: 6px; border-left: 3px solid var(--accent); }
-        .response-example { background: #f0fdf4; border: 1px solid #10b981; padding: 15px; border-radius: 6px; margin: 10px 0; }
-        .warning-box { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 6px; margin: 15px 0; }
-        .info-box { background: #dbeafe; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 6px; margin: 15px 0; }
-        .success-box { background: #d1fae5; border-left: 4px solid #10b981; padding: 15px; border-radius: 6px; margin: 15px 0; }
+        .response-example { background: #f0fdf4; border: 1px solid #10b981; padding: 15px; border-radius: 8px; margin: 10px 0; color: #065f46; }
+        .warning-box { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 6px; margin: 15px 0; color: #92400e; }
+        .info-box { background: #dbeafe; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 6px; margin: 15px 0; color: #1e3a8a; }
+        .success-box { background: #d1fae5; border-left: 4px solid #10b981; padding: 15px; border-radius: 6px; margin: 15px 0; color: #065f46; }
         @media (min-width: 768px) {
             .docs-layout { display: grid; grid-template-columns: 250px 1fr; gap: 30px; }
         }
     </style>
+    <script src="/static/js/home-button.js" defer></script>
 </head>
 <body>
     <div class="docs-container">
