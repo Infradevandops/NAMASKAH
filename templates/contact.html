@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - Namaskah SMS</title>
+    <meta name="description" content="Contact Namaskah SMS - Get support, ask questions, or provide feedback">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .contact-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+        .contact-header { text-align: center; margin-bottom: 50px; }
+        .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .contact-info { background: var(--bg-card); padding: 40px; border-radius: 16px; border: 1px solid var(--border); }
+        .contact-form { background: var(--bg-card); padding: 40px; border-radius: 16px; border: 1px solid var(--border); }
+        .info-item { margin-bottom: 30px; }
+        .info-item h3 { color: var(--accent); margin-bottom: 10px; }
+        .info-item p { color: var(--text-secondary); line-height: 1.8; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); }
+        .form-group textarea { min-height: 150px; resize: vertical; }
+        @media (max-width: 768px) {
+            .contact-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-nav">
+        <a href="/" class="home-btn">Home</a>
+    </div>
+
+    <div class="contact-container">
+        <div class="contact-header">
+            <h1>Contact Us</h1>
+            <p style="color: var(--text-secondary); font-size: 1.1rem;">We're here to help. Reach out anytime.</p>
+        </div>
+
+        <div class="contact-grid">
+            <div class="contact-info">
+                <h2 style="margin-bottom: 30px;">Get in Touch</h2>
+                
+                <div class="info-item">
+                    <h3>📧 Email Support</h3>
+                    <p><strong>General:</strong> support@namaskah.app</p>
+                    <p><strong>Privacy:</strong> privacy@namaskah.app</p>
+                    <p><strong>Legal:</strong> legal@namaskah.app</p>
+                    <p><strong>Response Time:</strong> Within 24 hours</p>
+                </div>
+
+                <div class="info-item">
+                    <h3>💬 Live Chat</h3>
+                    <p>Available in dashboard for logged-in users</p>
+                    <p><strong>Hours:</strong> 24/7 automated, human support 9 AM - 6 PM UTC</p>
+                </div>
+
+                <div class="info-item">
+                    <h3>📚 Resources</h3>
+                    <p><a href="/api-docs" style="color: var(--accent);">API Documentation</a></p>
+                    <p><a href="/faq" style="color: var(--accent);">FAQ</a></p>
+                    <p><a href="/status" style="color: var(--accent);">Service Status</a></p>
+                </div>
+
+                <div class="info-item">
+                    <h3>🔗 Social Media</h3>
+                    <p>Twitter: @NamaskahSMS (coming soon)</p>
+                    <p>LinkedIn: Namaskah SMS (coming soon)</p>
+                </div>
+
+                <div class="info-item">
+                    <h3>⏰ Support Hours</h3>
+                    <p><strong>Email:</strong> 24/7 (24-hour response)</p>
+                    <p><strong>Live Chat:</strong> 9 AM - 6 PM UTC</p>
+                    <p><strong>Emergency:</strong> Status page for outages</p>
+                </div>
+            </div>
+
+            <div class="contact-form">
+                <h2 style="margin-bottom: 30px;">Send Us a Message</h2>
+                
+                <form id="contactForm">
+                    <div class="form-group">
+                        <label for="name">Name *</label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="category">Category *</label>
+                        <select id="category" name="category" required>
+                            <option value="">Select a category</option>
+                            <option value="technical">Technical Support</option>
+                            <option value="billing">Billing & Payments</option>
+                            <option value="api">API & Integration</option>
+                            <option value="account">Account Issues</option>
+                            <option value="feature">Feature Request</option>
+                            <option value="feedback">Feedback</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message">Message *</label>
+                        <textarea id="message" name="message" required></textarea>
+                    </div>
+
+                    <button type="submit" style="width: 100%; padding: 15px; font-size: 1rem;">Send Message</button>
+                </form>
+
+                <div id="formMessage" style="margin-top: 20px; padding: 15px; border-radius: 8px; display: none;"></div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 60px; padding: 40px; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border);">
+            <h2 style="margin-bottom: 20px;">Frequently Asked Questions</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 30px;">Find quick answers to common questions</p>
+            <button onclick="window.location.href='/faq'" style="padding: 12px 30px;">View FAQ</button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('contactForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                category: document.getElementById('category').value,
+                message: document.getElementById('message').value
+            };
+
+            const messageDiv = document.getElementById('formMessage');
+            
+            try {
+                const response = await fetch('/support/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    messageDiv.style.display = 'block';
+                    messageDiv.style.background = '#d1fae5';
+                    messageDiv.style.color = '#065f46';
+                    messageDiv.textContent = `✓ Message sent! Ticket ID: ${data.ticket_id}. We'll respond within 24 hours.`;
+                    document.getElementById('contactForm').reset();
+                } else {
+                    throw new Error(data.detail || 'Failed to send message');
+                }
+            } catch (error) {
+                messageDiv.style.display = 'block';
+                messageDiv.style.background = '#fee2e2';
+                messageDiv.style.color = '#991b1b';
+                messageDiv.textContent = `✗ Error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>

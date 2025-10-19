@@ -876,6 +876,14 @@ async def terms_page(request: Request):
 async def refund_page(request: Request):
     return templates.TemplateResponse("refund.html", {"request": request})
 
+@app.get("/cookies")
+async def cookies_page(request: Request):
+    return templates.TemplateResponse("cookies.html", {"request": request})
+
+@app.get("/contact")
+async def contact_page(request: Request):
+    return templates.TemplateResponse("contact.html", {"request": request})
+
 @app.get("/analytics")
 async def analytics_page(request: Request):
     return templates.TemplateResponse("analytics.html", {"request": request})
