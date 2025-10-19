@@ -842,6 +842,7 @@
 
         // Handle Google Sign-In response
         async function handleGoogleSignIn(response) {
+            console.log('Google sign-in initiated');
             showLoading(true);
             try {
                 const res = await fetch('/auth/google', {
@@ -850,20 +851,32 @@
                     body: JSON.stringify({token: response.credential})
                 });
                 
+                console.log('Google auth response:', res.status);
                 const data = await res.json();
+                console.log('Google auth data:', data);
                 
-                if (res.ok) {
+                if (res.ok && data.token) {
+                    window.token = data.token;
                     localStorage.setItem('token', data.token);
-                    if (typeof token !== 'undefined') token = data.token;
                     showLoading(false);
                     showNotification('✅ Login successful!', 'success');
-                    setTimeout(() => location.reload(), 300);
+                    
+                    // Use checkAuth instead of reload
+                    setTimeout(() => {
+                        if (typeof checkAuth === 'function') {
+                            checkAuth();
+                        } else {
+                            location.reload();
+                        }
+                    }, 500);
                 } else {
                     showLoading(false);
+                    console.error('Google sign-in failed:', data.detail);
                     showNotification('❌ ' + (data.detail || 'Google sign-in failed'), 'error');
                 }
             } catch (error) {
                 showLoading(false);
+                console.error('Google sign-in error:', error);
                 showNotification('❌ Network error. Please try again.', 'error');
             }
         }
