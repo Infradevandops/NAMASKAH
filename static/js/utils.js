@@ -4,7 +4,7 @@ let isOnline = navigator.onLine;
 window.addEventListener('online', () => {
     isOnline = true;
     showNotification('✅ Connection restored', 'success');
-    if (token) checkAuth();
+    if (window.token) checkAuth();
 });
 
 window.addEventListener('offline', () => {
@@ -90,7 +90,8 @@ function copyToClipboard(text) {
 }
 
 // Check auth on load
-if (window.token || localStorage.getItem('token')) {
+window.token = localStorage.getItem('token');
+if (window.token) {
     if (typeof checkAuth === 'function') {
         checkAuth();
     }

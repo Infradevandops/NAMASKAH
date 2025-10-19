@@ -1428,6 +1428,9 @@ def get_google_config():
 @app.post("/auth/google", tags=["Authentication"], summary="Google OAuth Login")
 def google_auth(req: GoogleAuthRequest, db: Session = Depends(get_db)):
     """Authenticate with Google OAuth"""
+    if not GOOGLE_CLIENT_ID or GOOGLE_CLIENT_ID == "your-google-client-id.apps.googleusercontent.com":
+        raise HTTPException(status_code=503, detail="Google OAuth not configured")
+    
     try:
         from google.oauth2 import id_token
         from google.auth.transport import requests as google_requests
