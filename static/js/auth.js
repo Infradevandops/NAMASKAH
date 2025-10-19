@@ -105,7 +105,9 @@ async function login() {
 }
 
 async function checkAuth() {
+    console.log('checkAuth called, token:', window.token);
     if (!window.token) {
+        console.log('No token, logging out');
         logout();
         return;
     }
@@ -115,17 +117,22 @@ async function checkAuth() {
             headers: {'Authorization': `Bearer ${window.token}`}
         });
         
+        console.log('Auth response:', res.status);
+        
         if (res.ok) {
             const user = await res.json();
+            console.log('User loaded:', user.email);
             document.getElementById('user-email').textContent = user.email;
             document.getElementById('user-credits').textContent = user.credits.toFixed(2);
             document.getElementById('free-verifications').textContent = Math.floor(user.free_verifications || 0);
+            console.log('Calling showApp()');
             showApp();
         } else {
+            console.log('Auth failed, logging out');
             logout();
         }
     } catch (err) {
-        console.error('Auth check failed:', err);
+        console.error('Auth check error:', err);
         logout();
     }
 }
