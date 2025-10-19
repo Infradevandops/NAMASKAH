@@ -40,7 +40,7 @@ async function register() {
             window.token = data.token;
             localStorage.setItem('token', data.token);
             showNotification(`✅ Welcome! You got ₵${data.credits} free credits`, 'success');
-            showApp();
+            setTimeout(() => location.reload(), 500);
         } else {
             showNotification(`❌ ${data.detail || 'Registration failed'}`, 'error');
         }
@@ -87,8 +87,8 @@ async function login() {
             showNotification('✅ Login successful!', 'success');
             
             setTimeout(() => {
-                checkAuth();
-            }, 100);
+                location.reload();
+            }, 500);
         } else {
             showLoading(false);
             showNotification(`❌ ${data.detail || 'Invalid credentials'}`, 'error');
