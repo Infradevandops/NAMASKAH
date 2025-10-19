@@ -5,6 +5,8 @@ async function register() {
     const email = document.getElementById('register-email').value;
     const password = document.getElementById('register-password').value;
     
+    console.log('Register attempt for:', email);
+    
     if (!email || !password) {
         showNotification('⚠️ Please enter email and password', 'error');
         return;
@@ -21,6 +23,8 @@ async function register() {
     const refCode = urlParams.get('ref');
     const url = refCode ? `${API_BASE}/auth/register?referral_code=${refCode}` : `${API_BASE}/auth/register`;
     
+    console.log('Fetching:', url);
+    
     try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -33,23 +37,30 @@ async function register() {
         });
         
         clearTimeout(timeoutId);
+        console.log('Response status:', res.status);
+        
         const data = await res.json();
+        console.log('Response data:', data);
         showLoading(false);
         
         if (res.ok) {
             window.token = data.token;
             localStorage.setItem('token', data.token);
             showNotification(`✅ Welcome! You got ₵${data.credits} free credits`, 'success');
+            console.log('Reloading page in 500ms');
             setTimeout(() => location.reload(), 500);
         } else {
             showNotification(`❌ ${data.detail || 'Registration failed'}`, 'error');
         }
     } catch (err) {
         showLoading(false);
+        console.error('Register error:', err);
+        console.error('Error name:', err.name);
+        console.error('Error message:', err.message);
         if (err.name === 'AbortError') {
             showNotification('⏱️ Request timeout. Server may be down', 'error');
         } else {
-            showNotification('🌐 Network error. Check your connection', 'error');
+            showNotification(`🌐 Network error: ${err.message}`, 'error');
         }
     }
 }
@@ -57,6 +68,8 @@ async function register() {
 async function login() {
     const email = document.getElementById('login-email')?.value;
     const password = document.getElementById('login-password')?.value;
+    
+    console.log('Login attempt for:', email);
     
     if (!email || !password) {
         showNotification('⚠️ Please enter email and password', 'error');
@@ -66,10 +79,13 @@ async function login() {
     showLoading(true);
     
     try {
+        const url = `${API_BASE}/auth/login`;
+        console.log('Fetching:', url);
+        
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
         
-        const res = await fetch(`${API_BASE}/auth/login`, {
+        const res = await fetch(url, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({email, password}),
@@ -77,7 +93,10 @@ async function login() {
         });
         
         clearTimeout(timeoutId);
+        console.log('Response status:', res.status);
+        
         const data = await res.json();
+        console.log('Response data:', data);
         
         if (res.ok && data.token) {
             window.token = data.token;
@@ -86,6 +105,7 @@ async function login() {
             showLoading(false);
             showNotification('✅ Login successful!', 'success');
             
+            console.log('Reloading page in 500ms');
             setTimeout(() => {
                 location.reload();
             }, 500);
@@ -96,10 +116,12 @@ async function login() {
     } catch (err) {
         showLoading(false);
         console.error('Login error:', err);
+        console.error('Error name:', err.name);
+        console.error('Error message:', err.message);
         if (err.name === 'AbortError') {
             showNotification('⏱️ Request timeout. Server may be down', 'error');
         } else {
-            showNotification('🌐 Network error. Check your connection', 'error');
+            showNotification(`🌐 Network error: ${err.message}`, 'error');
         }
     }
 }
@@ -107,8 +129,9 @@ async function login() {
 async function checkAuth() {
     console.log('checkAuth called, token:', window.token);
     if (!window.token) {
-        console.log('No token, logging out');
-        logout();
+        console.log('No token, showing auth section');
+        document.getElementById('auth-section').classList.remove('hidden');
+        document.getElementById('app-section').classList.add('hidden');
         return;
     }
     
@@ -126,7 +149,11 @@ async function checkAuth() {
             document.getElementById('user-credits').textContent = user.credits.toFixed(2);
             document.getElementById('free-verifications').textContent = Math.floor(user.free_verifications || 0);
             console.log('Calling showApp()');
-            showApp();
+            if (typeof showApp === 'function') {
+                showApp();
+            } else {
+                console.error('showApp function not found!');
+            }
         } else {
             console.log('Auth failed, logging out');
             logout();

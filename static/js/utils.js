@@ -47,27 +47,30 @@ function showNotification(message, type) {
     }, 3000);
 }
 
-function showApp() {
+window.showApp = function() {
+    console.log('showApp called');
     const authSection = document.getElementById('auth-section');
     const appSection = document.getElementById('app-section');
     
-    // Fade out auth section
-    authSection.classList.add('fade-out');
+    if (!authSection || !appSection) {
+        console.error('Auth or app section not found!');
+        return;
+    }
     
+    console.log('Hiding auth, showing app');
+    
+    // Immediately hide auth and show app
+    authSection.classList.add('hidden');
+    appSection.classList.remove('hidden');
+    document.getElementById('top-logout-btn').classList.remove('hidden');
+    
+    // Set opacity for fade in
+    appSection.style.opacity = '1';
+    
+    showLoading(false);
+    
+    // Load data with error handling
     setTimeout(() => {
-        authSection.classList.add('hidden');
-        authSection.classList.remove('fade-out');
-        appSection.classList.remove('hidden');
-        document.getElementById('top-logout-btn').classList.remove('hidden');
-        
-        // Fade in app section
-        requestAnimationFrame(() => {
-            appSection.style.opacity = '1';
-        });
-        
-        showLoading(false);
-        
-        // Load data with error handling
         try {
             if (typeof checkEmailVerification === 'function') checkEmailVerification();
             if (typeof loadServices === 'function') loadServices();
@@ -81,7 +84,7 @@ function showApp() {
         } catch (err) {
             console.error('Error loading app data:', err);
         }
-    }, 300);
+    }, 100);
 }
 
 function copyToClipboard(text) {
@@ -91,13 +94,36 @@ function copyToClipboard(text) {
 
 // Check auth on load
 window.token = localStorage.getItem('token');
+console.log('Utils.js loaded, token:', window.token ? 'exists' : 'none');
+
 if (window.token) {
-    if (typeof checkAuth === 'function') {
-        checkAuth();
+    console.log('Token found, will check auth when ready');
+    // Wait for DOM and all scripts to load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                if (typeof checkAuth === 'function') {
+                    checkAuth();
+                } else {
+                    console.error('checkAuth not found!');
+                }
+            }, 100);
+        });
+    } else {
+        setTimeout(() => {
+            if (typeof checkAuth === 'function') {
+                checkAuth();
+            } else {
+                console.error('checkAuth not found!');
+            }
+        }, 100);
     }
 } else {
+    console.log('No token, checking for referral');
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('ref')) {
-        setTimeout(() => showTab('register'), 100);
+        setTimeout(() => {
+            if (typeof showTab === 'function') showTab('register');
+        }, 100);
     }
 }
