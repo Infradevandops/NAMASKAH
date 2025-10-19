@@ -48,27 +48,40 @@ function showNotification(message, type) {
 }
 
 function showApp() {
-    document.getElementById('auth-section').classList.add('hidden');
-    document.getElementById('app-section').classList.remove('hidden');
-    document.getElementById('top-logout-btn').classList.remove('hidden');
+    const authSection = document.getElementById('auth-section');
+    const appSection = document.getElementById('app-section');
     
-    // Hide loading spinner
-    showLoading(false);
+    // Fade out auth section
+    authSection.classList.add('fade-out');
     
-    // Load data with error handling
-    try {
-        if (typeof checkEmailVerification === 'function') checkEmailVerification();
-        if (typeof loadServices === 'function') loadServices();
-        if (typeof loadAPIKeys === 'function') loadAPIKeys();
-        if (typeof loadWebhooks === 'function') loadWebhooks();
-        if (typeof loadAnalytics === 'function') loadAnalytics();
-        if (typeof loadNotificationSettings === 'function') loadNotificationSettings();
-        if (typeof loadReferralStats === 'function') loadReferralStats();
-        if (typeof loadActiveRentals === 'function') loadActiveRentals();
-        if (typeof startHistoryRefresh === 'function') startHistoryRefresh();
-    } catch (err) {
-        console.error('Error loading app data:', err);
-    }
+    setTimeout(() => {
+        authSection.classList.add('hidden');
+        authSection.classList.remove('fade-out');
+        appSection.classList.remove('hidden');
+        document.getElementById('top-logout-btn').classList.remove('hidden');
+        
+        // Fade in app section
+        requestAnimationFrame(() => {
+            appSection.style.opacity = '1';
+        });
+        
+        showLoading(false);
+        
+        // Load data with error handling
+        try {
+            if (typeof checkEmailVerification === 'function') checkEmailVerification();
+            if (typeof loadServices === 'function') loadServices();
+            if (typeof loadAPIKeys === 'function') loadAPIKeys();
+            if (typeof loadWebhooks === 'function') loadWebhooks();
+            if (typeof loadAnalytics === 'function') loadAnalytics();
+            if (typeof loadNotificationSettings === 'function') loadNotificationSettings();
+            if (typeof loadReferralStats === 'function') loadReferralStats();
+            if (typeof loadActiveRentals === 'function') loadActiveRentals();
+            if (typeof startHistoryRefresh === 'function') startHistoryRefresh();
+        } catch (err) {
+            console.error('Error loading app data:', err);
+        }
+    }, 300);
 }
 
 function copyToClipboard(text) {

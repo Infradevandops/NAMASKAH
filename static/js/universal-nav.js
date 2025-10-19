@@ -115,9 +115,18 @@
     const savedTheme = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
     
-    // Add to page
+    // Add to page with fade-in
     document.head.appendChild(style);
+    nav.style.opacity = '0';
+    nav.style.transition = 'opacity 0.3s ease-in';
     document.body.insertBefore(nav, document.body.firstChild);
+    
+    // Fade in after DOM insertion
+    requestAnimationFrame(() => {
+        setTimeout(() => {
+            nav.style.opacity = '1';
+        }, 50);
+    });
     
     console.log('✅ Universal navigation loaded');
 })();

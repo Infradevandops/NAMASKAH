@@ -136,10 +136,24 @@ function logout() {
     stopAutoRefresh();
     stopHistoryRefresh();
     
-    document.getElementById('verifications').innerHTML = '';
-    document.getElementById('top-logout-btn').classList.add('hidden');
-    document.getElementById('auth-section').classList.remove('hidden');
-    document.getElementById('app-section').classList.add('hidden');
+    const authSection = document.getElementById('auth-section');
+    const appSection = document.getElementById('app-section');
+    
+    // Fade out app section
+    appSection.classList.add('fade-out');
+    
+    setTimeout(() => {
+        document.getElementById('verifications').innerHTML = '';
+        document.getElementById('top-logout-btn').classList.add('hidden');
+        appSection.classList.add('hidden');
+        appSection.classList.remove('fade-out');
+        authSection.classList.remove('hidden');
+        
+        // Fade in auth section
+        requestAnimationFrame(() => {
+            authSection.style.opacity = '1';
+        });
+    }, 300);
 }
 
 function showTab(tab) {

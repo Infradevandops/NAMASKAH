@@ -329,6 +329,15 @@ button:active {
     display: none !important;
 }
 
+#auth-section, #app-section {
+    transition: opacity 0.3s ease-in-out;
+    opacity: 1;
+}
+
+#auth-section.fade-out, #app-section.fade-out {
+    opacity: 0;
+}
+
 .user-info {
     display: flex;
     flex-direction: column;
