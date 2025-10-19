@@ -1607,7 +1607,7 @@ def reset_password(req: PasswordResetConfirm, db: Session = Depends(get_db)):
     return {"message": "Password reset successfully"}
 
 @app.get("/auth/me", tags=["Authentication"], summary="Get Current User")
-def get_me(user: User = Depends(get_current_user)):
+def get_me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Get authenticated user information and credit balance"""
     credits = user.credits
     
