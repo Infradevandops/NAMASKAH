@@ -1421,8 +1421,16 @@ def register(req: RegisterRequest, referral_code: str = None, db: Session = Depe
 @app.get("/auth/google/config", tags=["Authentication"], summary="Get Google OAuth Config")
 def get_google_config():
     """Get Google OAuth configuration"""
+    # Check if Google OAuth is properly configured
+    is_configured = (
+        GOOGLE_CLIENT_ID and 
+        GOOGLE_CLIENT_ID != "your-google-client-id.apps.googleusercontent.com" and
+        len(GOOGLE_CLIENT_ID) > 20  # Basic validation
+    )
+    
     return {
-        "client_id": GOOGLE_CLIENT_ID if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_ID != "your-google-client-id.apps.googleusercontent.com" else None
+        "client_id": GOOGLE_CLIENT_ID if is_configured else None,
+        "enabled": is_configured
     }
 
 @app.post("/auth/google", tags=["Authentication"], summary="Google OAuth Login")
@@ -1442,6 +1450,7 @@ def google_auth(req: GoogleAuthRequest, db: Session = Depends(get_db)):
         
         email = idinfo['email']
         google_id = idinfo['sub']
+        email_verified = idinfo.get('email_verified', False)
         
         # Check if user exists
         user = db.query(User).filter(User.email == email).first()
@@ -1452,13 +1461,27 @@ def google_auth(req: GoogleAuthRequest, db: Session = Depends(get_db)):
             user = User(
                 id=f"user_{datetime.now(timezone.utc).timestamp()}",
                 email=email,
-                password_hash=bcrypt.hashpw(google_id.encode('utf-8'), bcrypt.gensalt()).decode(),  # Use Google ID as password
+                password_hash=bcrypt.hashpw(google_id.encode('utf-8'), bcrypt.gensalt()).decode(),
                 credits=0.0,
                 free_verifications=1.0,
-                referral_code=secrets.token_urlsafe(6)
+                referral_code=secrets.token_urlsafe(6),
+                email_verified=email_verified  # Auto-verify if Google verified
             )
             db.add(user)
             db.commit()
+            
+            # Log registration
+            log_activity(db, user_id=user.id, email=user.email, action="google_register", 
+                        status="success", details="New user via Google OAuth")
+        else:
+            # Update email verification if Google verified
+            if email_verified and not user.email_verified:
+                user.email_verified = True
+                db.commit()
+            
+            # Log login
+            log_activity(db, user_id=user.id, email=user.email, action="google_login", 
+                        status="success", details="Login via Google OAuth")
         
         # Generate JWT
         token = jwt.encode(
@@ -1473,9 +1496,14 @@ def google_auth(req: GoogleAuthRequest, db: Session = Depends(get_db)):
             "token": token,
             "user_id": user.id,
             "credits": user.credits,
-            "is_admin": user.is_admin
+            "free_verifications": user.free_verifications,
+            "is_admin": user.is_admin,
+            "email_verified": user.email_verified
         }
+    except ImportError:
+        raise HTTPException(status_code=503, detail="Google OAuth library not installed")
     except Exception as e:
+        logger.error(f"Google auth error: {str(e)}")
         raise HTTPException(status_code=401, detail=f"Google authentication failed: {str(e)}")
 
 @app.post("/auth/login", tags=["Authentication"], summary="Login User")

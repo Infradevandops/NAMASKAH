@@ -27,7 +27,7 @@ async function register() {
     
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
         
         const res = await fetch(url, {
             method: 'POST',
@@ -41,17 +41,24 @@ async function register() {
         
         const data = await res.json();
         console.log('Response data:', data);
-        showLoading(false);
         
         if (res.ok) {
             window.token = data.token;
             localStorage.setItem('token', data.token);
-            showNotification(`✅ Welcome! You got ₵${data.credits} free credits`, 'success');
-            console.log('Reloading page now');
+            showLoading(false);
+            showNotification(`✅ Welcome! You got 1 free verification`, 'success');
+            console.log('Calling checkAuth to load app');
             
-            // Force immediate reload
-            window.location.href = window.location.href.split('?')[0];
+            // Call checkAuth instead of reload
+            setTimeout(() => {
+                if (typeof checkAuth === 'function') {
+                    checkAuth();
+                } else {
+                    window.location.reload();
+                }
+            }, 500);
         } else {
+            showLoading(false);
             showNotification(`❌ ${data.detail || 'Registration failed'}`, 'error');
         }
     } catch (err) {
@@ -60,7 +67,7 @@ async function register() {
         console.error('Error name:', err.name);
         console.error('Error message:', err.message);
         if (err.name === 'AbortError') {
-            showNotification('⏱️ Request timeout. Server may be down', 'error');
+            showNotification('⏱️ Request timeout. Please check your connection', 'error');
         } else {
             showNotification(`🌐 Network error: ${err.message}`, 'error');
         }
@@ -85,7 +92,7 @@ async function login() {
         console.log('Fetching:', url);
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
         
         const res = await fetch(url, {
             method: 'POST',
@@ -104,11 +111,18 @@ async function login() {
             window.token = data.token;
             localStorage.setItem('token', data.token);
             
+            showLoading(false);
             showNotification('✅ Login successful!', 'success');
-            console.log('Reloading page now');
+            console.log('Calling checkAuth to load app');
             
-            // Force immediate reload
-            window.location.href = window.location.href.split('?')[0];
+            // Call checkAuth instead of reload
+            setTimeout(() => {
+                if (typeof checkAuth === 'function') {
+                    checkAuth();
+                } else {
+                    window.location.reload();
+                }
+            }, 500);
         } else {
             showLoading(false);
             showNotification(`❌ ${data.detail || 'Invalid credentials'}`, 'error');
@@ -119,7 +133,7 @@ async function login() {
         console.error('Error name:', err.name);
         console.error('Error message:', err.message);
         if (err.name === 'AbortError') {
-            showNotification('⏱️ Request timeout. Server may be down', 'error');
+            showNotification('⏱️ Request timeout. Please check your connection', 'error');
         } else {
             showNotification(`🌐 Network error: ${err.message}`, 'error');
         }
