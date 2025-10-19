@@ -1,34 +1,54 @@
-<!-- SEO Meta Tags Template - Include in all pages -->
-{% macro meta_tags(title, description, url, image="/static/og-image.png", type="website") %}
-<!-- Primary Meta Tags -->
-<title>{{ title }}</title>
-<meta name="title" content="{{ title }}">
-<meta name="description" content="{{ description }}">
-<meta name="keywords" content="SMS verification, temporary phone number, receive SMS online, virtual phone number, SMS API, phone verification, WhatsApp verification, Telegram verification">
+<!-- Enhanced SEO Meta Tags Template -->
+<!-- Primary SEO Meta Tags -->
+<title>{{ title | default('Namaskah SMS - Instant SMS Verification') }}</title>
+<meta name="description" content="{{ description | default('Get temporary phone numbers for SMS verification in seconds. 95%+ success rate, automatic refunds, API access for 1,807+ services.') }}">
+<meta name="keywords" content="{{ keywords | default('SMS verification, temporary phone number, receive SMS online, phone verification, WhatsApp verification, Telegram verification') }}">
 <meta name="author" content="Namaskah SMS">
-<meta name="robots" content="index, follow">
-<link rel="canonical" href="{{ url }}">
+<meta name="robots" content="{{ robots | default('index, follow') }}">
+<link rel="canonical" href="{{ canonical_url | default(request.url) }}">
 
-<!-- Open Graph / Facebook -->
-<meta property="og:type" content="{{ type }}">
-<meta property="og:url" content="{{ url }}">
-<meta property="og:title" content="{{ title }}">
-<meta property="og:description" content="{{ description }}">
-<meta property="og:image" content="https://namaskah.app{{ image }}">
+<!-- Open Graph Meta Tags for Social Sharing -->
+<meta property="og:title" content="{{ og_title | default(title + ' - Namaskah SMS') }}">
+<meta property="og:description" content="{{ og_description | default(description) }}">
+<meta property="og:image" content="https://namaskah.app{{ og_image | default('/static/images/og-image.png') }}">
+<meta property="og:url" content="{{ og_url | default(request.url) }}">
+<meta property="og:type" content="{{ og_type | default('website') }}">
 <meta property="og:site_name" content="Namaskah SMS">
 <meta property="og:locale" content="en_US">
 
-<!-- Twitter -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:url" content="{{ url }}">
-<meta name="twitter:title" content="{{ title }}">
-<meta name="twitter:description" content="{{ description }}">
-<meta name="twitter:image" content="https://namaskah.app{{ image }}">
-<meta name="twitter:creator" content="@NamaskahSMS">
+<!-- Twitter Card Meta Tags -->
+<meta name="twitter:card" content="{{ twitter_card | default('summary_large_image') }}">
+<meta name="twitter:title" content="{{ twitter_title | default(og_title | default(title)) }}">
+<meta name="twitter:description" content="{{ twitter_description | default(og_description | default(description)) }}">
+<meta name="twitter:image" content="https://namaskah.app{{ twitter_image | default(og_image | default('/static/images/og-image.png')) }}">
+<meta name="twitter:site" content="@namaskahsms">
+<meta name="twitter:creator" content="@namaskahsms">
 
-<!-- Additional Meta Tags -->
-<meta name="theme-color" content="#8b6914">
+<!-- Additional SEO and Technical Meta Tags -->
+<meta name="theme-color" content="#667eea">
+<meta name="msapplication-TileColor" content="#667eea">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Namaskah SMS">
 <meta name="format-detection" content="telephone=no">
-{% endmacro %}
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- Favicon and App Icons -->
+<link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png">
+<link rel="manifest" href="/static/manifest.json">
+
+<!-- Preconnect for Performance -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://www.google-analytics.com">
+<link rel="dns-prefetch" href="https://api.paystack.co">
+
+<!-- Language and Geo Meta Tags -->
+<meta name="language" content="English">
+<meta name="geo.region" content="Global">
+<meta name="geo.placename" content="Worldwide">
+
+<!-- Legacy Meta Tags for Older Browsers -->
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="referrer" content="origin-when-cross-origin">

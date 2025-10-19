@@ -18,10 +18,16 @@ function getServiceTimer(serviceName) {
 
 async function createVerification() {
     const service = document.getElementById('service-select').value;
-    const capability = document.querySelector('input[name="capability"]:checked').value;
+    const capabilityEl = document.querySelector('input[name="capability"]:checked');
+    const capability = capabilityEl ? capabilityEl.value : 'sms';
     
     if (!service) {
         showNotification('⚠️ Please select a service', 'error');
+        return;
+    }
+    
+    if (!token) {
+        showNotification('🔒 Please login first', 'error');
         return;
     }
     
@@ -44,10 +50,10 @@ async function createVerification() {
             currentVerificationId = data.id;
             displayVerification(data);
             document.getElementById('user-credits').textContent = data.remaining_credits.toFixed(2);
-            showNotification(`✅ Verification created! Cost: ₵${data.cost}`, 'success');
+            showNotification(`✅ Verification created! Cost: N${data.cost}`, 'success');
             startAutoRefresh();
-            loadHistory();
-            loadTransactions(true);
+            if (typeof loadHistory === 'function') loadHistory();
+            if (typeof loadTransactions === 'function') loadTransactions(true);
             
             if (!firstVerificationCompleted) {
                 firstVerificationCompleted = true;

@@ -1,180 +1,53 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analytics - Namaskah SMS</title>
-    <link rel="stylesheet" href="/static/css/style.css">
-    <script src="/track.js"></script>
-    <script src="/static/js/universal-nav.js" defer></script>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>📊 User Analytics</h1>
-            <p>Track user behavior and activity</p>
-        </header>
+<!-- Google Analytics 4 - Privacy Compliant -->
+{% if analytics_id %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ analytics_id }}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  
+  // Initialize with privacy settings
+  gtag('js', new Date());
+  gtag('config', '{{ analytics_id }}', {
+    'anonymize_ip': true,
+    'allow_google_signals': false,
+    'allow_ad_personalization_signals': false,
+    'cookie_expires': 63072000, // 2 years
+    'cookie_update': true,
+    'cookie_flags': 'SameSite=None;Secure'
+  });
+  
+  // Custom events for business metrics
+  function trackVerification(service, success) {
+    gtag('event', 'verification_attempt', {
+      'event_category': 'engagement',
+      'event_label': service,
+      'value': success ? 1 : 0
+    });
+  }
+  
+  function trackPayment(amount, currency) {
+    gtag('event', 'purchase', {
+      'transaction_id': Date.now().toString(),
+      'value': amount,
+      'currency': currency,
+      'event_category': 'ecommerce'
+    });
+  }
+  
+  function trackSignup(method) {
+    gtag('event', 'sign_up', {
+      'method': method,
+      'event_category': 'engagement'
+    });
+  }
+  
+  function trackApiKeyGenerated() {
+    gtag('event', 'api_key_generated', {
+      'event_category': 'engagement'
+    });
+  }
+</script>
 
-        <div class="card">
-            <h2>Search User Activity</h2>
-            <input type="email" id="search-email" placeholder="Enter user email">
-            <button onclick="searchUser()">Search</button>
-            <button onclick="viewAllActivity()">View All Activity</button>
-        </div>
-
-        <div id="summary" class="card hidden">
-            <h2>Summary</h2>
-            <div id="summary-content"></div>
-        </div>
-
-        <div id="journey" class="card hidden">
-            <h2>User Journey</h2>
-            <div id="journey-content"></div>
-        </div>
-
-        <div id="activities" class="card hidden">
-            <h2>Activity Logs</h2>
-            <div id="activities-content"></div>
-        </div>
-
-        <div id="notification" class="notification hidden"></div>
-    </div>
-
-    <script>
-        const API_BASE = '';
-        const token = localStorage.getItem('admin_token');
-
-        if (!token) {
-            window.location.href = '/admin';
-        }
-
-        async function searchUser() {
-            const email = document.getElementById('search-email').value;
-            if (!email) {
-                alert('Enter email');
-                return;
-            }
-
-            try {
-                // Get summary
-                const summaryRes = await fetch(`${API_BASE}/admin/analytics/summary?email=${email}&days=30`, {
-                    headers: {'Authorization': `Bearer ${token}`}
-                });
-                const summary = await summaryRes.json();
-
-                // Get user ID
-                const usersRes = await fetch(`${API_BASE}/admin/users?search=${email}`, {
-                    headers: {'Authorization': `Bearer ${token}`}
-                });
-                const usersData = await usersRes.json();
-                const user = usersData.users[0];
-
-                if (user) {
-                    // Get journey
-                    const journeyRes = await fetch(`${API_BASE}/admin/users/${user.id}/journey`, {
-                        headers: {'Authorization': `Bearer ${token}`}
-                    });
-                    const journey = await journeyRes.json();
-
-                    displaySummary(summary);
-                    displayJourney(journey);
-                } else {
-                    displaySummary(summary);
-                }
-
-                // Get activity logs
-                const logsRes = await fetch(`${API_BASE}/admin/activity-logs?email=${email}&limit=100`, {
-                    headers: {'Authorization': `Bearer ${token}`}
-                });
-                const logs = await logsRes.json();
-                displayActivities(logs.logs);
-
-            } catch (err) {
-                alert('Error loading data');
-            }
-        }
-
-        async function viewAllActivity() {
-            try {
-                const res = await fetch(`${API_BASE}/admin/activity-logs?limit=200`, {
-                    headers: {'Authorization': `Bearer ${token}`}
-                });
-                const data = await res.json();
-                displayActivities(data.logs);
-            } catch (err) {
-                alert('Error loading data');
-            }
-        }
-
-        function displaySummary(data) {
-            document.getElementById('summary').classList.remove('hidden');
-            document.getElementById('summary-content').innerHTML = `
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                    <div style="background: #667eea; color: white; padding: 20px; border-radius: 8px;">
-                        <div style="font-size: 28px; font-weight: bold;">${data.total_activities}</div>
-                        <div>Total Activities</div>
-                    </div>
-                    <div style="background: #10b981; color: white; padding: 20px; border-radius: 8px;">
-                        <div style="font-size: 28px; font-weight: bold;">${data.unique_sessions}</div>
-                        <div>Unique Sessions</div>
-                    </div>
-                </div>
-                <h3 style="margin-top: 20px;">Page Views</h3>
-                ${data.page_views.map(p => `<div>${p.page}: ${p.count} views</div>`).join('')}
-                <h3 style="margin-top: 20px;">Button Clicks</h3>
-                ${data.button_clicks.map(b => `<div>${b.element} on ${b.page}: ${b.count} clicks</div>`).join('')}
-            `;
-        }
-
-        function displayJourney(data) {
-            document.getElementById('journey').classList.remove('hidden');
-            const timeline = data.activities.map(a => `
-                <div style="border-left: 3px solid #667eea; padding-left: 15px; margin-bottom: 15px;">
-                    <div style="font-weight: bold;">${new Date(a.timestamp).toLocaleString()}</div>
-                    <div>${a.page} → ${a.action} ${a.element ? `(${a.element})` : ''}</div>
-                    ${a.details ? `<div style="color: #6b7280; font-size: 14px;">${a.details}</div>` : ''}
-                </div>
-            `).join('');
-
-            const payments = data.payments.map(p => `
-                <div style="border-left: 3px solid #10b981; padding-left: 15px; margin-bottom: 15px;">
-                    <div style="font-weight: bold;">${new Date(p.timestamp).toLocaleString()}</div>
-                    <div>Payment: ${p.reference}</div>
-                    <div>Amount: N${p.amount} | Status: ${p.status}</div>
-                    <div>Webhook: ${p.webhook_received ? '✅' : '❌'} | Credited: ${p.credited ? '✅' : '❌'}</div>
-                </div>
-            `).join('');
-
-            document.getElementById('journey-content').innerHTML = timeline + payments;
-        }
-
-        function displayActivities(logs) {
-            document.getElementById('activities').classList.remove('hidden');
-            document.getElementById('activities-content').innerHTML = `
-                <table style="width: 100%; border-collapse: collapse;">
-                    <thead>
-                        <tr style="background: #f9fafb;">
-                            <th style="padding: 10px; text-align: left;">Time</th>
-                            <th style="padding: 10px; text-align: left;">Email</th>
-                            <th style="padding: 10px; text-align: left;">Page</th>
-                            <th style="padding: 10px; text-align: left;">Action</th>
-                            <th style="padding: 10px; text-align: left;">Element</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${logs.map(log => `
-                            <tr style="border-bottom: 1px solid #e5e7eb;">
-                                <td style="padding: 10px;">${new Date(log.created_at).toLocaleString()}</td>
-                                <td style="padding: 10px;">${log.email}</td>
-                                <td style="padding: 10px;">${log.page || '-'}</td>
-                                <td style="padding: 10px;">${log.action}</td>
-                                <td style="padding: 10px;">${log.element || '-'}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-        }
-    </script>
-</body>
-</html>
+<!-- Google Search Console Verification -->
+<meta name="google-site-verification" content="YOUR_VERIFICATION_CODE">
+{% endif %}

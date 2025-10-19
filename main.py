@@ -15,7 +15,7 @@ except ImportError:
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -36,6 +36,112 @@ import requests
 
 load_dotenv()
 
+# SEO Configuration
+SEO_CONFIG = {
+    '/': {
+        'title': 'Namaskah SMS - Instant SMS Verification for 1,807+ Services',
+        'description': 'Get temporary phone numbers for SMS verification in seconds. 95%+ success rate, automatic refunds, API access. WhatsApp, Telegram, Google, Discord & 1,800+ more services.',
+        'keywords': 'SMS verification, temporary phone number, receive SMS online, phone verification, WhatsApp verification, Telegram verification, Discord verification, Google verification, virtual phone number, SMS API',
+        'og_image': '/static/images/og-home.png',
+        'og_type': 'website'
+    },
+    '/app': {
+        'title': 'Dashboard - Namaskah SMS',
+        'description': 'Access your SMS verification dashboard. Create verifications, manage wallet, view history, and use our API for 1,807+ services.',
+        'keywords': 'SMS dashboard, verification dashboard, phone number dashboard, API access, SMS management',
+        'robots': 'noindex, nofollow',
+        'og_type': 'website'
+    },
+    '/api-docs': {
+        'title': 'API Documentation - Namaskah SMS',
+        'description': 'Complete API documentation for SMS verification integration. RESTful API with webhooks, real-time status updates, and comprehensive examples.',
+        'keywords': 'SMS API, verification API, phone number API, REST API, webhook API, developer documentation, SMS integration',
+        'og_type': 'website'
+    },
+    '/faq': {
+        'title': 'FAQ - Namaskah SMS',
+        'description': 'Frequently asked questions about SMS verification services. Get answers about pricing, refunds, API usage, and service availability.',
+        'keywords': 'SMS verification FAQ, phone verification questions, temporary number help, SMS API support',
+        'og_type': 'website'
+    },
+    '/about': {
+        'title': 'About Us - Namaskah SMS',
+        'description': 'Learn about Namaskah SMS - professional SMS verification service provider. Our mission, technology, and commitment to privacy and reliability.',
+        'keywords': 'about Namaskah SMS, SMS verification company, phone verification service, temporary numbers provider',
+        'og_type': 'website'
+    },
+    '/contact': {
+        'title': 'Contact Support - Namaskah SMS',
+        'description': 'Get help with SMS verification services. Contact our support team for assistance with verifications, payments, API integration, and account issues.',
+        'keywords': 'SMS verification support, phone verification help, contact Namaskah SMS, customer service',
+        'og_type': 'website'
+    },
+    '/status': {
+        'title': 'Service Status - Namaskah SMS',
+        'description': 'Real-time status of SMS verification services. Check API uptime, service availability, and system performance across all supported platforms.',
+        'keywords': 'SMS service status, verification uptime, API status, system health, service availability',
+        'og_type': 'website'
+    },
+    '/privacy': {
+        'title': 'Privacy Policy - Namaskah SMS',
+        'description': 'Our privacy policy explains how we collect, use, and protect your data. GDPR compliant with transparent data practices and user rights.',
+        'keywords': 'privacy policy, data protection, GDPR compliance, user privacy, data security',
+        'og_type': 'website'
+    },
+    '/terms': {
+        'title': 'Terms of Service - Namaskah SMS',
+        'description': 'Terms and conditions for using Namaskah SMS verification services. Fair usage policy, user agreement, and service limitations.',
+        'keywords': 'terms of service, user agreement, service terms, usage policy, SMS verification terms',
+        'og_type': 'website'
+    },
+    '/cookies': {
+        'title': 'Cookie Policy - Namaskah SMS',
+        'description': 'Learn about our cookie usage and tracking technologies. Manage your cookie preferences and understand data collection practices.',
+        'keywords': 'cookie policy, tracking cookies, privacy settings, data collection, cookie management',
+        'og_type': 'website'
+    },
+    '/refund': {
+        'title': 'Refund Policy - Namaskah SMS',
+        'description': 'Fair and transparent refund policy for SMS verification services. Automatic refunds for failed verifications and clear cancellation terms.',
+        'keywords': 'refund policy, SMS verification refunds, automatic refunds, cancellation policy, money back guarantee',
+        'og_type': 'website'
+    },
+    '/reviews': {
+        'title': 'Customer Reviews - Namaskah SMS',
+        'description': 'Read customer reviews and testimonials for Namaskah SMS verification services. Real feedback from developers, businesses, and individual users.',
+        'keywords': 'SMS verification reviews, customer testimonials, user feedback, Namaskah SMS reviews, phone verification ratings',
+        'og_type': 'website'
+    },
+    '/analytics': {
+        'title': 'Analytics Dashboard - Namaskah SMS',
+        'description': 'View detailed analytics and insights for your SMS verification usage. Track performance, success rates, and service statistics.',
+        'keywords': 'SMS analytics, verification statistics, usage dashboard, performance metrics',
+        'robots': 'noindex, nofollow',
+        'og_type': 'website'
+    }
+}
+
+def get_seo_meta(path: str, request_url: str = None):
+    """Get SEO metadata for a given path"""
+    config = SEO_CONFIG.get(path, SEO_CONFIG['/'])  # Default to homepage config
+    
+    return {
+        'title': config.get('title', 'Namaskah SMS'),
+        'description': config.get('description', 'Instant SMS verification service'),
+        'keywords': config.get('keywords', 'SMS verification, phone verification'),
+        'robots': config.get('robots', 'index, follow'),
+        'og_title': config.get('og_title', config.get('title')),
+        'og_description': config.get('og_description', config.get('description')),
+        'og_image': config.get('og_image', '/static/images/og-image.png'),
+        'og_type': config.get('og_type', 'website'),
+        'og_url': request_url or f"https://namaskah.app{path}",
+        'canonical_url': request_url or f"https://namaskah.app{path}",
+        'twitter_card': config.get('twitter_card', 'summary_large_image'),
+        'twitter_title': config.get('twitter_title', config.get('title')),
+        'twitter_description': config.get('twitter_description', config.get('description')),
+        'twitter_image': config.get('twitter_image', config.get('og_image', '/static/images/og-image.png'))
+    }
+
 # Initialize Sentry for error tracking
 SENTRY_DSN = os.getenv("SENTRY_DSN")
 if SENTRY_AVAILABLE and SENTRY_DSN:
@@ -48,6 +154,7 @@ if SENTRY_AVAILABLE and SENTRY_DSN:
 
 # Config
 JWT_SECRET = os.getenv("JWT_SECRET_KEY", "change-me-in-production")
+GOOGLE_ANALYTICS_ID = os.getenv("GOOGLE_ANALYTICS_ID")  # Set in production
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./sms.db")
 TEXTVERIFIED_API_KEY = os.getenv("TEXTVERIFIED_API_KEY")
 TEXTVERIFIED_EMAIL = os.getenv("TEXTVERIFIED_EMAIL")
@@ -731,11 +838,23 @@ Get token via `/auth/login` or `/auth/register`.
 # Custom error page handlers
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc):
-    return templates.TemplateResponse("404.html", {"request": request}, status_code=404)
+    seo_meta = {
+        'title': 'Page Not Found - Namaskah SMS',
+        'description': 'The page you are looking for could not be found. Return to Namaskah SMS for instant SMS verification services.',
+        'robots': 'noindex, nofollow'
+    }
+    context = {"request": request, **seo_meta}
+    return templates.TemplateResponse("404.html", context, status_code=404)
 
 @app.exception_handler(500)
 async def server_error_handler(request: Request, exc):
-    return templates.TemplateResponse("500.html", {"request": request}, status_code=500)
+    seo_meta = {
+        'title': 'Server Error - Namaskah SMS',
+        'description': 'We are experiencing technical difficulties. Please try again later or contact support for assistance.',
+        'robots': 'noindex, nofollow'
+    }
+    context = {"request": request, **seo_meta}
+    return templates.TemplateResponse("500.html", context, status_code=500)
 
 # Register error handlers
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
@@ -841,33 +960,59 @@ async def tracking_script():
 
 @app.get("/")
 async def root(request: Request):
-    response = templates.TemplateResponse("landing.html", {"request": request})
+    seo_meta = get_seo_meta('/', str(request.url))
+    context = {
+        "request": request, 
+        "analytics_id": GOOGLE_ANALYTICS_ID,
+        **seo_meta
+    }
+    response = templates.TemplateResponse("landing.html", context)
     response.headers["Cache-Control"] = "no-cache"
     return response
 
 @app.get("/app")
 async def app_page(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    seo_meta = get_seo_meta('/app', str(request.url))
+    context = {
+        "request": request, 
+        "analytics_id": GOOGLE_ANALYTICS_ID,
+        **seo_meta
+    }
+    return templates.TemplateResponse("index.html", context)
 
 @app.get("/api-docs")
 async def api_docs_page(request: Request):
-    return templates.TemplateResponse("api_docs.html", {"request": request})
+    seo_meta = get_seo_meta('/api-docs', str(request.url))
+    context = {
+        "request": request, 
+        "analytics_id": GOOGLE_ANALYTICS_ID,
+        **seo_meta
+    }
+    return templates.TemplateResponse("api_docs.html", context)
 
 @app.get("/faq")
 async def faq_page(request: Request):
-    return templates.TemplateResponse("faq.html", {"request": request})
+    seo_meta = get_seo_meta('/faq', str(request.url))
+    context = {"request": request, **seo_meta}
+    return templates.TemplateResponse("faq.html", context)
 
 @app.get("/about")
 async def about_page(request: Request):
-    return templates.TemplateResponse("about.html", {"request": request})
+    seo_meta = get_seo_meta('/about', str(request.url))
+    context = {"request": request, **seo_meta}
+    return templates.TemplateResponse("about.html", context)
 
 @app.get("/reviews")
 async def reviews_page(request: Request):
-    return templates.TemplateResponse("reviews.html", {"request": request})
+    seo_meta = get_seo_meta('/reviews', str(request.url))
+    context = {"request": request, **seo_meta}
+    return templates.TemplateResponse("reviews.html", context)
 
 @app.get("/status")
 async def status_page(request: Request):
-    return templates.TemplateResponse("status.html", {"request": request})
+    seo_meta = get_seo_meta('/status', str(request.url))
+    context = {"request": request, **seo_meta}
+    return templates.TemplateResponse("status.html", context)
 
 @app.get("/admin")
 async def admin_panel(request: Request):
@@ -875,27 +1020,39 @@ async def admin_panel(request: Request):
 
 @app.get("/privacy")
 async def privacy_page(request: Request):
-    return templates.TemplateResponse("privacy.html", {"request": request})
+    seo_meta = get_seo_meta('/privacy', str(request.url))
+    context = {"request": request, **seo_meta}
+    return templates.TemplateResponse("privacy.html", context)
 
 @app.get("/terms")
 async def terms_page(request: Request):
-    return templates.TemplateResponse("terms.html", {"request": request})
+    seo_meta = get_seo_meta('/terms', str(request.url))
+    context = {"request": request, **seo_meta}
+    return templates.TemplateResponse("terms.html", context)
 
 @app.get("/refund")
 async def refund_page(request: Request):
-    return templates.TemplateResponse("refund.html", {"request": request})
+    seo_meta = get_seo_meta('/refund', str(request.url))
+    context = {"request": request, **seo_meta}
+    return templates.TemplateResponse("refund.html", context)
 
 @app.get("/cookies")
 async def cookies_page(request: Request):
-    return templates.TemplateResponse("cookies.html", {"request": request})
+    seo_meta = get_seo_meta('/cookies', str(request.url))
+    context = {"request": request, **seo_meta}
+    return templates.TemplateResponse("cookies.html", context)
 
 @app.get("/contact")
 async def contact_page(request: Request):
-    return templates.TemplateResponse("contact.html", {"request": request})
+    seo_meta = get_seo_meta('/contact', str(request.url))
+    context = {"request": request, **seo_meta}
+    return templates.TemplateResponse("contact.html", context)
 
 @app.get("/analytics")
 async def analytics_page(request: Request):
-    return templates.TemplateResponse("analytics.html", {"request": request})
+    seo_meta = get_seo_meta('/analytics', str(request.url))
+    context = {"request": request, **seo_meta}
+    return templates.TemplateResponse("analytics.html", context)
 
 @app.get("/manifest.json")
 async def manifest():
@@ -904,10 +1061,101 @@ async def manifest():
     return FileResponse("static/manifest.json", media_type="application/json")
 
 @app.get("/sitemap.xml")
-async def sitemap():
-    """Serve sitemap for SEO"""
-    from fastapi.responses import FileResponse
-    return FileResponse("static/sitemap.xml", media_type="application/xml")
+async def generate_sitemap():
+    """Generate dynamic XML sitemap for SEO"""
+    from datetime import datetime
+    
+    # Define all public pages with priorities and change frequencies
+    pages = [
+        {
+            'url': 'https://namaskah.app/',
+            'priority': '1.0',
+            'changefreq': 'daily',
+            'lastmod': datetime.now().strftime('%Y-%m-%d')
+        },
+        {
+            'url': 'https://namaskah.app/app',
+            'priority': '0.9',
+            'changefreq': 'daily',
+            'lastmod': datetime.now().strftime('%Y-%m-%d')
+        },
+        {
+            'url': 'https://namaskah.app/api-docs',
+            'priority': '0.8',
+            'changefreq': 'weekly',
+            'lastmod': '2025-01-19'
+        },
+        {
+            'url': 'https://namaskah.app/faq',
+            'priority': '0.7',
+            'changefreq': 'monthly',
+            'lastmod': '2025-01-19'
+        },
+        {
+            'url': 'https://namaskah.app/about',
+            'priority': '0.7',
+            'changefreq': 'monthly',
+            'lastmod': '2025-01-19'
+        },
+        {
+            'url': 'https://namaskah.app/contact',
+            'priority': '0.7',
+            'changefreq': 'monthly',
+            'lastmod': '2025-01-19'
+        },
+        {
+            'url': 'https://namaskah.app/status',
+            'priority': '0.6',
+            'changefreq': 'daily',
+            'lastmod': datetime.now().strftime('%Y-%m-%d')
+        },
+        {
+            'url': 'https://namaskah.app/reviews',
+            'priority': '0.6',
+            'changefreq': 'monthly',
+            'lastmod': '2025-01-19'
+        },
+        {
+            'url': 'https://namaskah.app/privacy',
+            'priority': '0.4',
+            'changefreq': 'monthly',
+            'lastmod': '2025-01-19'
+        },
+        {
+            'url': 'https://namaskah.app/terms',
+            'priority': '0.4',
+            'changefreq': 'monthly',
+            'lastmod': '2025-01-19'
+        },
+        {
+            'url': 'https://namaskah.app/refund',
+            'priority': '0.4',
+            'changefreq': 'monthly',
+            'lastmod': '2025-01-19'
+        },
+        {
+            'url': 'https://namaskah.app/cookies',
+            'priority': '0.3',
+            'changefreq': 'monthly',
+            'lastmod': '2025-01-19'
+        }
+    ]
+    
+    # Generate XML
+    xml_content = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    xml_content += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    
+    for page in pages:
+        xml_content += f'  <url>\n'
+        xml_content += f'    <loc>{page["url"]}</loc>\n'
+        xml_content += f'    <lastmod>{page["lastmod"]}</lastmod>\n'
+        xml_content += f'    <changefreq>{page["changefreq"]}</changefreq>\n'
+        xml_content += f'    <priority>{page["priority"]}</priority>\n'
+        xml_content += f'  </url>\n'
+    
+    xml_content += '</urlset>'
+    
+    return Response(content=xml_content, media_type="application/xml")
 
 @app.get("/robots.txt")
 async def robots():

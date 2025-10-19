@@ -80,20 +80,16 @@ async function login() {
         const data = await res.json();
         
         if (res.ok && data.token) {
-            if (typeof clearSession === 'function') clearSession();
             token = data.token;
             localStorage.setItem('token', token);
             
-            // Hide loading immediately
             showLoading(false);
             showNotification('✅ Login successful!', 'success');
             
-            // Transition to app
-            if (typeof showApp === 'function') {
-                showApp();
-            } else {
+            // Force reload user data then show app
+            setTimeout(() => {
                 checkAuth();
-            }
+            }, 100);
         } else {
             showLoading(false);
             showNotification(`❌ ${data.detail || 'Invalid credentials'}`, 'error');
@@ -110,6 +106,11 @@ async function login() {
 }
 
 async function checkAuth() {
+    if (!token) {
+        logout();
+        return;
+    }
+    
     try {
         const res = await fetch(`${API_BASE}/auth/me`, {
             headers: {'Authorization': `Bearer ${token}`}
@@ -125,6 +126,7 @@ async function checkAuth() {
             logout();
         }
     } catch (err) {
+        console.error('Auth check failed:', err);
         logout();
     }
 }

@@ -2,10 +2,19 @@
 window.GOOGLE_CLIENT_ID = null;
 window.googleConfigLoaded = false;
 
-// Fetch config from backend
-fetch('/auth/google/config')
+// Fetch config from backend with timeout
+const configTimeout = setTimeout(() => {
+    window.googleConfigLoaded = true;
+    const btn = document.getElementById('google-auth-btn');
+    const sep = document.getElementById('google-separator');
+    if (btn) btn.style.display = 'none';
+    if (sep) sep.style.display = 'none';
+}, 3000);
+
+fetch('/auth/google/config', { timeout: 2000 })
     .then(r => r.json())
     .then(data => {
+        clearTimeout(configTimeout);
         window.GOOGLE_CLIENT_ID = data.client_id;
         window.googleConfigLoaded = true;
         
@@ -19,6 +28,7 @@ fetch('/auth/google/config')
         }
     })
     .catch(() => {
+        clearTimeout(configTimeout);
         window.googleConfigLoaded = true;
         const btn = document.getElementById('google-auth-btn');
         const sep = document.getElementById('google-separator');
