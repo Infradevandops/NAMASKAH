@@ -145,15 +145,27 @@ async function checkAuth() {
         if (res.ok) {
             const user = await res.json();
             console.log('User loaded:', user.email);
+            
+            // Update UI
             document.getElementById('user-email').textContent = user.email;
             document.getElementById('user-credits').textContent = user.credits.toFixed(2);
             document.getElementById('free-verifications').textContent = Math.floor(user.free_verifications || 0);
-            console.log('Calling showApp()');
-            if (typeof showApp === 'function') {
-                showApp();
-            } else {
-                console.error('showApp function not found!');
-            }
+            
+            // Show app directly
+            console.log('Showing app section');
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('app-section').classList.remove('hidden');
+            document.getElementById('top-logout-btn').classList.remove('hidden');
+            
+            // Load app data
+            setTimeout(() => {
+                if (typeof loadServices === 'function') loadServices();
+                if (typeof loadAPIKeys === 'function') loadAPIKeys();
+                if (typeof loadWebhooks === 'function') loadWebhooks();
+                if (typeof loadAnalytics === 'function') loadAnalytics();
+                if (typeof loadReferralStats === 'function') loadReferralStats();
+                if (typeof loadActiveRentals === 'function') loadActiveRentals();
+            }, 100);
         } else {
             console.log('Auth failed, logging out');
             logout();
