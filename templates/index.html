@@ -763,20 +763,20 @@
     </div>
     
     <!-- Modular JavaScript Architecture -->
-    <script src="/static/js/config.js?v=20251019"></script>
-    <script src="/static/js/utils.js?v=20251019"></script>
-    <script src="/static/js/auth.js?v=20251019"></script>
-    <script src="/static/js/services.js?v=20251019"></script>
-    <script src="/static/js/verification.js?v=20251019"></script>
-    <script src="/static/js/history.js?v=20251019"></script>
-    <script src="/static/js/wallet.js?v=20251019"></script>
-    <script src="/static/js/rentals.js?v=20251019"></script>
-    <script src="/static/js/developer.js?v=20251019"></script>
-    <script src="/static/js/settings.js?v=20251019"></script>
-    <script src="/static/js/mobile.js?v=20251019"></script>
-    <script src="/static/js/biometric.js?v=20251019"></script>
-    <script src="/static/js/offline-queue.js?v=20251019"></script>
-    <script src="/static/js/main.js?v=20251019"></script>
+    <script src="/static/js/config.js?v=20251020"></script>
+    <script src="/static/js/utils.js?v=20251020"></script>
+    <script src="/static/js/auth.js?v=20251020"></script>
+    <script src="/static/js/services.js?v=20251020"></script>
+    <script src="/static/js/verification.js?v=20251020"></script>
+    <script src="/static/js/history.js?v=20251020"></script>
+    <script src="/static/js/wallet.js?v=20251020"></script>
+    <script src="/static/js/rentals.js?v=20251020"></script>
+    <script src="/static/js/developer.js?v=20251020"></script>
+    <script src="/static/js/settings.js?v=20251020"></script>
+    <script src="/static/js/mobile.js?v=20251020"></script>
+    <script src="/static/js/biometric.js?v=20251020"></script>
+    <script src="/static/js/offline-queue.js?v=20251020"></script>
+    <script src="/static/js/main.js?v=20251020"></script>
     <script>
         // Register Service Worker
         if ('serviceWorker' in navigator) {
@@ -807,40 +807,41 @@
         let googleInitialized = false;
         
         function initGoogleSignIn() {
-            if (!window.GOOGLE_CLIENT_ID) return;
+            if (!window.GOOGLE_CLIENT_ID || googleInitialized) return;
+            if (typeof google === 'undefined' || !google.accounts) return;
 
-            if (!googleInitialized && typeof google !== 'undefined' && google.accounts) {
-                try {
-                    google.accounts.id.initialize({
-                        client_id: window.GOOGLE_CLIENT_ID,
-                        callback: handleGoogleSignIn
+            try {
+                google.accounts.id.initialize({
+                    client_id: window.GOOGLE_CLIENT_ID,
+                    callback: handleGoogleSignIn
+                });
+                googleInitialized = true;
+                
+                const container = document.getElementById('google-auth-btn');
+                const separator = document.getElementById('google-separator');
+                if (container) {
+                    google.accounts.id.renderButton(container, { 
+                        theme: 'outline', 
+                        size: 'large', 
+                        width: '100%',
+                        text: 'continue_with',
+                        shape: 'rectangular'
                     });
-                    googleInitialized = true;
-                    
-                    const container = document.getElementById('google-auth-btn');
-                    const separator = document.getElementById('google-separator');
-                    if (container) {
-                        google.accounts.id.renderButton(container, { 
-                            theme: 'outline', 
-                            size: 'large', 
-                            width: '100%',
-                            text: 'continue_with',
-                            shape: 'rectangular'
-                        });
-                        container.classList.add('loaded');
-                        container.style.display = 'flex';
-                        separator.style.display = 'block';
-                    }
-                } catch (error) {
-                    console.error('Google init error:', error);
+                    container.style.display = 'flex';
+                    separator.style.display = 'block';
                 }
+            } catch (error) {
+                const container = document.getElementById('google-auth-btn');
+                const separator = document.getElementById('google-separator');
+                if (container) container.style.display = 'none';
+                if (separator) separator.style.display = 'none';
             }
         }
 
         // Handle Google Sign-In response
         async function handleGoogleSignIn(response) {
+            showLoading(true);
             try {
-                showLoading();
                 const res = await fetch('/auth/google', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -852,19 +853,16 @@
                 if (res.ok) {
                     token = data.token;
                     localStorage.setItem('token', data.token);
-                    localStorage.setItem('user_id', data.user_id);
-                    showNotification('✅ Signed in with Google successfully!', 'success');
-                    setTimeout(() => {
-                        checkAuth();
-                    }, 500);
+                    showLoading(false);
+                    showNotification('✅ Login successful!', 'success');
+                    setTimeout(() => checkAuth(), 200);
                 } else {
+                    showLoading(false);
                     showNotification('❌ ' + (data.detail || 'Google sign-in failed'), 'error');
                 }
             } catch (error) {
-                console.error('Google sign-in error:', error);
-                showNotification('❌ Google sign-in failed. Please try again.', 'error');
-            } finally {
-                hideLoading();
+                showLoading(false);
+                showNotification('❌ Network error. Please try again.', 'error');
             }
         }
 
