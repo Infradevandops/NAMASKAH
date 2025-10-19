@@ -6,8 +6,8 @@
 (function() {
     'use strict';
     
-    // Check if nav already exists
-    if (document.querySelector('.universal-nav')) return;
+    // Check if nav already exists or if page has its own top-nav
+    if (document.querySelector('.universal-nav') || document.querySelector('.top-nav')) return;
     
     // Create navigation
     const nav = document.createElement('div');
