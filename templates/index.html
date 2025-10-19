@@ -10,6 +10,8 @@
     <link rel="manifest" href="/static/manifest.json">
     <link rel="apple-touch-icon" href="/static/icons/icon-192x192.png">
     <title>Namaskah SMS - Verification Service</title>
+    <link rel="preconnect" href="https://accounts.google.com">
+    <link rel="preconnect" href="https://api.paystack.co">
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/mobile.css">
     <style>
@@ -20,7 +22,7 @@
         #google-auth-btn { opacity: 1; transition: opacity 0.3s ease-in; }
         #google-auth-btn.loaded { opacity: 1; }
     </style>
-    <script src="/track.js"></script>
+    <script src="/track.js" defer></script>
     <script src="/static/js/home-button.js" defer></script>
 </head>
 <body class="loaded">

@@ -4124,6 +4124,13 @@ async def security_headers_middleware(request: Request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    
+    # Performance headers
+    if request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    elif request.url.path in ["/", "/app", "/api-docs"]:
+        response.headers["Cache-Control"] = "public, max-age=3600"
+    
     return response
 
 @app.middleware("http")
