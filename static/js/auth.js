@@ -83,17 +83,17 @@ async function login() {
             if (typeof clearSession === 'function') clearSession();
             token = data.token;
             localStorage.setItem('token', token);
+            
+            // Hide loading immediately
             showLoading(false);
             showNotification('✅ Login successful!', 'success');
             
-            // Force page transition
-            setTimeout(() => {
-                if (typeof showApp === 'function') {
-                    showApp();
-                } else {
-                    checkAuth();
-                }
-            }, 300);
+            // Transition to app
+            if (typeof showApp === 'function') {
+                showApp();
+            } else {
+                checkAuth();
+            }
         } else {
             showLoading(false);
             showNotification(`❌ ${data.detail || 'Invalid credentials'}`, 'error');
