@@ -22,12 +22,17 @@ async function register() {
     const url = refCode ? `${API_BASE}/auth/register?referral_code=${refCode}` : `${API_BASE}/auth/register`;
     
     try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
         const res = await fetch(url, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({email, password})
+            body: JSON.stringify({email, password}),
+            signal: controller.signal
         });
         
+        clearTimeout(timeoutId);
         const data = await res.json();
         showLoading(false);
         
@@ -41,7 +46,11 @@ async function register() {
         }
     } catch (err) {
         showLoading(false);
-        showNotification('🌐 Network error. Check your connection', 'error');
+        if (err.name === 'AbortError') {
+            showNotification('⏱️ Request timeout. Server may be down', 'error');
+        } else {
+            showNotification('🌐 Network error. Check your connection', 'error');
+        }
     }
 }
 
@@ -57,14 +66,18 @@ async function login() {
     showLoading(true);
     
     try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+        
         const res = await fetch(`${API_BASE}/auth/login`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({email, password})
+            body: JSON.stringify({email, password}),
+            signal: controller.signal
         });
         
+        clearTimeout(timeoutId);
         const data = await res.json();
-        showLoading(false);
         
         if (res.ok && data.token) {
             if (typeof clearSession === 'function') clearSession();
@@ -72,16 +85,22 @@ async function login() {
             localStorage.setItem('token', token);
             showNotification('✅ Login successful!', 'success');
             setTimeout(() => {
+                showLoading(false);
                 if (typeof showApp === 'function') showApp();
                 else checkAuth();
             }, 500);
         } else {
+            showLoading(false);
             showNotification(`❌ ${data.detail || 'Invalid credentials'}`, 'error');
         }
     } catch (err) {
         showLoading(false);
         console.error('Login error:', err);
-        showNotification('🌐 Network error. Check your connection', 'error');
+        if (err.name === 'AbortError') {
+            showNotification('⏱️ Request timeout. Server may be down', 'error');
+        } else {
+            showNotification('🌐 Network error. Check your connection', 'error');
+        }
     }
 }
 
