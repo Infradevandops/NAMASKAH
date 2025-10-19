@@ -564,24 +564,26 @@
                     </div>
 
                     <script>
-                        checkBiometricSupport().then(supported => {
-                            if (supported) {
-                                document.getElementById('biometric-section').style.display = 'block';
-                                const enabled = localStorage.getItem('biometric_enabled');
-                                const status = document.getElementById('biometric-status');
-                                const btn = document.getElementById('biometric-toggle');
-                                
-                                if (enabled) {
-                                    status.innerHTML = '<span style="color: #10b981;">✅ Biometric authentication is enabled</span>';
-                                    btn.textContent = 'Disable Biometric';
-                                    btn.style.background = '#ef4444';
-                                } else {
-                                    status.innerHTML = '<span style="color: #6b7280;">❌ Biometric authentication is disabled</span>';
-                                    btn.textContent = 'Enable Biometric';
-                                    btn.style.background = '#10b981';
+                        if (typeof checkBiometricSupport === 'function') {
+                            checkBiometricSupport().then(supported => {
+                                if (supported) {
+                                    document.getElementById('biometric-section').style.display = 'block';
+                                    const enabled = localStorage.getItem('biometric_enabled');
+                                    const status = document.getElementById('biometric-status');
+                                    const btn = document.getElementById('biometric-toggle');
+                                    
+                                    if (enabled) {
+                                        status.innerHTML = '<span style="color: #10b981;">✅ Biometric authentication is enabled</span>';
+                                        btn.textContent = 'Disable Biometric';
+                                        btn.style.background = '#ef4444';
+                                    } else {
+                                        status.innerHTML = '<span style="color: #6b7280;">❌ Biometric authentication is disabled</span>';
+                                        btn.textContent = 'Enable Biometric';
+                                        btn.style.background = '#10b981';
+                                    }
                                 }
-                            }
-                        });
+                            });
+                        }
                         
                         async function toggleBiometric() {
                             const enabled = localStorage.getItem('biometric_enabled');
@@ -592,7 +594,6 @@
                                 await registerBiometric(email);
                             }
                             location.reload();
-                        }
                         }
                     </script>
                 </div>
@@ -764,20 +765,20 @@
     </div>
     
     <!-- Modular JavaScript Architecture -->
-    <script src="/static/js/config.js?v=20251025"></script>
-    <script src="/static/js/utils.js?v=20251025"></script>
-    <script src="/static/js/auth.js?v=20251025"></script>
-    <script src="/static/js/services.js?v=20251025"></script>
-    <script src="/static/js/verification.js?v=20251025"></script>
-    <script src="/static/js/history.js?v=20251025"></script>
-    <script src="/static/js/wallet.js?v=20251025"></script>
-    <script src="/static/js/rentals.js?v=20251025"></script>
-    <script src="/static/js/developer.js?v=20251025"></script>
-    <script src="/static/js/settings.js?v=20251025"></script>
-    <script src="/static/js/mobile.js?v=20251025"></script>
-    <script src="/static/js/biometric.js?v=20251025"></script>
-    <script src="/static/js/offline-queue.js?v=20251025"></script>
-    <script src="/static/js/main.js?v=20251025"></script>
+    <script src="/static/js/config.js?v=20251024"></script>
+    <script src="/static/js/utils.js?v=20251024"></script>
+    <script src="/static/js/auth.js?v=20251024"></script>
+    <script src="/static/js/services.js?v=20251024"></script>
+    <script src="/static/js/verification.js?v=20251024"></script>
+    <script src="/static/js/history.js?v=20251024"></script>
+    <script src="/static/js/wallet.js?v=20251024"></script>
+    <script src="/static/js/rentals.js?v=20251024"></script>
+    <script src="/static/js/developer.js?v=20251024"></script>
+    <script src="/static/js/settings.js?v=20251024"></script>
+    <script src="/static/js/mobile.js?v=20251024"></script>
+    <script src="/static/js/biometric.js?v=20251024"></script>
+    <script src="/static/js/offline-queue.js?v=20251024"></script>
+    <script src="/static/js/main.js?v=20251024"></script>
     <script>
         // Register Service Worker
         if ('serviceWorker' in navigator) {
