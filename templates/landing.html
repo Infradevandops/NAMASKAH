@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://accounts.google.com">
     <link rel="preconnect" href="https://api.paystack.co">
     <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/landing-improvements.css">
     <script src="/static/js/social-proof.js"></script>
     <style>
         /* Anti-flicker */
@@ -72,7 +73,7 @@
             background: var(--bg-secondary);
             box-shadow: -2px 0 10px rgba(0,0,0,0.1);
             transition: right 0.3s ease;
-            z-index: 999;
+            z-index: 1500;
             padding: 20px;
             overflow-y: auto;
         }
@@ -409,6 +410,64 @@
             }
         }
     </style>
+
+    <!-- Test Components for High-Contrast UI -->
+    <div style="background: var(--bg-primary); padding: 40px 20px;">
+        <div style="max-width: 1200px; margin: 0 auto;">
+            
+            <!-- Warning Box Test -->
+            <div class="warning-box">
+                <div class="warning-title">Important: Initiating a chargeback without contacting us first may result in:</div>
+                <ul>
+                    <li>Immediate account suspension</li>
+                    <li>Forfeiture of all credits</li>
+                    <li>Ban from future use</li>
+                </ul>
+                <div class="warning-footer">
+                    Always contact support first. We're here to help resolve issues fairly.
+                </div>
+            </div>
+
+            <!-- FAQ Test -->
+            <div class="faq-container" style="margin: 40px 0;">
+                <h2 style="color: white; text-align: center; margin-bottom: 30px;">Frequently Asked Questions</h2>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>Can I get a receipt for my payments?</h3>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-content">
+                            <p>Yes! We automatically send receipts to your email after every successful payment. You can also download receipts from your account dashboard at any time.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>What happens if I don't receive the SMS?</h3>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-content">
+                            <p>If you don't receive an SMS within 10 minutes, you'll get an automatic refund. No questions asked. Our 95%+ success rate means this rarely happens.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CTA Test -->
+            <div class="cta-section">
+                <div class="cta-content">
+                    <h2 class="cta-title">Still have questions?</h2>
+                    <p class="cta-subtitle">We're here to help! Get instant support from our team.</p>
+                    <button class="cta-button-primary" onclick="window.location.href='/app'">
+                        Get Started Now
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
 
     <!-- Trust Badges -->
     <div style="background: var(--bg-secondary); padding: 30px 20px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
@@ -1005,6 +1064,22 @@
             card.style.animationDelay = `${index * 0.1}s`;
             card.style.animation = 'slideIn 0.5s ease-out forwards';
         });
+        
+        // FAQ Toggle Function
+        function toggleFaq(element) {
+            const faqItem = element.closest('.faq-item');
+            const isActive = faqItem.classList.contains('active');
+            
+            // Close all other FAQs
+            document.querySelectorAll('.faq-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Toggle current FAQ
+            if (!isActive) {
+                faqItem.classList.add('active');
+            }
+        }
     </script>
 </body>
 </html>

@@ -238,7 +238,7 @@
     justify-content: center;
     color: white;
     font-size: 20px;
-    z-index: 999;
+    z-index: 1001;
     transition: transform 0.3s;
     pointer-events: none;
 }
@@ -301,7 +301,7 @@
 /* PWA Install Prompt */
 .pwa-install-prompt {
     position: fixed;
-    bottom: calc(70px + env(safe-area-inset-bottom));
+    bottom: calc(80px + env(safe-area-inset-bottom));
     left: 10px;
     right: 10px;
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
@@ -309,7 +309,7 @@
     padding: 15px;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    z-index: 999;
+    z-index: 1001;
     display: none;
     animation: slideUp 0.3s ease-out;
 }
