@@ -763,20 +763,20 @@
     </div>
     
     <!-- Modular JavaScript Architecture -->
-    <script src="/static/js/config.js?v=20251020"></script>
-    <script src="/static/js/utils.js?v=20251020"></script>
-    <script src="/static/js/auth.js?v=20251020"></script>
-    <script src="/static/js/services.js?v=20251020"></script>
-    <script src="/static/js/verification.js?v=20251020"></script>
-    <script src="/static/js/history.js?v=20251020"></script>
-    <script src="/static/js/wallet.js?v=20251020"></script>
-    <script src="/static/js/rentals.js?v=20251020"></script>
-    <script src="/static/js/developer.js?v=20251020"></script>
-    <script src="/static/js/settings.js?v=20251020"></script>
-    <script src="/static/js/mobile.js?v=20251020"></script>
-    <script src="/static/js/biometric.js?v=20251020"></script>
-    <script src="/static/js/offline-queue.js?v=20251020"></script>
-    <script src="/static/js/main.js?v=20251020"></script>
+    <script src="/static/js/config.js?v=20251021"></script>
+    <script src="/static/js/utils.js?v=20251021"></script>
+    <script src="/static/js/auth.js?v=20251021"></script>
+    <script src="/static/js/services.js?v=20251021"></script>
+    <script src="/static/js/verification.js?v=20251021"></script>
+    <script src="/static/js/history.js?v=20251021"></script>
+    <script src="/static/js/wallet.js?v=20251021"></script>
+    <script src="/static/js/rentals.js?v=20251021"></script>
+    <script src="/static/js/developer.js?v=20251021"></script>
+    <script src="/static/js/settings.js?v=20251021"></script>
+    <script src="/static/js/mobile.js?v=20251021"></script>
+    <script src="/static/js/biometric.js?v=20251021"></script>
+    <script src="/static/js/offline-queue.js?v=20251021"></script>
+    <script src="/static/js/main.js?v=20251021"></script>
     <script>
         // Register Service Worker
         if ('serviceWorker' in navigator) {
@@ -851,11 +851,11 @@
                 const data = await res.json();
                 
                 if (res.ok) {
-                    token = data.token;
                     localStorage.setItem('token', data.token);
+                    if (typeof token !== 'undefined') token = data.token;
                     showLoading(false);
                     showNotification('✅ Login successful!', 'success');
-                    setTimeout(() => checkAuth(), 200);
+                    setTimeout(() => location.reload(), 300);
                 } else {
                     showLoading(false);
                     showNotification('❌ ' + (data.detail || 'Google sign-in failed'), 'error');
