@@ -47,8 +47,10 @@ async function register() {
             window.token = data.token;
             localStorage.setItem('token', data.token);
             showNotification(`✅ Welcome! You got ₵${data.credits} free credits`, 'success');
-            console.log('Reloading page in 500ms');
-            setTimeout(() => location.reload(), 500);
+            console.log('Reloading page now');
+            
+            // Force immediate reload
+            window.location.href = window.location.href.split('?')[0];
         } else {
             showNotification(`❌ ${data.detail || 'Registration failed'}`, 'error');
         }
@@ -102,13 +104,11 @@ async function login() {
             window.token = data.token;
             localStorage.setItem('token', data.token);
             
-            showLoading(false);
             showNotification('✅ Login successful!', 'success');
+            console.log('Reloading page now');
             
-            console.log('Reloading page in 500ms');
-            setTimeout(() => {
-                location.reload();
-            }, 500);
+            // Force immediate reload
+            window.location.href = window.location.href.split('?')[0];
         } else {
             showLoading(false);
             showNotification(`❌ ${data.detail || 'Invalid credentials'}`, 'error');
