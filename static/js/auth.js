@@ -1,5 +1,6 @@
 // Authentication Module
-let token = localStorage.getItem('token');
+window.token = localStorage.getItem('token');
+let token = window.token;
 
 async function register() {
     const email = document.getElementById('register-email').value;

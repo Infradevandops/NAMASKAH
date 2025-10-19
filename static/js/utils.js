@@ -90,8 +90,10 @@ function copyToClipboard(text) {
 }
 
 // Check auth on load
-if (token) {
-    checkAuth();
+if (window.token || localStorage.getItem('token')) {
+    if (typeof checkAuth === 'function') {
+        checkAuth();
+    }
 } else {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('ref')) {
