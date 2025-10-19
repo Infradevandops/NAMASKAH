@@ -864,6 +864,18 @@ async def status_page(request: Request):
 async def admin_panel(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request})
 
+@app.get("/privacy")
+async def privacy_page(request: Request):
+    return templates.TemplateResponse("privacy.html", {"request": request})
+
+@app.get("/terms")
+async def terms_page(request: Request):
+    return templates.TemplateResponse("terms.html", {"request": request})
+
+@app.get("/refund")
+async def refund_page(request: Request):
+    return templates.TemplateResponse("refund.html", {"request": request})
+
 @app.get("/analytics")
 async def analytics_page(request: Request):
     return templates.TemplateResponse("analytics.html", {"request": request})
