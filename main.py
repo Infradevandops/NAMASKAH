@@ -903,6 +903,18 @@ async def manifest():
     from fastapi.responses import FileResponse
     return FileResponse("static/manifest.json", media_type="application/json")
 
+@app.get("/sitemap.xml")
+async def sitemap():
+    """Serve sitemap for SEO"""
+    from fastapi.responses import FileResponse
+    return FileResponse("static/sitemap.xml", media_type="application/xml")
+
+@app.get("/robots.txt")
+async def robots():
+    """Serve robots.txt for search engines"""
+    from fastapi.responses import FileResponse
+    return FileResponse("static/robots.txt", media_type="text/plain")
+
 @app.get("/sw.js")
 async def service_worker():
     """Serve service worker"""
