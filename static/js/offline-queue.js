@@ -36,7 +36,7 @@ async function processQueue() {
                 await fetch(`${API_BASE}/verify/create`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
+                        'Authorization': `Bearer ${window.token}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(item.data)

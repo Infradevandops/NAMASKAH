@@ -43,7 +43,7 @@ async function selectPayment(method) {
             const res = await fetch(`${API_BASE}/wallet/paystack/initialize`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': `Bearer ${window.token}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ amount, payment_method: method })
@@ -80,7 +80,7 @@ async function selectPayment(method) {
 async function verifyPayment(reference) {
     try {
         const response = await fetch(`${API_BASE}/wallet/paystack/verify/${reference}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${window.token}` }
         });
         const data = await response.json();
         if (response.ok && data.status === 'success') {

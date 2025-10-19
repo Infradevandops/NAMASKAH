@@ -1,6 +1,5 @@
 // Authentication Module
 window.token = localStorage.getItem('token');
-let token = window.token;
 
 async function register() {
     const email = document.getElementById('register-email').value;
@@ -38,8 +37,8 @@ async function register() {
         showLoading(false);
         
         if (res.ok) {
-            token = data.token;
-            localStorage.setItem('token', token);
+            window.token = data.token;
+            localStorage.setItem('token', data.token);
             showNotification(`✅ Welcome! You got ₵${data.credits} free credits`, 'success');
             showApp();
         } else {
@@ -81,13 +80,12 @@ async function login() {
         const data = await res.json();
         
         if (res.ok && data.token) {
-            token = data.token;
-            localStorage.setItem('token', token);
+            window.token = data.token;
+            localStorage.setItem('token', data.token);
             
             showLoading(false);
             showNotification('✅ Login successful!', 'success');
             
-            // Force reload user data then show app
             setTimeout(() => {
                 checkAuth();
             }, 100);
@@ -107,14 +105,14 @@ async function login() {
 }
 
 async function checkAuth() {
-    if (!token) {
+    if (!window.token) {
         logout();
         return;
     }
     
     try {
         const res = await fetch(`${API_BASE}/auth/me`, {
-            headers: {'Authorization': `Bearer ${token}`}
+            headers: {'Authorization': `Bearer ${window.token}`}
         });
         
         if (res.ok) {
@@ -133,7 +131,7 @@ async function checkAuth() {
 }
 
 function logout() {
-    token = null;
+    window.token = null;
     localStorage.removeItem('token');
     clearSession();
     stopAutoRefresh();
@@ -175,7 +173,7 @@ function showTab(tab) {
 async function checkEmailVerification() {
     try {
         const res = await fetch(`${API_BASE}/auth/me`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${window.token}` }
         });
         const data = await res.json();
         
@@ -198,7 +196,7 @@ async function resendVerificationEmail() {
     try {
         const res = await fetch(`${API_BASE}/auth/resend-verification`, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${window.token}` }
         });
         
         if (res.ok) {

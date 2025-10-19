@@ -20,7 +20,7 @@ async function loadHistory(silent = false, showAll = false) {
     
     try {
         const res = await fetch(`${API_BASE}/verifications/history`, {
-            headers: {'Authorization': `Bearer ${token}`}
+            headers: {'Authorization': `Bearer ${window.token}`}
         });
         
         if (res.ok) {
@@ -64,7 +64,7 @@ async function loadVerification(id) {
     
     try {
         const res = await fetch(`${API_BASE}/verify/${id}`, {
-            headers: {'Authorization': `Bearer ${token}`}
+            headers: {'Authorization': `Bearer ${window.token}`}
         });
         
         showLoading(false);
@@ -91,7 +91,7 @@ async function loadTransactions(silent = false, showAll = false) {
     
     try {
         const res = await fetch(`${API_BASE}/transactions/history`, {
-            headers: {'Authorization': `Bearer ${token}`}
+            headers: {'Authorization': `Bearer ${window.token}`}
         });
         
         if (res.ok) {
@@ -140,7 +140,7 @@ async function exportTransactions() {
     if (!token) return;
     try {
         const res = await fetch(`${API_BASE}/transactions/export`, {
-            headers: {'Authorization': `Bearer ${token}`}
+            headers: {'Authorization': `Bearer ${window.token}`}
         });
         if (res.ok) {
             const blob = await res.blob();
@@ -162,7 +162,7 @@ async function exportVerifications() {
     if (!token) return;
     try {
         const res = await fetch(`${API_BASE}/verifications/export`, {
-            headers: {'Authorization': `Bearer ${token}`}
+            headers: {'Authorization': `Bearer ${window.token}`}
         });
         if (res.ok) {
             const blob = await res.blob();

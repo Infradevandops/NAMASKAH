@@ -11,7 +11,7 @@ async function createAPIKey() {
         const res = await fetch(`${API_BASE}/api-keys/create`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${window.token}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ name })
@@ -35,7 +35,7 @@ async function loadAPIKeys() {
     
     try {
         const res = await fetch(`${API_BASE}/api-keys/list`, {
-            headers: {'Authorization': `Bearer ${token}`}
+            headers: {'Authorization': `Bearer ${window.token}`}
         });
         
         if (res.ok) {
@@ -67,7 +67,7 @@ async function deleteAPIKey(keyId) {
     try {
         const res = await fetch(`${API_BASE}/api-keys/${keyId}`, {
             method: 'DELETE',
-            headers: {'Authorization': `Bearer ${token}`}
+            headers: {'Authorization': `Bearer ${window.token}`}
         });
         
         if (res.ok) {
@@ -90,7 +90,7 @@ async function createWebhook() {
         const res = await fetch(`${API_BASE}/webhooks/create`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${window.token}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ url })
@@ -113,7 +113,7 @@ async function loadWebhooks() {
     
     try {
         const res = await fetch(`${API_BASE}/webhooks/list`, {
-            headers: {'Authorization': `Bearer ${token}`}
+            headers: {'Authorization': `Bearer ${window.token}`}
         });
         
         if (res.ok) {
@@ -147,7 +147,7 @@ async function deleteWebhook(webhookId) {
     try {
         const res = await fetch(`${API_BASE}/webhooks/${webhookId}`, {
             method: 'DELETE',
-            headers: {'Authorization': `Bearer ${token}`}
+            headers: {'Authorization': `Bearer ${window.token}`}
         });
         
         if (res.ok) {
@@ -164,7 +164,7 @@ async function loadAnalytics() {
     
     try {
         const res = await fetch(`${API_BASE}/analytics/dashboard`, {
-            headers: {'Authorization': `Bearer ${token}`}
+            headers: {'Authorization': `Bearer ${window.token}`}
         });
         
         if (res.ok) {

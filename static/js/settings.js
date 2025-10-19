@@ -5,7 +5,7 @@ async function loadNotificationSettings() {
     
     try {
         const res = await fetch(`${API_BASE}/notifications/settings`, {
-            headers: {'Authorization': `Bearer ${token}`}
+            headers: {'Authorization': `Bearer ${window.token}`}
         });
         
         if (res.ok) {
@@ -29,7 +29,7 @@ async function updateNotificationSettings() {
     try {
         const res = await fetch(`${API_BASE}/notifications/settings?email_on_sms=${emailOnSms}&email_on_low_balance=${emailOnLowBalance}&low_balance_threshold=${threshold}`, {
             method: 'POST',
-            headers: {'Authorization': `Bearer ${token}`}
+            headers: {'Authorization': `Bearer ${window.token}`}
         });
         
         if (res.ok) {
@@ -45,7 +45,7 @@ async function loadReferralStats() {
     
     try {
         const res = await fetch(`${API_BASE}/referrals/stats`, {
-            headers: {'Authorization': `Bearer ${token}`}
+            headers: {'Authorization': `Bearer ${window.token}`}
         });
         
         if (res.ok) {
@@ -116,7 +116,7 @@ async function submitSupport(event) {
     
     try {
         const headers = {'Content-Type': 'application/json'};
-        if (token) headers['Authorization'] = `Bearer ${token}`;
+        if (token) headers['Authorization'] = `Bearer ${window.token}`;
         
         const res = await fetch(`${API_BASE}/support/submit`, {
             method: 'POST',

@@ -26,7 +26,7 @@ async function createVerification() {
         return;
     }
     
-    if (!token) {
+    if (!window.token) {
         showNotification('🔒 Please login first', 'error');
         return;
     }
@@ -37,7 +37,7 @@ async function createVerification() {
         const res = await fetch(`${API_BASE}/verify/create`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${window.token}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({service_name: service, capability: capability})
@@ -190,7 +190,7 @@ async function retryWithVoice() {
     try {
         const res = await fetch(`${API_BASE}/verify/${currentVerificationId}/retry?retry_type=voice`, {
             method: 'POST',
-            headers: {'Authorization': `Bearer ${token}`}
+            headers: {'Authorization': `Bearer ${window.token}`}
         });
         
         const data = await res.json();
@@ -217,7 +217,7 @@ async function retryWithSame() {
     try {
         const res = await fetch(`${API_BASE}/verify/${currentVerificationId}/retry?retry_type=same`, {
             method: 'POST',
-            headers: {'Authorization': `Bearer ${token}`}
+            headers: {'Authorization': `Bearer ${window.token}`}
         });
         
         const data = await res.json();
@@ -243,7 +243,7 @@ async function retryWithNew() {
     try {
         const res = await fetch(`${API_BASE}/verify/${currentVerificationId}/retry?retry_type=new`, {
             method: 'POST',
-            headers: {'Authorization': `Bearer ${token}`}
+            headers: {'Authorization': `Bearer ${window.token}`}
         });
         
         const data = await res.json();
@@ -268,7 +268,7 @@ async function autoCancel() {
     
     try {
         const res = await fetch(`${API_BASE}/verify/${currentVerificationId}/messages`, {
-            headers: {'Authorization': `Bearer ${token}`}
+            headers: {'Authorization': `Bearer ${window.token}`}
         });
         
         if (res.ok) {
@@ -299,7 +299,7 @@ async function retryVerification() {
         const res = await fetch(`${API_BASE}/verify/create`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${window.token}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({service_name: currentServiceName})
@@ -330,7 +330,7 @@ async function updateVerificationStatus() {
     
     try {
         const res = await fetch(`${API_BASE}/verify/${currentVerificationId}`, {
-            headers: {'Authorization': `Bearer ${token}`}
+            headers: {'Authorization': `Bearer ${window.token}`}
         });
         
         if (res.ok) {
@@ -359,7 +359,7 @@ async function checkMessages(silent = false) {
     
     try {
         const res = await fetch(`${API_BASE}/verify/${currentVerificationId}/messages`, {
-            headers: {'Authorization': `Bearer ${token}`}
+            headers: {'Authorization': `Bearer ${window.token}`}
         });
         
         if (!res.ok) {
@@ -456,7 +456,7 @@ async function cancelVerification() {
     try {
         const res = await fetch(`${API_BASE}/verify/${currentVerificationId}`, {
             method: 'DELETE',
-            headers: {'Authorization': `Bearer ${token}`}
+            headers: {'Authorization': `Bearer ${window.token}`}
         });
         
         showLoading(false);
@@ -485,7 +485,7 @@ async function checkVoiceCall() {
     
     try {
         const res = await fetch(`${API_BASE}/verify/${currentVerificationId}/voice`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${window.token}` }
         });
         
         showLoading(false);

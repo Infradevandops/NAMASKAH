@@ -86,7 +86,7 @@ async function createRentalNumber() {
         const res = await fetch(`${API_BASE}/rentals/create`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${window.token}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
@@ -120,7 +120,7 @@ async function loadActiveRentals() {
     
     try {
         const res = await fetch(`${API_BASE}/rentals/active`, {
-            headers: {'Authorization': `Bearer ${token}`}
+            headers: {'Authorization': `Bearer ${window.token}`}
         });
         
         if (res.ok) {
@@ -178,7 +178,7 @@ async function toggleRentalMessages(rentalId) {
         if (!rentalMessagesCache[rentalId]) {
             try {
                 const res = await fetch(`${API_BASE}/rentals/${rentalId}/messages`, {
-                    headers: {'Authorization': `Bearer ${token}`}
+                    headers: {'Authorization': `Bearer ${window.token}`}
                 });
                 
                 if (res.ok) {
@@ -244,7 +244,7 @@ async function extendRental(rentalId) {
         const res = await fetch(`${API_BASE}/rentals/${rentalId}/extend`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${window.token}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ additional_hours: parseFloat(hours) })
@@ -274,7 +274,7 @@ async function releaseRental(rentalId) {
     try {
         const res = await fetch(`${API_BASE}/rentals/${rentalId}/release`, {
             method: 'POST',
-            headers: {'Authorization': `Bearer ${token}`}
+            headers: {'Authorization': `Bearer ${window.token}`}
         });
         
         const data = await res.json();
