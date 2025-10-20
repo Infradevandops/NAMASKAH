@@ -1624,14 +1624,16 @@ def get_me(user: User = Depends(get_current_user), db: Session = Depends(get_db)
             pass
     
     # Get subscription plan
-    subscription = db.query(Subscription).filter(
-        Subscription.user_id == user.id,
-        Subscription.status == "active"
-    ).first()
-    
     plan = "starter"
-    if subscription:
-        plan = subscription.plan
+    try:
+        subscription = db.query(Subscription).filter(
+            Subscription.user_id == user.id,
+            Subscription.status == "active"
+        ).first()
+        if subscription:
+            plan = subscription.plan
+    except Exception as e:
+        logger.error(f"Subscription query failed: {e}")
     
     return {
         "id": user.id,
