@@ -45,6 +45,7 @@ async function register() {
         if (res.ok) {
             window.token = data.token;
             localStorage.setItem('token', data.token);
+            if (data.is_admin) localStorage.setItem('admin_token', data.token);
             showLoading(false);
             showNotification(`✅ Welcome! You got 1 free verification`, 'success');
             console.log('Calling checkAuth to load app');
@@ -110,6 +111,7 @@ async function login() {
         if (res.ok && data.token) {
             window.token = data.token;
             localStorage.setItem('token', data.token);
+            if (data.is_admin) localStorage.setItem('admin_token', data.token);
             
             showLoading(false);
             showNotification('✅ Login successful!', 'success');
@@ -199,6 +201,7 @@ async function checkAuth() {
 function logout() {
     window.token = null;
     localStorage.removeItem('token');
+    localStorage.removeItem('admin_token');
     clearSession();
     stopAutoRefresh();
     stopHistoryRefresh();

@@ -329,12 +329,64 @@
 
     <script>
         const API_BASE = '';
-        let token = localStorage.getItem('admin_token');
+        let token = localStorage.getItem('admin_token') || localStorage.getItem('token');
         let allUsers = [];
         let currentFilter = 'all';
 
+        // Show login form if no token
         if (!token) {
-            window.location.href = '/admin';
+            document.body.innerHTML = `
+                <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div style="background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-width: 400px; width: 90%;">
+                        <h1 style="color: #667eea; margin-bottom: 30px; text-align: center;">🎛️ Admin Login</h1>
+                        <input type="email" id="admin-email" placeholder="Email" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;" onkeypress="if(event.key==='Enter')adminLogin()">
+                        <input type="password" id="admin-password" placeholder="Password" style="width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;" onkeypress="if(event.key==='Enter')adminLogin()">
+                        <button onclick="adminLogin()" style="width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px;">Login</button>
+                        <div id="admin-error" style="color: #ef4444; margin-top: 15px; text-align: center; display: none;"></div>
+                    </div>
+                </div>
+            `;
+            
+            window.adminLogin = async function() {
+                const email = document.getElementById('admin-email').value;
+                const password = document.getElementById('admin-password').value;
+                const errorDiv = document.getElementById('admin-error');
+                
+                if (!email || !password) {
+                    errorDiv.textContent = 'Please enter email and password';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+                
+                try {
+                    const res = await fetch('/auth/login', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({email, password})
+                    });
+                    
+                    const data = await res.json();
+                    
+                    if (res.ok && data.token) {
+                        if (data.is_admin) {
+                            localStorage.setItem('admin_token', data.token);
+                            localStorage.setItem('token', data.token);
+                            window.location.reload();
+                        } else {
+                            errorDiv.textContent = 'Admin access required';
+                            errorDiv.style.display = 'block';
+                        }
+                    } else {
+                        errorDiv.textContent = data.detail || 'Invalid credentials';
+                        errorDiv.style.display = 'block';
+                    }
+                } catch (error) {
+                    errorDiv.textContent = 'Network error. Please try again.';
+                    errorDiv.style.display = 'block';
+                }
+            };
+            
+            throw new Error('No token - showing login form');
         }
 
         const headers = { 'Authorization': `Bearer ${token}` };
@@ -540,7 +592,8 @@
 
         function logout() {
             localStorage.removeItem('admin_token');
-            window.location.href = '/admin';
+            localStorage.removeItem('token');
+            window.location.reload();
         }
 
         // Load data on page load

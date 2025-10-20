@@ -809,13 +809,21 @@
         let googleInitialized = false;
         
         function initGoogleSignIn() {
-            if (!window.GOOGLE_CLIENT_ID || googleInitialized) return;
-            if (typeof google === 'undefined' || !google.accounts) return;
+            if (!window.GOOGLE_CLIENT_ID || googleInitialized) {
+                hideGoogleButton();
+                return;
+            }
+            if (typeof google === 'undefined' || !google.accounts) {
+                hideGoogleButton();
+                return;
+            }
 
             try {
                 google.accounts.id.initialize({
                     client_id: window.GOOGLE_CLIENT_ID,
-                    callback: handleGoogleSignIn
+                    callback: handleGoogleSignIn,
+                    auto_select: false,
+                    cancel_on_tap_outside: true
                 });
                 googleInitialized = true;
                 
@@ -827,30 +835,39 @@
                         size: 'large', 
                         width: '100%',
                         text: 'continue_with',
-                        shape: 'rectangular'
+                        shape: 'rectangular',
+                        logo_alignment: 'left'
                     });
                     container.style.display = 'flex';
-                    separator.style.display = 'block';
+                    if (separator) separator.style.display = 'block';
                 }
             } catch (error) {
-                const container = document.getElementById('google-auth-btn');
-                const separator = document.getElementById('google-separator');
-                if (container) container.style.display = 'none';
-                if (separator) separator.style.display = 'none';
+                console.error('Google Sign-In init error:', error);
+                hideGoogleButton();
             }
+        }
+        
+        function hideGoogleButton() {
+            const container = document.getElementById('google-auth-btn');
+            const separator = document.getElementById('google-separator');
+            if (container) container.style.display = 'none';
+            if (separator) separator.style.display = 'none';
         }
 
         // Handle Google Sign-In response
         async function handleGoogleSignIn(response) {
-            console.log('Google sign-in initiated', response);
+            console.log('Google sign-in initiated');
             
             if (!response || !response.credential) {
                 console.error('Google sign-in failed: No credential received');
-                showNotification('❌ Google sign-in failed. Please try again.', 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('❌ Google sign-in failed. Please try again.', 'error');
+                }
                 return;
             }
             
-            showLoading(true);
+            if (typeof showLoading === 'function') showLoading(true);
+            
             try {
                 const res = await fetch('/auth/google', {
                     method: 'POST',
@@ -858,15 +875,21 @@
                     body: JSON.stringify({token: response.credential})
                 });
                 
-                console.log('Google auth response:', res.status);
                 const data = await res.json();
-                console.log('Google auth data:', data);
                 
                 if (res.ok && data.token) {
                     window.token = data.token;
                     localStorage.setItem('token', data.token);
-                    showLoading(false);
-                    showNotification('✅ Login successful!', 'success');
+                    
+                    // Store admin token if user is admin
+                    if (data.is_admin) {
+                        localStorage.setItem('admin_token', data.token);
+                    }
+                    
+                    if (typeof showLoading === 'function') showLoading(false);
+                    if (typeof showNotification === 'function') {
+                        showNotification('✅ Login successful!', 'success');
+                    }
                     
                     // Use checkAuth instead of reload
                     setTimeout(() => {
@@ -877,33 +900,49 @@
                         }
                     }, 500);
                 } else {
-                    showLoading(false);
+                    if (typeof showLoading === 'function') showLoading(false);
                     console.error('Google sign-in failed:', data.detail);
-                    showNotification('❌ ' + (data.detail || 'Google sign-in failed'), 'error');
+                    if (typeof showNotification === 'function') {
+                        showNotification('❌ ' + (data.detail || 'Google sign-in failed'), 'error');
+                    }
                 }
             } catch (error) {
-                showLoading(false);
+                if (typeof showLoading === 'function') showLoading(false);
                 console.error('Google sign-in error:', error);
-                showNotification('❌ Network error. Please try again.', 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('❌ Network error. Please try again.', 'error');
+                }
             }
         }
 
         window.loadGoogleSDK = function() {
-            if (!window.GOOGLE_CLIENT_ID) return;
+            if (!window.GOOGLE_CLIENT_ID) {
+                hideGoogleButton();
+                return;
+            }
             
             const script = document.createElement('script');
             script.src = 'https://accounts.google.com/gsi/client';
-            script.onload = () => setTimeout(initGoogleSignIn, 100);
-            script.onerror = () => {
-                document.getElementById('google-auth-btn').style.display = 'none';
-                document.getElementById('google-separator').style.display = 'none';
+            script.async = true;
+            script.defer = true;
+            script.onload = () => {
+                console.log('Google SDK loaded');
+                setTimeout(initGoogleSignIn, 100);
+            };
+            script.onerror = (error) => {
+                console.error('Google SDK load error:', error);
+                hideGoogleButton();
             };
             document.head.appendChild(script);
         }
 
         function waitForConfig() {
             if (window.googleConfigLoaded) {
-                if (window.GOOGLE_CLIENT_ID) window.loadGoogleSDK();
+                if (window.GOOGLE_CLIENT_ID) {
+                    window.loadGoogleSDK();
+                } else {
+                    hideGoogleButton();
+                }
             } else {
                 setTimeout(waitForConfig, 50);
             }
@@ -914,6 +953,14 @@
         } else {
             waitForConfig();
         }
+        
+        // Timeout fallback - hide Google button after 5 seconds if not loaded
+        setTimeout(() => {
+            if (!googleInitialized) {
+                console.log('Google Sign-In timeout - hiding button');
+                hideGoogleButton();
+            }
+        }, 5000);
         
         // Switch tabs - Google button stays persistent
         window.showTab = function(tab) {
