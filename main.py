@@ -1780,115 +1780,15 @@ def export_user_transactions(user: User = Depends(get_current_user), db: Session
     )
 
 @app.post("/verify/create", tags=["Verification"], summary="Create SMS/Voice Verification")
-def create_verification(req: CreateVerificationRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Create new SMS or voice verification
+def create_verification(req: CreateVerificationRequest, db: Session = Depends(get_db)):
+    """Create new SMS or voice verification - NO AUTH REQUIRED
     
     - **service_name**: Service identifier (e.g., 'whatsapp', 'telegram')
     - **capability**: 'sms' or 'voice'
-    
-    Pricing: Popular services N1 ($2), General N1.25 ($2.50), Voice +N0.25
-    Tiers: Pay-as-You-Go (no discount), Developer (20% off, min N25), Enterprise (35% off, min N100)
     """
-    try:
-        # Check for custom pricing first
-        custom_pricing = db.query(ServicePricing).filter(
-            ServicePricing.service_name == req.service_name.lower()
-        ).first()
-        
-        if custom_pricing:
-            base_cost = custom_pricing.price
-        else:
-            # Determine base price (popular vs general)
-            popular_services = ['whatsapp', 'instagram', 'facebook', 'telegram', 'twitter', 'tiktok', 'snapchat', 'google']
-            is_popular = req.service_name.lower() in popular_services
-            base_cost = SMS_PRICING['popular'] if is_popular else SMS_PRICING['general']
-        
-        # Add voice premium if voice verification
-        if req.capability == 'voice':
-            base_cost += VOICE_PREMIUM
-        
-        # Apply subscription discount
-        subscription = db.query(Subscription).filter(
-            Subscription.user_id == user.id,
-            Subscription.status == "active"
-        ).first()
-        
-        if subscription:
-            discount = subscription.discount
-            cost = base_cost * (1 - discount)
-        else:
-            cost = base_cost
-    except Exception as e:
-        print(f"Pricing calculation error: {e}")
-        raise HTTPException(status_code=500, detail=f"Pricing error: {str(e)}")
-    
-    # Check if user has free verifications or credits
-    try:
-        if user.free_verifications >= 1:
-            user.free_verifications -= 1
-            cost = 0  # Free verification
-            # Track free verification in transactions
-            db.add(Transaction(
-                id=f"txn_{datetime.now(timezone.utc).timestamp()}",
-                user_id=user.id,
-                amount=0,
-                type="debit",
-                description=f"Free verification for {req.service_name}"
-            ))
-        elif user.credits < cost:
-            raise HTTPException(status_code=402, detail=f"Insufficient credits. Need N{cost}, have N{user.credits}")
-        else:
-            user.credits -= cost
-            # Create transaction for paid verification
-            db.add(Transaction(
-                id=f"txn_{datetime.now(timezone.utc).timestamp()}",
-                user_id=user.id,
-                amount=-cost,
-                type="debit",
-                description=f"Verification for {req.service_name}"
-            ))
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"Credit deduction error: {e}")
-        raise HTTPException(status_code=500, detail=f"Credit processing error: {str(e)}")
-    
-    # Process affiliate commission (10% of spending)
-    if user.referred_by and cost > 0:
-        referrer = db.query(User).filter(User.id == user.referred_by).first()
-        if referrer:
-            commission = round(cost * 0.10, 2)
-            referrer.credits += commission
-            referrer.referral_earnings += commission
-            
-            db.add(Transaction(
-                id=f"txn_{datetime.now(timezone.utc).timestamp()}_aff",
-                user_id=referrer.id,
-                amount=commission,
-                type="credit",
-                description=f"Affiliate commission: {user.email} spent N{cost}"
-            ))
-    
-    # Check low balance and send notification
-    try:
-        settings = db.query(NotificationSettings).filter(NotificationSettings.user_id == user.id).first()
-        threshold = settings.low_balance_threshold if settings else 1.0
-        
-        if user.credits <= threshold and (not settings or settings.email_on_low_balance):
-            try:
-                send_email(
-                    user.email,
-                    "⚠️ Low Balance Alert - Namaskah SMS",
-                    f"""<h2>⚠️ Low Balance Alert</h2>
-                    <p>Your wallet balance is low: <strong>N{user.credits:.2f}</strong></p>
-                    <p>Fund your wallet to continue using Namaskah SMS.</p>
-                    <p><a href="{BASE_URL}/app">Fund Wallet Now</a></p>"""
-                )
-            except:
-                pass  # Don't fail verification if email fails
-    except Exception as e:
-        print(f"Notification check error (non-critical): {e}")
-        pass  # Don't fail verification if notification check fails
+    # NO AUTH MODE - Free access for testing
+    cost = 0
+    user_id = "guest"
     
     # Create verification with filters
     try:
@@ -1900,16 +1800,12 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
         )
         details = tv_client.get_verification(verification_id)
     except Exception as e:
-        # Refund if TextVerified API fails
-        if cost > 0:
-            user.credits += cost
-            db.rollback()
         print(f"TextVerified API error: {e}")
         raise HTTPException(status_code=503, detail=f"Verification service unavailable: {str(e)}")
     
     verification = Verification(
         id=verification_id,
-        user_id=user.id,
+        user_id=user_id,
         service_name=req.service_name,
         phone_number=details.get("number"),
         capability=req.capability,
@@ -1925,16 +1821,15 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
         "phone_number": verification.phone_number,
         "capability": verification.capability,
         "status": verification.status,
-        "cost": verification.cost,
-        "remaining_credits": user.credits
+        "cost": cost,
+        "remaining_credits": 0
     }
 
 @app.get("/verify/{verification_id}", tags=["Verification"], summary="Get Verification Status")
-def get_verification(verification_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Get verification details and current status"""
+def get_verification(verification_id: str, db: Session = Depends(get_db)):
+    """Get verification details and current status - NO AUTH REQUIRED"""
     verification = db.query(Verification).filter(
-        Verification.id == verification_id,
-        Verification.user_id == user.id
+        Verification.id == verification_id
     ).first()
     
     if not verification:
@@ -1954,34 +1849,16 @@ def get_verification(verification_id: str, user: User = Depends(get_current_user
     }
 
 @app.get("/verify/{verification_id}/messages", tags=["Verification"], summary="Get SMS Messages")
-async def get_messages(verification_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Retrieve SMS messages for verification. Triggers webhooks if configured."""
+async def get_messages(verification_id: str, db: Session = Depends(get_db)):
+    """Retrieve SMS messages for verification - NO AUTH REQUIRED"""
     verification = db.query(Verification).filter(
-        Verification.id == verification_id,
-        Verification.user_id == user.id
+        Verification.id == verification_id
     ).first()
     
     if not verification:
         raise HTTPException(status_code=404, detail="Verification not found")
     
     messages = tv_client.get_messages(verification_id)
-    
-    # Send to webhooks and email if messages exist
-    if messages:
-        await send_webhook(user.id, verification_id, messages, db)
-        
-        # Send email notification
-        settings = db.query(NotificationSettings).filter(NotificationSettings.user_id == user.id).first()
-        if not settings or settings.email_on_sms:
-            send_email(
-                user.email,
-                f"📨 SMS Received - {verification.service_name}",
-                f"""<h2>🎉 SMS Code Received!</h2>
-                <p>Your verification for <strong>{verification.service_name}</strong> has received an SMS.</p>
-                <p><strong>Messages:</strong></p>
-                <ul>{''.join([f'<li>{msg}</li>' for msg in messages])}</ul>
-                <p>View in dashboard: <a href="{BASE_URL}/app">Namaskah SMS</a></p>"""
-            )
     
     return {"verification_id": verification_id, "messages": messages}
 
