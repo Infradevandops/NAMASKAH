@@ -1018,10 +1018,6 @@ async def status_page(request: Request):
 async def admin_panel(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request})
 
-@app.get("/admin/enhanced")
-async def admin_panel_enhanced(request: Request):
-    return templates.TemplateResponse("admin_enhanced.html", {"request": request})
-
 @app.get("/privacy")
 async def privacy_page(request: Request):
     seo_meta = get_seo_meta('/privacy', str(request.url))
