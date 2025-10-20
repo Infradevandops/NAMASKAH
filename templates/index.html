@@ -842,7 +842,14 @@
 
         // Handle Google Sign-In response
         async function handleGoogleSignIn(response) {
-            console.log('Google sign-in initiated');
+            console.log('Google sign-in initiated', response);
+            
+            if (!response || !response.credential) {
+                console.error('Google sign-in failed: No credential received');
+                showNotification('❌ Google sign-in failed. Please try again.', 'error');
+                return;
+            }
+            
             showLoading(true);
             try {
                 const res = await fetch('/auth/google', {
