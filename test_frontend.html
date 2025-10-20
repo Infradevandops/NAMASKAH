@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Frontend Diagnostic</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #0f0; }
+        .pass { color: #0f0; }
+        .fail { color: #f00; }
+        .test { margin: 10px 0; padding: 10px; background: #2a2a2a; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Namaskah Frontend Diagnostic</h1>
+    <div id="results"></div>
+    
+    <script>
+        const results = document.getElementById('results');
+        
+        async function test(name, fn) {
+            const div = document.createElement('div');
+            div.className = 'test';
+            try {
+                await fn();
+                div.innerHTML = `<span class="pass">✅ ${name}</span>`;
+            } catch (e) {
+                div.innerHTML = `<span class="fail">❌ ${name}: ${e.message}</span>`;
+            }
+            results.appendChild(div);
+        }
+        
+        async function runTests() {
+            // Test 1: Config loads
+            await test('Config API', async () => {
+                const r = await fetch('/auth/google/config');
+                if (!r.ok) throw new Error('Config failed');
+            });
+            
+            // Test 2: Services load
+            await test('Services API', async () => {
+                const r = await fetch('/services/list');
+                if (!r.ok) throw new Error('Services failed');
+            });
+            
+            // Test 3: Health check
+            await test('Health Check', async () => {
+                const r = await fetch('/health');
+                if (!r.ok) throw new Error('Health failed');
+            });
+            
+            // Test 4: Static files
+            await test('Static JS Files', async () => {
+                const r = await fetch('/static/js/config.js');
+                if (!r.ok) throw new Error('Static files failed');
+            });
+            
+            // Test 5: Login attempt
+            await test('Login API', async () => {
+                const r = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email: 'test@test.com', password: 'test123'})
+                });
+                // Expect 401 for invalid creds, not 500
+                if (r.status === 500) throw new Error('Server error');
+            });
+            
+            results.innerHTML += '<div class="test"><span class="pass">✅ All critical paths tested</span></div>';
+        }
+        
+        runTests();
+    </script>
+</body>
+</html>

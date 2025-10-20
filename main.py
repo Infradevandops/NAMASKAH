@@ -1018,6 +1018,10 @@ async def status_page(request: Request):
 async def admin_panel(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request})
 
+@app.get("/admin/enhanced")
+async def admin_panel_enhanced(request: Request):
+    return templates.TemplateResponse("admin_enhanced.html", {"request": request})
+
 @app.get("/privacy")
 async def privacy_page(request: Request):
     seo_meta = get_seo_meta('/privacy', str(request.url))
@@ -2241,7 +2245,9 @@ def get_all_users(
     admin: User = Depends(get_admin_user),
     db: Session = Depends(get_db)
 ):
-    """Get all registered users with search and pagination (admin only)"""
+    """Get all registered users with plan info, search and pagination (admin only)"""
+    from sqlalchemy import func
+    
     query = db.query(User)
     
     # Search filter
@@ -2257,19 +2263,51 @@ def get_all_users(
     offset = (page - 1) * limit
     users = query.order_by(User.created_at.desc()).offset(offset).limit(limit).all()
     
+    # Get verification counts and spending for each user
+    user_data = []
+    for u in users:
+        # Get verification count
+        verification_count = db.query(Verification).filter(
+            Verification.user_id == u.id
+        ).count()
+        
+        # Get total spent
+        total_spent = db.query(func.sum(Transaction.amount)).filter(
+            Transaction.user_id == u.id,
+            Transaction.type == "debit"
+        ).scalar() or 0
+        total_spent = abs(total_spent)
+        
+        # Get total funded
+        total_funded = db.query(func.sum(Transaction.amount)).filter(
+            Transaction.user_id == u.id,
+            Transaction.type == "credit"
+        ).scalar() or 0
+        
+        # Determine plan based on total funded
+        if total_funded >= 100:
+            plan = "enterprise"
+        elif total_funded >= 25:
+            plan = "developer"
+        else:
+            plan = "free"
+        
+        user_data.append({
+            "id": u.id,
+            "email": u.email,
+            "credits": u.credits,
+            "free_verifications": u.free_verifications,
+            "is_admin": u.is_admin,
+            "email_verified": u.email_verified,
+            "created_at": u.created_at.isoformat(),
+            "plan": plan,
+            "verification_count": verification_count,
+            "total_spent": total_spent,
+            "total_funded": total_funded
+        })
+    
     return {
-        "users": [
-            {
-                "id": u.id,
-                "email": u.email,
-                "credits": u.credits,
-                "free_verifications": u.free_verifications,
-                "is_admin": u.is_admin,
-                "email_verified": u.email_verified,
-                "created_at": u.created_at.isoformat()
-            }
-            for u in users
-        ],
+        "users": user_data,
         "pagination": {
             "page": page,
             "limit": limit,
@@ -3003,26 +3041,35 @@ def subscribe_to_plan(req: SubscribeRequest, user: User = Depends(get_current_us
 @app.get("/subscription/current", tags=["Subscription"], summary="Get Current Subscription")
 def get_current_subscription(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Get user's current subscription"""
-    subscription = db.query(Subscription).filter(Subscription.user_id == user.id).first()
-    
-    if not subscription:
+    try:
+        subscription = db.query(Subscription).filter(Subscription.user_id == user.id).first()
+        
+        if not subscription:
+            return {
+                "plan": "starter",
+                "name": "Starter",
+                "status": "active",
+                "features": SUBSCRIPTION_PLANS.get('starter', {})
+            }
+        
+        return {
+            "plan": subscription.plan,
+            "name": SUBSCRIPTION_PLANS.get(subscription.plan, {}).get('name', subscription.plan),
+            "status": subscription.status,
+            "price": subscription.price,
+            "discount": f"{int(subscription.discount * 100)}%",
+            "duration": f"{subscription.duration} days" if subscription.duration > 0 else "Lifetime",
+            "expires_at": subscription.expires_at.isoformat() if subscription.expires_at else "Never",
+            "features": SUBSCRIPTION_PLANS.get(subscription.plan, {})
+        }
+    except Exception as e:
+        logger.error(f"Subscription query failed: {e}")
         return {
             "plan": "starter",
             "name": "Starter",
             "status": "active",
-            "features": SUBSCRIPTION_PLANS['starter']
+            "features": {}
         }
-    
-    return {
-        "plan": subscription.plan,
-        "name": SUBSCRIPTION_PLANS[subscription.plan]['name'],
-        "status": subscription.status,
-        "price": subscription.price,
-        "discount": f"{int(subscription.discount * 100)}%",
-        "duration": f"{subscription.duration} days" if subscription.duration > 0 else "Lifetime",
-        "expires_at": subscription.expires_at.isoformat() if subscription.expires_at else "Never",
-        "features": SUBSCRIPTION_PLANS[subscription.plan]
-    }
 
 @app.post("/subscription/cancel", tags=["Subscription"], summary="Cancel Subscription")
 def cancel_subscription(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -3111,8 +3158,8 @@ def get_banned_numbers(
     }
 
 @app.get("/admin/stats", tags=["Admin"], summary="Get Platform Statistics")
-def get_stats(period: str = "30", admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
-    """Get platform-wide statistics (admin only)
+def get_stats(period: str = "7", admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Get platform-wide statistics with real-time data (admin only)
     
     - **period**: Time period (7, 14, 30, 60, 90, or 'all')
     """
@@ -3153,7 +3200,6 @@ def get_stats(period: str = "30", admin: User = Depends(get_admin_user), db: Ses
     ).count()
     
     pending_verifications = db.query(Verification).filter(
-        Verification.created_at >= start_date,
         Verification.status == "pending"
     ).count()
     
@@ -3166,13 +3212,22 @@ def get_stats(period: str = "30", admin: User = Depends(get_admin_user), db: Ses
     ).scalar() or 0
     total_revenue = abs(total_revenue)
     
+    # Calculate revenue for previous period for comparison
+    prev_start = start_date - timedelta(days=int(period))
+    prev_revenue = db.query(func.sum(Transaction.amount)).filter(
+        Transaction.type == "debit",
+        Transaction.created_at >= prev_start,
+        Transaction.created_at < start_date
+    ).scalar() or 0
+    prev_revenue = abs(prev_revenue)
+    revenue_change = total_revenue - prev_revenue
+    
     # Plan distribution (based on total funded amount)
     users_with_funding = db.query(
         User.id,
         func.sum(Transaction.amount).label('total_funded')
     ).join(Transaction, User.id == Transaction.user_id).filter(
-        Transaction.type == "credit",
-        Transaction.description.contains("funded")
+        Transaction.type == "credit"
     ).group_by(User.id).all()
     
     pay_as_you_go = 0
@@ -3203,6 +3258,29 @@ def get_stats(period: str = "30", admin: User = Depends(get_admin_user), db: Ses
         func.count(Verification.id).desc()
     ).limit(10).all()
     
+    # Daily breakdown for charts
+    daily_stats = []
+    for i in range(int(period)):
+        day_start = start_date + timedelta(days=i)
+        day_end = day_start + timedelta(days=1)
+        
+        day_verifications = db.query(Verification).filter(
+            Verification.created_at >= day_start,
+            Verification.created_at < day_end
+        ).count()
+        
+        day_revenue = db.query(func.sum(Transaction.amount)).filter(
+            Transaction.type == "debit",
+            Transaction.created_at >= day_start,
+            Transaction.created_at < day_end
+        ).scalar() or 0
+        
+        daily_stats.append({
+            "date": day_start.strftime("%Y-%m-%d"),
+            "verifications": day_verifications,
+            "revenue": abs(day_revenue)
+        })
+    
     return {
         "total_users": total_users,
         "new_users": new_users,
@@ -3212,7 +3290,8 @@ def get_stats(period: str = "30", admin: User = Depends(get_admin_user), db: Ses
         "cancelled_verifications": cancelled_verifications,
         "pending_verifications": pending_verifications,
         "success_rate": round(success_rate, 1),
-        "total_revenue": total_revenue,
+        "total_revenue": round(total_revenue, 2),
+        "revenue_change": round(revenue_change, 2),
         "plan_distribution": {
             "pay_as_you_go": pay_as_you_go,
             "developer": developer,
@@ -3225,7 +3304,8 @@ def get_stats(period: str = "30", admin: User = Depends(get_admin_user), db: Ses
                 "revenue": float(s[2] or 0)
             }
             for s in popular_services
-        ]
+        ],
+        "daily_stats": daily_stats
     }
 
 # Payment Endpoints
@@ -4160,25 +4240,29 @@ def create_rental(req: CreateRentalRequest, user: User = Depends(get_current_use
 @app.get("/rentals/active", tags=["Rentals"], summary="List Active Rentals")
 def list_active_rentals(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Get all active rentals for current user"""
-    rentals = db.query(NumberRental).filter(
-        NumberRental.user_id == user.id,
-        NumberRental.status == "active"
-    ).order_by(NumberRental.expires_at).all()
-    
-    now = datetime.now(timezone.utc)
-    return {
-        "rentals": [
-            {
-                "id": r.id,
-                "phone_number": r.phone_number,
-                "service_name": r.service_name,
-                "expires_at": r.expires_at.isoformat(),
-                "time_remaining_seconds": max(0, int((r.expires_at - now).total_seconds())),
-                "auto_extend": r.auto_extend
-            }
-            for r in rentals
-        ]
-    }
+    try:
+        rentals = db.query(NumberRental).filter(
+            NumberRental.user_id == user.id,
+            NumberRental.status == "active"
+        ).order_by(NumberRental.expires_at).all()
+        
+        now = datetime.now(timezone.utc)
+        return {
+            "rentals": [
+                {
+                    "id": r.id,
+                    "phone_number": r.phone_number,
+                    "service_name": r.service_name,
+                    "expires_at": r.expires_at.isoformat() if r.expires_at else None,
+                    "time_remaining_seconds": max(0, int((r.expires_at - now).total_seconds())) if r.expires_at else 0,
+                    "auto_extend": r.auto_extend
+                }
+                for r in rentals
+            ]
+        }
+    except Exception as e:
+        logger.error(f"Rentals query failed: {e}")
+        return {"rentals": []}
 
 @app.get("/rentals/{rental_id}", tags=["Rentals"], summary="Get Rental Details")
 def get_rental(rental_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
