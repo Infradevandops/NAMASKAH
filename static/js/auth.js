@@ -158,7 +158,13 @@ async function checkAuth() {
         
         if (res.ok) {
             const user = await res.json();
-            console.log('User loaded:', user.email);
+            console.log('User loaded:', user);
+            
+            if (!user || !user.email) {
+                console.error('Invalid user data:', user);
+                logout();
+                return;
+            }
             
             // Update UI
             document.getElementById('user-email').textContent = user.email;
