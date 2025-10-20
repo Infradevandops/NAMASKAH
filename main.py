@@ -163,45 +163,21 @@ TEXTVERIFIED_EMAIL = os.getenv("TEXTVERIFIED_EMAIL")
 USD_TO_NAMASKAH = 0.5  # 1 USD = 0.5N
 NAMASKAH_TO_USD = 2.0  # 1N = 2 USD
 
-# SMS Verification Pricing (in Namaskah coins N)
+# Import optimized pricing
+from pricing_config import (
+    SERVICE_TIERS, SUBSCRIPTION_PLANS, RENTAL_HOURLY,
+    RENTAL_SERVICE_SPECIFIC, RENTAL_GENERAL_USE, PREMIUM_ADDONS,
+    VOICE_PREMIUM, get_service_tier, get_service_price, calculate_rental_cost
+)
+
+# Legacy pricing (deprecated)
 SMS_PRICING = {
-    'popular': 1.0,        # WhatsApp, Instagram, Facebook, Telegram, etc.
-    'general': 1.25        # Unlisted services
+    'popular': 1.0,
+    'general': 1.25
 }
 
-# Voice adds N0.25 to SMS price
-VOICE_PREMIUM = 0.25
-
-# Subscription Plans
-SUBSCRIPTION_PLANS = {
-    'starter': {
-        'name': 'Starter',
-        'duration': 7,  # 7 days
-        'price': 12.5,  # N12.5 = $25
-        'discount': 0.0,  # No discount
-        'area_code': False,
-        'carrier': False,
-        'description': 'Random numbers, 7 days'
-    },
-    'pro': {
-        'name': 'Pro',
-        'duration': 30,  # 30 days (1 month)
-        'price': 25.0,  # N25 = $50
-        'discount': 0.20,  # 20% discount
-        'area_code': True,
-        'carrier': False,
-        'description': 'Choose area code, 30 days, 20% discount'
-    },
-    'turbo': {
-        'name': 'Turbo',
-        'duration': 0,  # Lifetime
-        'price': 75.0,  # N75 = $150
-        'discount': 0.35,  # 35% discount
-        'area_code': True,
-        'carrier': True,
-        'description': 'Choose area code + carrier, lifetime, 35% discount'
-    }
-}
+# Subscription Plans (now imported from pricing_config.py)
+# Legacy plans kept for backward compatibility
 
 VERIFICATION_COST = SMS_PRICING['popular']  # Default
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
@@ -711,18 +687,31 @@ class TextVerifiedClient:
         self.api_key = TEXTVERIFIED_API_KEY
         self.email = TEXTVERIFIED_EMAIL
         self.token = None
+        self.token_expires = None
 
-    def get_token(self):
-        if self.token:
+    def get_token(self, force_refresh=False):
+        """Get authentication token with automatic refresh"""
+        # Check if token exists and is not expired
+        if self.token and not force_refresh:
+            if self.token_expires and datetime.now(timezone.utc) < self.token_expires:
+                return self.token
+        
+        # Get new token
+        try:
+            headers = {"X-API-KEY": self.api_key, "X-API-USERNAME": self.email}
+            r = requests.post(f"{self.base_url}/api/pub/v2/auth", headers=headers, timeout=10)
+            r.raise_for_status()
+            self.token = r.json()["token"]
+            # Token expires in 1 hour, refresh after 50 minutes
+            self.token_expires = datetime.now(timezone.utc) + timedelta(minutes=50)
+            logger.info("✅ TextVerified token refreshed")
             return self.token
-        headers = {"X-API-KEY": self.api_key, "X-API-USERNAME": self.email}
-        r = requests.post(f"{self.base_url}/api/pub/v2/auth", headers=headers)
-        r.raise_for_status()
-        self.token = r.json()["token"]
-        return self.token
+        except requests.exceptions.RequestException as e:
+            logger.error(f"❌ TextVerified auth failed: {e}")
+            raise HTTPException(status_code=503, detail=f"SMS provider authentication failed: {str(e)}")
 
     def create_verification(self, service_name: str, capability: str = "sms", area_code: str = None, carrier: str = None):
-        headers = {"Authorization": f"Bearer {self.get_token()}"}
+        """Create verification with automatic token refresh on 401"""
         payload = {"serviceName": service_name, "capability": capability}
         
         # Add filters if provided
@@ -731,31 +720,82 @@ class TextVerifiedClient:
         if carrier:
             payload["carrier"] = carrier
         
-        r = requests.post(
-            f"{self.base_url}/api/pub/v2/verifications",
-            headers=headers,
-            json=payload
-        )
-        r.raise_for_status()
-        return r.headers.get("Location", "").split("/")[-1]
+        # Try with current token
+        try:
+            headers = {"Authorization": f"Bearer {self.get_token()}"}
+            r = requests.post(
+                f"{self.base_url}/api/pub/v2/verifications",
+                headers=headers,
+                json=payload,
+                timeout=15
+            )
+            r.raise_for_status()
+            return r.headers.get("Location", "").split("/")[-1]
+        except requests.exceptions.HTTPError as e:
+            # If 401, refresh token and retry once
+            if e.response.status_code == 401:
+                logger.warning("Token expired, refreshing...")
+                headers = {"Authorization": f"Bearer {self.get_token(force_refresh=True)}"}
+                r = requests.post(
+                    f"{self.base_url}/api/pub/v2/verifications",
+                    headers=headers,
+                    json=payload,
+                    timeout=15
+                )
+                r.raise_for_status()
+                return r.headers.get("Location", "").split("/")[-1]
+            raise
 
     def get_verification(self, verification_id: str):
-        headers = {"Authorization": f"Bearer {self.get_token()}"}
-        r = requests.get(f"{self.base_url}/api/pub/v2/verifications/{verification_id}", headers=headers)
-        r.raise_for_status()
-        return r.json()
+        """Get verification with automatic token refresh on 401"""
+        try:
+            headers = {"Authorization": f"Bearer {self.get_token()}"}
+            r = requests.get(f"{self.base_url}/api/pub/v2/verifications/{verification_id}", 
+                           headers=headers, timeout=10)
+            r.raise_for_status()
+            return r.json()
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                headers = {"Authorization": f"Bearer {self.get_token(force_refresh=True)}"}
+                r = requests.get(f"{self.base_url}/api/pub/v2/verifications/{verification_id}", 
+                               headers=headers, timeout=10)
+                r.raise_for_status()
+                return r.json()
+            raise
 
     def get_messages(self, verification_id: str):
-        headers = {"Authorization": f"Bearer {self.get_token()}"}
-        r = requests.get(f"{self.base_url}/api/pub/v2/sms?reservationId={verification_id}", headers=headers)
-        r.raise_for_status()
-        return [sms["smsContent"] for sms in r.json().get("data", [])]
+        """Get messages with automatic token refresh on 401"""
+        try:
+            headers = {"Authorization": f"Bearer {self.get_token()}"}
+            r = requests.get(f"{self.base_url}/api/pub/v2/sms?reservationId={verification_id}", 
+                           headers=headers, timeout=10)
+            r.raise_for_status()
+            return [sms["smsContent"] for sms in r.json().get("data", [])]
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                headers = {"Authorization": f"Bearer {self.get_token(force_refresh=True)}"}
+                r = requests.get(f"{self.base_url}/api/pub/v2/sms?reservationId={verification_id}", 
+                               headers=headers, timeout=10)
+                r.raise_for_status()
+                return [sms["smsContent"] for sms in r.json().get("data", [])]
+            raise
 
     def cancel_verification(self, verification_id: str):
-        headers = {"Authorization": f"Bearer {self.get_token()}"}
-        r = requests.post(f"{self.base_url}/api/pub/v2/verifications/{verification_id}/cancel", headers=headers)
-        r.raise_for_status()
-        return True
+        """Cancel verification with automatic token refresh on 401"""
+        try:
+            headers = {"Authorization": f"Bearer {self.get_token()}"}
+            r = requests.post(f"{self.base_url}/api/pub/v2/verifications/{verification_id}/cancel", 
+                            headers=headers, timeout=10)
+            r.raise_for_status()
+            return True
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                headers = {"Authorization": f"Bearer {self.get_token(force_refresh=True)}"}
+                r = requests.post(f"{self.base_url}/api/pub/v2/verifications/{verification_id}/cancel", 
+                                headers=headers, timeout=10)
+                r.raise_for_status()
+                return True
+            raise
 
 tv_client = TextVerifiedClient()
 
@@ -1212,20 +1252,90 @@ def emergency_admin_reset(secret: str, db: Session = Depends(get_db)):
 
 @app.get("/services/list", tags=["System"], summary="List All Services")
 def get_services_list():
-    """Get complete list of supported services with categories and pricing
+    """Get complete list of supported services with categories and pricing tiers
     
     Returns:
     - categories: Services grouped by category
-    - uncategorized: Services without category
-    - pricing: Cost per verification type
+    - tiers: Services grouped by pricing tier
+    - pricing: Cost per tier
     """
     try:
         import json
         with open('services_categorized.json', 'r') as f:
             data = json.load(f)
+        
+        # Add tier information
+        data['tiers'] = {
+            'tier1': {
+                'name': 'High-Demand',
+                'price': 0.75,
+                'price_usd': 1.50,
+                'services': SERVICE_TIERS['tier1']['services'],
+                'success_rate': 98
+            },
+            'tier2': {
+                'name': 'Standard',
+                'price': 1.00,
+                'price_usd': 2.00,
+                'services': SERVICE_TIERS['tier2']['services'],
+                'success_rate': 95
+            },
+            'tier3': {
+                'name': 'Premium',
+                'price': 1.50,
+                'price_usd': 3.00,
+                'services': SERVICE_TIERS['tier3']['services'],
+                'success_rate': 90
+            },
+            'tier4': {
+                'name': 'Specialty',
+                'price': 2.00,
+                'price_usd': 4.00,
+                'services': [],
+                'success_rate': 85
+            }
+        }
+        
         return data
     except:
-        return {"categories": {}, "uncategorized": [], "pricing": {"categorized": 0.50, "uncategorized": 0.75}}
+        return {"categories": {}, "uncategorized": [], "tiers": {}}
+
+@app.get("/services/price/{service_name}", tags=["System"], summary="Get Service Price")
+def get_service_price_endpoint(service_name: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get dynamic price for a service based on user's plan and volume"""
+    # Get user's subscription
+    subscription = db.query(Subscription).filter(
+        Subscription.user_id == user.id,
+        Subscription.status == "active"
+    ).first()
+    user_plan = subscription.plan if subscription else 'starter'
+    
+    # Get monthly count
+    month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0)
+    monthly_count = db.query(Verification).filter(
+        Verification.user_id == user.id,
+        Verification.created_at >= month_start
+    ).count()
+    
+    # Calculate price
+    tier = get_service_tier(service_name)
+    base_price = get_service_price(service_name, user_plan, monthly_count)
+    
+    return {
+        "service": service_name,
+        "tier": tier,
+        "tier_name": SERVICE_TIERS[tier]['name'],
+        "base_price": base_price,
+        "base_price_usd": base_price * 2,
+        "user_plan": user_plan,
+        "monthly_verifications": monthly_count,
+        "voice_premium": VOICE_PREMIUM,
+        "addons": {
+            "custom_area_code": PREMIUM_ADDONS['custom_area_code'],
+            "guaranteed_carrier": PREMIUM_ADDONS['guaranteed_carrier'],
+            "priority_queue": PREMIUM_ADDONS['priority_queue']
+        }
+    }
 
 @app.get("/services/status", tags=["System"], summary="Get Service Status")
 def get_services_status(db: Session = Depends(get_db)):
@@ -1780,15 +1890,55 @@ def export_user_transactions(user: User = Depends(get_current_user), db: Session
     )
 
 @app.post("/verify/create", tags=["Verification"], summary="Create SMS/Voice Verification")
-def create_verification(req: CreateVerificationRequest, db: Session = Depends(get_db)):
-    """Create new SMS or voice verification - NO AUTH REQUIRED
+def create_verification(req: CreateVerificationRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Create new SMS or voice verification
     
     - **service_name**: Service identifier (e.g., 'whatsapp', 'telegram')
     - **capability**: 'sms' or 'voice'
+    - **area_code**: Optional custom area code (+$4)
+    - **carrier**: Optional guaranteed carrier (+$6)
     """
-    # NO AUTH MODE - Free access for testing
-    cost = 0
-    user_id = "guest"
+    # Get user's subscription plan
+    subscription = db.query(Subscription).filter(
+        Subscription.user_id == user.id,
+        Subscription.status == "active"
+    ).first()
+    user_plan = subscription.plan if subscription else 'starter'
+    
+    # Get monthly verification count for volume discount
+    from datetime import timedelta
+    month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0)
+    monthly_count = db.query(Verification).filter(
+        Verification.user_id == user.id,
+        Verification.created_at >= month_start
+    ).count()
+    
+    # Calculate base cost using dynamic pricing
+    cost = get_service_price(req.service_name, user_plan, monthly_count)
+    
+    # Add voice premium if voice verification
+    if req.capability == 'voice':
+        cost += VOICE_PREMIUM
+    
+    # Add premium add-on costs
+    if req.area_code:
+        cost += PREMIUM_ADDONS['custom_area_code']
+    if req.carrier:
+        cost += PREMIUM_ADDONS['guaranteed_carrier']
+    
+    # Check if user has free verifications
+    plan_data = SUBSCRIPTION_PLANS[user_plan]
+    free_limit = plan_data.get('free_verifications', 0)
+    
+    if free_limit == -1 or (user.free_verifications > 0 and free_limit > 0):
+        # Use free verification
+        if user.free_verifications > 0:
+            user.free_verifications -= 1
+        cost = 0
+    elif user.credits < cost:
+        raise HTTPException(status_code=402, detail=f"Insufficient credits. Need N{cost}, have N{user.credits}")
+    
+    user_id = user.id
     
     # Create verification with filters
     try:
@@ -1803,6 +1953,13 @@ def create_verification(req: CreateVerificationRequest, db: Session = Depends(ge
         print(f"TextVerified API error: {e}")
         raise HTTPException(status_code=503, detail=f"Verification service unavailable: {str(e)}")
     
+    # Deduct credits if not free
+    if cost > 0:
+        user.credits -= cost
+    
+    # Get service tier for tracking
+    tier = get_service_tier(req.service_name)
+    
     verification = Verification(
         id=verification_id,
         user_id=user_id,
@@ -1813,6 +1970,17 @@ def create_verification(req: CreateVerificationRequest, db: Session = Depends(ge
         cost=cost
     )
     db.add(verification)
+    
+    # Create transaction if cost > 0
+    if cost > 0:
+        db.add(Transaction(
+            id=f"txn_{datetime.now(timezone.utc).timestamp()}",
+            user_id=user.id,
+            amount=-cost,
+            type="debit",
+            description=f"{req.service_name} verification ({tier})"
+        ))
+    
     db.commit()
     
     return {
@@ -1888,28 +2056,17 @@ def get_voice_call(verification_id: str, user: User = Depends(get_current_user),
     }
 
 @app.post("/verify/{verification_id}/retry", tags=["Verification"], summary="Retry Verification")
-def retry_verification(verification_id: str, retry_type: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def retry_verification(verification_id: str, retry_type: str, db: Session = Depends(get_db)):
     """Retry verification with voice, same number, or new number
     
     - **retry_type**: 'voice', 'same', 'new'
     """
     verification = db.query(Verification).filter(
-        Verification.id == verification_id,
-        Verification.user_id == user.id
+        Verification.id == verification_id
     ).first()
     
     if not verification:
         raise HTTPException(status_code=404, detail="Verification not found")
-    
-    # Refund original SMS cost
-    user.credits += verification.cost
-    db.add(Transaction(
-        id=f"txn_{datetime.now(timezone.utc).timestamp()}",
-        user_id=user.id,
-        amount=verification.cost,
-        type="credit",
-        description=f"Refund for failed {verification.service_name} verification"
-    ))
     
     # Mark number as banned if no SMS received
     # Extract area code and carrier from phone number
@@ -1945,85 +2102,8 @@ def retry_verification(verification_id: str, retry_type: str, user: User = Depen
     
     verification.status = "cancelled"
     
-    if retry_type == "voice":
-        # Create voice verification
-        cost = SMS_PRICING['popular'] + VOICE_PREMIUM
-        if user.credits < cost:
-            raise HTTPException(status_code=402, detail=f"Insufficient credits for voice. Need N{cost}")
-        
-        user.credits -= cost
-        
-        try:
-            new_verification_id = tv_client.create_verification(
-                verification.service_name,
-                "voice"
-            )
-            details = tv_client.get_verification(new_verification_id)
-            
-            new_verification = Verification(
-                id=new_verification_id,
-                user_id=user.id,
-                service_name=verification.service_name,
-                phone_number=details.get("number"),
-                capability="voice",
-                status="pending",
-                cost=cost
-            )
-            db.add(new_verification)
-            db.add(Transaction(
-                id=f"txn_{datetime.now(timezone.utc).timestamp()}",
-                user_id=user.id,
-                amount=-cost,
-                type="debit",
-                description=f"Voice verification for {verification.service_name}"
-            ))
-            db.commit()
-            
-            return {
-                "id": new_verification.id,
-                "phone_number": new_verification.phone_number,
-                "capability": "voice",
-                "status": "pending",
-                "cost": cost,
-                "message": "Switched to voice verification"
-            }
-        except Exception as e:
-            user.credits += cost
-            db.rollback()
-            raise HTTPException(status_code=503, detail=f"Voice verification failed: {str(e)}")
-    
-    elif retry_type == "same":
-        # Retry with same number
-        cost = verification.cost
-        if user.credits < cost:
-            raise HTTPException(status_code=402, detail=f"Insufficient credits. Need N{cost}")
-        
-        user.credits -= cost
-        verification.status = "pending"
-        db.add(Transaction(
-            id=f"txn_{datetime.now(timezone.utc).timestamp()}",
-            user_id=user.id,
-            amount=-cost,
-            type="debit",
-            description=f"Retry {verification.service_name} with same number"
-        ))
-        db.commit()
-        
-        return {
-            "id": verification.id,
-            "phone_number": verification.phone_number,
-            "status": "pending",
-            "message": "Retrying with same number"
-        }
-    
-    elif retry_type == "new":
-        # Get new number
-        cost = verification.cost
-        if user.credits < cost:
-            raise HTTPException(status_code=402, detail=f"Insufficient credits. Need N{cost}")
-        
-        user.credits -= cost
-        
+    if retry_type == "new":
+        # Get new number - NO AUTH MODE
         try:
             new_verification_id = tv_client.create_verification(
                 verification.service_name,
@@ -2033,37 +2113,28 @@ def retry_verification(verification_id: str, retry_type: str, user: User = Depen
             
             new_verification = Verification(
                 id=new_verification_id,
-                user_id=user.id,
+                user_id="guest",
                 service_name=verification.service_name,
                 phone_number=details.get("number"),
                 capability=verification.capability,
                 status="pending",
-                cost=cost
+                cost=0
             )
             db.add(new_verification)
-            db.add(Transaction(
-                id=f"txn_{datetime.now(timezone.utc).timestamp()}",
-                user_id=user.id,
-                amount=-cost,
-                type="debit",
-                description=f"New number for {verification.service_name}"
-            ))
             db.commit()
             
             return {
                 "id": new_verification.id,
                 "phone_number": new_verification.phone_number,
                 "status": "pending",
-                "cost": cost,
+                "cost": 0,
                 "message": "New number assigned"
             }
         except Exception as e:
-            user.credits += cost
-            db.rollback()
             raise HTTPException(status_code=503, detail=f"Failed to get new number: {str(e)}")
     
     else:
-        raise HTTPException(status_code=400, detail="Invalid retry_type. Use 'voice', 'same', or 'new'")
+        raise HTTPException(status_code=400, detail="Invalid retry_type. Use 'new' only")
 
 @app.delete("/verify/{verification_id}", tags=["Verification"], summary="Cancel Verification")
 def cancel_verification(verification_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -3862,55 +3933,7 @@ class SystemConfig(Base):
 
 Base.metadata.create_all(bind=engine)
 
-# Rental Pricing (in Namaskah coins N)
-# Service-Specific Rentals (for single service like WhatsApp)
-RENTAL_SERVICE_SPECIFIC = {
-    168: 5.0,      # 7 days
-    336: 9.0,      # 14 days
-    720: 16.0,     # 30 days
-    1440: 28.0,    # 60 days
-    2160: 38.0,    # 90 days
-    8760: 50.0     # 365 days
-}
-
-# General Use Rentals (can receive from any service)
-RENTAL_GENERAL_USE = {
-    168: 6.0,      # 7 days
-    336: 11.0,     # 14 days
-    720: 20.0,     # 30 days
-    1440: 35.0,    # 60 days
-    2160: 48.0,    # 90 days
-    8760: 80.0     # 365 days
-}
-
-# Rental modes
-RENTAL_MODES = {
-    'always_ready': 1.0,    # Full price - always active
-    'always_active': 1.0,   # Alias
-    'manual': 0.7           # 30% discount - needs activation
-}
-
-def calculate_rental_cost(hours: float, service_name: str = 'general', mode: str = 'always_active') -> float:
-    """Calculate rental cost based on duration, service, and mode (in N)"""
-    # Minimum 7 days (168 hours)
-    if hours < 168:
-        hours = 168
-    
-    # Determine if service-specific or general use
-    is_general = service_name.lower() in ['general', 'unlisted', 'any']
-    pricing_table = RENTAL_GENERAL_USE if is_general else RENTAL_SERVICE_SPECIFIC
-    
-    # Get base price
-    if hours in pricing_table:
-        base_cost = pricing_table[hours]
-    else:
-        # Calculate proportional cost based on 7-day rate
-        base_cost = round((hours / 168) * pricing_table[168], 2)
-    
-    # Apply mode discount
-    mode_multiplier = RENTAL_MODES.get(mode, RENTAL_MODES['always_active'])
-    
-    return round(base_cost * mode_multiplier, 2)
+# Rental pricing now imported from pricing_config.py
 
 def calculate_refund(rental: NumberRental) -> float:
     """Calculate refund for early release (50% of unused time, min 1hr used)"""
@@ -4042,7 +4065,16 @@ def create_rental(req: CreateRentalRequest, user: User = Depends(get_current_use
     
     # Default to always_ready mode if not specified
     mode = getattr(req, 'mode', 'always_ready')
-    cost = calculate_rental_cost(req.duration_hours, req.service_name, mode)
+    auto_renew = getattr(req, 'auto_extend', False)
+    
+    # Calculate cost with new pricing
+    cost = calculate_rental_cost(
+        req.duration_hours, 
+        req.service_name, 
+        mode, 
+        auto_renew,
+        bulk_count=1
+    )
     
     if user.credits < cost:
         raise HTTPException(status_code=402, detail=f"Insufficient credits. Need N{cost}, have N{user.credits}")
