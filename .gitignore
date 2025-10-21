@@ -110,3 +110,4 @@ COMMIT_MESSAGE.txt
 test_*.py
 !tests/test_*.py
 test_results.json
+.env.production

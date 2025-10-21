@@ -622,6 +622,193 @@ button:active {
     .crypto-option { padding: 12px; }
 }
 
+/* Crypto Payment Modal Styles */
+.crypto-payment-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+    padding: 20px;
+}
+
+.crypto-address-container {
+    background: #f9fafb;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 15px 0;
+    text-align: center;
+    position: relative;
+}
+
+.crypto-address {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    word-break: break-all;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    margin: 10px 0 15px 0;
+    color: #374151;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.crypto-copy-btn {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.crypto-copy-btn:hover {
+    background: #059669;
+    transform: translateY(-1px);
+}
+
+.crypto-instructions {
+    background: #fef3c7;
+    border: 2px solid #f59e0b;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 15px 0;
+}
+
+.crypto-instructions h4 {
+    color: #92400e;
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.crypto-instructions ul {
+    color: #92400e;
+    margin: 0;
+    padding-left: 20px;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.crypto-instructions li {
+    margin-bottom: 6px;
+}
+
+.crypto-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.crypto-actions button {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.crypto-confirm-btn {
+    background: #10b981;
+    color: white;
+}
+
+.crypto-confirm-btn:hover {
+    background: #059669;
+}
+
+.crypto-cancel-btn {
+    background: #ef4444;
+    color: white;
+}
+
+.crypto-cancel-btn:hover {
+    background: #dc2626;
+}
+
+/* Crypto Option Grid */
+#crypto-options {
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.crypto-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+@media (max-width: 480px) {
+    .crypto-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .crypto-address {
+        font-size: 12px;
+        padding: 12px;
+    }
+    
+    .crypto-actions {
+        flex-direction: column;
+    }
+    
+    .crypto-payment-modal {
+        padding: 10px;
+    }
+}
+
+/* Enhanced crypto option hover effects */
+.crypto-option > div {
+    position: relative;
+    overflow: hidden;
+}
+
+.crypto-option > div::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transition: left 0.5s;
+}
+
+.crypto-option:hover > div::before {
+    left: 100%;
+}
+
 .auto-refresh {
     display: inline-block;
     padding: 3px 6px;
