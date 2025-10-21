@@ -163,11 +163,17 @@ TEXTVERIFIED_EMAIL = os.getenv("TEXTVERIFIED_EMAIL")
 USD_TO_NAMASKAH = 0.5  # 1 USD = 0.5N
 NAMASKAH_TO_USD = 2.0  # 1N = 2 USD
 
-# Import optimized pricing
+# Import optimized pricing and retry mechanisms
 from pricing_config import (
-    SERVICE_TIERS, SUBSCRIPTION_PLANS, RENTAL_HOURLY,
+    SERVICE_TIERS, SUBSCRIPTION_PLANS, RENTAL_HOURLY, HOURLY_RENTAL_RULES,
     RENTAL_SERVICE_SPECIFIC, RENTAL_GENERAL_USE, PREMIUM_ADDONS,
-    VOICE_PREMIUM, get_service_tier, get_service_price, calculate_rental_cost
+    VOICE_PREMIUM, get_service_tier, get_service_price, calculate_rental_cost,
+    get_hourly_rental_price, get_rental_price_breakdown
+)
+from retry_mechanisms import (
+    retry_with_backoff, async_retry_with_backoff, PaymentRetryManager,
+    SMSRetryManager, DatabaseRetryManager, textverified_api_call,
+    paystack_api_call, check_service_health, reset_circuit_breaker
 )
 
 # Legacy pricing (deprecated)
@@ -710,8 +716,9 @@ class TextVerifiedClient:
             logger.error(f"❌ TextVerified auth failed: {e}")
             raise HTTPException(status_code=503, detail=f"SMS provider authentication failed: {str(e)}")
 
+    @retry_with_backoff(max_retries=3, circuit_breaker_key='textverified')
     def create_verification(self, service_name: str, capability: str = "sms", area_code: str = None, carrier: str = None):
-        """Create verification with automatic token refresh on 401"""
+        """Create verification with automatic token refresh and retry on 401"""
         payload = {"serviceName": service_name, "capability": capability}
         
         # Add filters if provided
@@ -723,60 +730,68 @@ class TextVerifiedClient:
         # Try with current token
         try:
             headers = {"Authorization": f"Bearer {self.get_token()}"}
-            r = requests.post(
+            r = textverified_api_call(
+                "POST",
                 f"{self.base_url}/api/pub/v2/verifications",
                 headers=headers,
-                json=payload,
-                timeout=15
+                json=payload
             )
-            r.raise_for_status()
             return r.headers.get("Location", "").split("/")[-1]
         except requests.exceptions.HTTPError as e:
             # If 401, refresh token and retry once
-            if e.response.status_code == 401:
+            if e.response and e.response.status_code == 401:
                 logger.warning("Token expired, refreshing...")
                 headers = {"Authorization": f"Bearer {self.get_token(force_refresh=True)}"}
-                r = requests.post(
+                r = textverified_api_call(
+                    "POST",
                     f"{self.base_url}/api/pub/v2/verifications",
                     headers=headers,
-                    json=payload,
-                    timeout=15
+                    json=payload
                 )
-                r.raise_for_status()
                 return r.headers.get("Location", "").split("/")[-1]
             raise
 
+    @retry_with_backoff(max_retries=2, circuit_breaker_key='textverified')
     def get_verification(self, verification_id: str):
-        """Get verification with automatic token refresh on 401"""
+        """Get verification with automatic token refresh and retry on 401"""
         try:
             headers = {"Authorization": f"Bearer {self.get_token()}"}
-            r = requests.get(f"{self.base_url}/api/pub/v2/verifications/{verification_id}", 
-                           headers=headers, timeout=10)
-            r.raise_for_status()
+            r = textverified_api_call(
+                "GET",
+                f"{self.base_url}/api/pub/v2/verifications/{verification_id}",
+                headers=headers
+            )
             return r.json()
         except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 401:
+            if e.response and e.response.status_code == 401:
                 headers = {"Authorization": f"Bearer {self.get_token(force_refresh=True)}"}
-                r = requests.get(f"{self.base_url}/api/pub/v2/verifications/{verification_id}", 
-                               headers=headers, timeout=10)
-                r.raise_for_status()
+                r = textverified_api_call(
+                    "GET",
+                    f"{self.base_url}/api/pub/v2/verifications/{verification_id}",
+                    headers=headers
+                )
                 return r.json()
             raise
 
+    @retry_with_backoff(max_retries=2, circuit_breaker_key='textverified')
     def get_messages(self, verification_id: str):
-        """Get messages with automatic token refresh on 401"""
+        """Get messages with automatic token refresh and retry on 401"""
         try:
             headers = {"Authorization": f"Bearer {self.get_token()}"}
-            r = requests.get(f"{self.base_url}/api/pub/v2/sms?reservationId={verification_id}", 
-                           headers=headers, timeout=10)
-            r.raise_for_status()
+            r = textverified_api_call(
+                "GET",
+                f"{self.base_url}/api/pub/v2/sms?reservationId={verification_id}",
+                headers=headers
+            )
             return [sms["smsContent"] for sms in r.json().get("data", [])]
         except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 401:
+            if e.response and e.response.status_code == 401:
                 headers = {"Authorization": f"Bearer {self.get_token(force_refresh=True)}"}
-                r = requests.get(f"{self.base_url}/api/pub/v2/sms?reservationId={verification_id}", 
-                               headers=headers, timeout=10)
-                r.raise_for_status()
+                r = textverified_api_call(
+                    "GET",
+                    f"{self.base_url}/api/pub/v2/sms?reservationId={verification_id}",
+                    headers=headers
+                )
                 return [sms["smsContent"] for sms in r.json().get("data", [])]
             raise
 
@@ -1264,36 +1279,26 @@ def get_services_list():
         with open('services_categorized.json', 'r') as f:
             data = json.load(f)
         
-        # Add tier information
+        # Add tier information with dynamic pricing
         data['tiers'] = {
-            'tier1': {
-                'name': 'High-Demand',
-                'price': 0.75,
-                'price_usd': 1.50,
-                'services': SERVICE_TIERS['tier1']['services'],
-                'success_rate': 98
-            },
-            'tier2': {
-                'name': 'Standard',
-                'price': 1.00,
-                'price_usd': 2.00,
-                'services': SERVICE_TIERS['tier2']['services'],
-                'success_rate': 95
-            },
-            'tier3': {
-                'name': 'Premium',
-                'price': 1.50,
-                'price_usd': 3.00,
-                'services': SERVICE_TIERS['tier3']['services'],
-                'success_rate': 90
-            },
-            'tier4': {
-                'name': 'Specialty',
-                'price': 2.00,
-                'price_usd': 4.00,
-                'services': [],
-                'success_rate': 85
+            tier_id: {
+                'name': tier_data['name'],
+                'price': tier_data['base_price'],
+                'price_usd': tier_data['base_price'] * 2,
+                'services': tier_data['services'],
+                'success_rate': tier_data['success_rate']
             }
+            for tier_id, tier_data in SERVICE_TIERS.items()
+        }
+        
+        # Add pricing plans info
+        data['plans'] = {
+            plan_id: {
+                'name': plan_data['name'],
+                'discount': plan_data['discount'],
+                'free_verifications': plan_data.get('free_verifications', 0)
+            }
+            for plan_id, plan_data in SUBSCRIPTION_PLANS.items()
         }
         
         return data
@@ -2869,54 +2874,20 @@ async def track_activity(request: Request, db: Session = Depends(get_db)):
 
 @app.get("/subscription/plans", tags=["Subscription"], summary="Get Available Plans")
 def get_subscription_plans():
-    """Get all available subscription plans"""
+    """Get all available subscription plans from pricing config"""
     return {
         "plans": [
             {
-                "id": "starter",
-                "name": "Starter",
-                "duration": "7 days",
-                "price": 12.5,
-                "price_usd": 25,
-                "discount": "0%",
-                "features": [
-                    "Random phone numbers",
-                    "Random carriers",
-                    "7 days access",
-                    "Basic support"
-                ]
-            },
-            {
-                "id": "pro",
-                "name": "Pro",
-                "duration": "30 days",
-                "price": 25.0,
-                "price_usd": 50,
-                "discount": "20%",
-                "features": [
-                    "Choose area code",
-                    "20% discount on all verifications",
-                    "30 days access",
-                    "Priority support",
-                    "API access"
-                ]
-            },
-            {
-                "id": "turbo",
-                "name": "Turbo",
-                "duration": "Lifetime",
-                "price": 75.0,
-                "price_usd": 150,
-                "discount": "35%",
-                "features": [
-                    "Choose area code",
-                    "Choose carrier (Verizon, AT&T, T-Mobile)",
-                    "35% discount on all verifications",
-                    "Lifetime access",
-                    "Premium support",
-                    "Advanced API access"
-                ]
+                "id": plan_id,
+                "name": plan_data['name'],
+                "price": plan_data['price'],
+                "price_usd": plan_data['price'] * 2,
+                "discount": f"{int(plan_data['discount'] * 100)}%",
+                "free_verifications": plan_data.get('free_verifications', 0),
+                "api_limit": plan_data.get('api_limit', 0),
+                "features": plan_data['features']
             }
+            for plan_id, plan_data in SUBSCRIPTION_PLANS.items()
         ]
     }
 
@@ -3101,6 +3072,60 @@ def get_banned_numbers(
         ]
     }
 
+@app.get("/admin/pricing/analytics", tags=["Admin"], summary="Get Pricing Analytics")
+def get_pricing_analytics(period: str = "30", admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Get pricing tier performance and revenue analytics (admin only)"""
+    from sqlalchemy import func
+    
+    days = int(period)
+    start_date = datetime.now(timezone.utc) - timedelta(days=days)
+    
+    # Tier performance
+    tier_stats = {}
+    for tier_id, tier_data in SERVICE_TIERS.items():
+        services = tier_data['services']
+        if services:
+            tier_verifications = db.query(Verification).filter(
+                Verification.service_name.in_(services),
+                Verification.created_at >= start_date
+            ).all()
+            
+            total_count = len(tier_verifications)
+            total_revenue = sum(v.cost for v in tier_verifications)
+            avg_price = total_revenue / total_count if total_count > 0 else 0
+            
+            tier_stats[tier_id] = {
+                'name': tier_data['name'],
+                'base_price': tier_data['base_price'],
+                'count': total_count,
+                'revenue': round(total_revenue, 2),
+                'avg_price': round(avg_price, 2),
+                'services': services[:5]  # Top 5 services
+            }
+    
+    # Plan distribution revenue
+    plan_revenue = {}
+    for plan_id, plan_data in SUBSCRIPTION_PLANS.items():
+        plan_subs = db.query(Subscription).filter(
+            Subscription.plan == plan_id,
+            Subscription.status == 'active'
+        ).count()
+        monthly_revenue = plan_subs * plan_data['price']
+        plan_revenue[plan_id] = {
+            'name': plan_data['name'],
+            'subscribers': plan_subs,
+            'monthly_revenue': round(monthly_revenue, 2),
+            'discount': plan_data['discount']
+        }
+    
+    return {
+        'period_days': days,
+        'tier_performance': tier_stats,
+        'plan_revenue': plan_revenue,
+        'total_tier_revenue': sum(t['revenue'] for t in tier_stats.values()),
+        'total_subscription_revenue': sum(p['monthly_revenue'] for p in plan_revenue.values())
+    }
+
 @app.get("/admin/stats", tags=["Admin"], summary="Get Platform Statistics")
 def get_stats(period: str = "7", admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Get platform-wide statistics with real-time data (admin only)
@@ -3254,6 +3279,46 @@ def get_stats(period: str = "7", admin: User = Depends(get_admin_user), db: Sess
 
 # Payment Endpoints
 # REMOVED: Mock fund_wallet endpoint - Use Paystack only
+
+@app.get("/system/health", tags=["System"], summary="System Health Check")
+def system_health():
+    """Get system health status including circuit breakers"""
+    health_status = {
+        "status": "healthy",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "services": {
+            "textverified": check_service_health("textverified"),
+            "paystack": check_service_health("paystack"),
+            "database": check_service_health("database")
+        },
+        "features": {
+            "hourly_rentals": True,
+            "retry_mechanisms": True,
+            "circuit_breakers": True,
+            "dynamic_pricing": True
+        }
+    }
+    
+    # Check if any service is down
+    for service_name, service_health in health_status["services"].items():
+        if service_health["status"] == "open":
+            health_status["status"] = "degraded"
+            break
+    
+    return health_status
+
+@app.post("/admin/system/reset-circuit-breaker", tags=["Admin"], summary="Reset Circuit Breaker")
+def admin_reset_circuit_breaker(service_name: str, admin: User = Depends(get_admin_user)):
+    """Manually reset a circuit breaker (admin only)"""
+    if service_name not in ["textverified", "paystack", "database"]:
+        raise HTTPException(status_code=400, detail="Invalid service name")
+    
+    success = reset_circuit_breaker(service_name)
+    
+    if success:
+        return {"message": f"Circuit breaker reset for {service_name}", "status": "success"}
+    else:
+        raise HTTPException(status_code=404, detail=f"Circuit breaker not found for {service_name}")
 
 @app.post("/wallet/paystack/initialize", tags=["Wallet"], summary="Initialize Paystack Payment")
 def initialize_paystack(req: FundWalletRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):

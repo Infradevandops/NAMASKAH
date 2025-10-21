@@ -6,6 +6,44 @@ let countdownSeconds = 45;
 let currentServiceName = null;
 let firstVerificationCompleted = false;
 
+// Dynamic pricing function
+async function getServicePrice(serviceName, capability = 'sms') {
+    if (!window.token) return null;
+    
+    try {
+        const res = await fetch(`${API_BASE}/services/price/${serviceName}`, {
+            headers: {'Authorization': `Bearer ${window.token}`}
+        });
+        if (res.ok) {
+            const data = await res.json();
+            return capability === 'voice' 
+                ? (data.base_price + data.voice_premium).toFixed(2)
+                : data.base_price.toFixed(2);
+        }
+    } catch (err) {
+        console.error('Price fetch error:', err);
+    }
+    return null;
+}
+
+// Get tier name for display
+function getTierName(serviceName) {
+    const tierMap = {
+        'whatsapp': 'High-Demand',
+        'telegram': 'High-Demand', 
+        'discord': 'High-Demand',
+        'google': 'High-Demand',
+        'instagram': 'Standard',
+        'facebook': 'Standard',
+        'twitter': 'Standard',
+        'tiktok': 'Standard',
+        'paypal': 'Premium',
+        'venmo': 'Premium',
+        'cashapp': 'Premium'
+    };
+    return tierMap[serviceName.toLowerCase()] || 'Specialty';
+}
+
 const serviceTimers = {
     'google': 60, 'discord': 60, 'whatsapp': 90, 'telegram': 90,
     'instagram': 120, 'facebook': 90, 'twitter': 75, 'tiktok': 90,
@@ -31,6 +69,13 @@ async function createVerification() {
         return;
     }
     
+    // Get dynamic price before creating
+    const price = await getServicePrice(service, capability);
+    if (price === null) {
+        showNotification('⚠️ Unable to get pricing. Try again.', 'error');
+        return;
+    }
+    
     showLoading(true);
     
     try {
@@ -50,7 +95,7 @@ async function createVerification() {
             currentVerificationId = data.id;
             displayVerification(data);
             document.getElementById('user-credits').textContent = data.remaining_credits.toFixed(2);
-            showNotification(`✅ Verification created! Cost: N${data.cost}`, 'success');
+            showNotification(`✅ Verification created! Cost: N${data.cost} (${getTierName(service)})`, 'success');
             startAutoRefresh();
             if (typeof loadHistory === 'function') loadHistory();
             if (typeof loadTransactions === 'function') loadTransactions(true);

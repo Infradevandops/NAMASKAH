@@ -1,12 +1,13 @@
 // Rentals Module
 let rentalMessagesCache = {};
+let currentExtendModal = null;
 
 const RENTAL_SERVICE_SPECIFIC = {
-    168: 5.0, 336: 9.0, 720: 16.0, 1440: 28.0, 2160: 38.0, 8760: 50.0
+    168: 10.0, 336: 18.0, 720: 32.5, 1440: 60.0, 2160: 85.0, 8760: 100.0
 };
 
 const RENTAL_GENERAL_USE = {
-    168: 6.0, 336: 11.0, 720: 20.0, 1440: 35.0, 2160: 48.0, 8760: 80.0
+    168: 15.0, 336: 25.0, 720: 40.0, 1440: 70.0, 2160: 95.0, 8760: 150.0
 };
 
 function showRentalModal() {
@@ -16,6 +17,76 @@ function showRentalModal() {
 
 function closeRentalModal() {
     document.getElementById('rental-modal').classList.add('hidden');
+    
+    // Clear pricing breakdown
+    const breakdownElement = document.getElementById('pricing-breakdown');
+    if (breakdownElement) {
+        breakdownElement.remove();
+    }
+    
+    // Reset form
+    document.querySelectorAll('input[name="rental-duration"]').forEach(radio => {
+        radio.checked = false;
+    });
+    document.querySelectorAll('[id*="duration-"][id*="-label"]').forEach(label => {
+        label.style.borderColor = 'transparent';
+    });
+    
+    const autoRenewCheckbox = document.getElementById('auto-renew-checkbox');
+    if (autoRenewCheckbox) {
+        autoRenewCheckbox.checked = false;
+    }
+}
+
+// Add event listeners and initialization
+document.addEventListener('DOMContentLoaded', function() {
+    // Add change listeners for dynamic pricing
+    document.addEventListener('change', function(e) {
+        if (e.target.name === 'rental-mode' || e.target.name === 'rental-duration' || e.target.id === 'auto-renew-checkbox') {
+            updateRentalPrice();
+        }
+    });
+    
+    // Add hourly rental support to existing modals
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                const rentalModal = document.getElementById('rental-modal');
+                if (rentalModal && !rentalModal.classList.contains('hidden')) {
+                    addHourlyRentalOptions();
+                    addAutoRenewOption();
+                }
+            }
+        });
+    });
+    
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+});
+
+// Add auto-renew checkbox to rental modal
+function addAutoRenewOption() {
+    const modalContent = document.querySelector('#rental-modal .modal-content');
+    if (!modalContent || modalContent.querySelector('#auto-renew-checkbox')) return;
+    
+    const autoRenewHtml = `
+        <div style="background: var(--bg-secondary); padding: 15px; border-radius: 8px; margin: 15px 0;">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                <input type="checkbox" id="auto-renew-checkbox" style="width: 18px; height: 18px;">
+                <div>
+                    <div style="font-weight: 600; color: var(--text-primary);">🔄 Auto-Renewal (10% discount)</div>
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">Automatically extend when rental expires</div>
+                </div>
+            </label>
+        </div>
+    `;
+    
+    const createButton = modalContent.querySelector('button[onclick*="createRentalNumber"]');
+    if (createButton && createButton.parentNode) {
+        createButton.parentNode.insertAdjacentHTML('beforebegin', autoRenewHtml);
+    }
 }
 
 function updateRentalPrice() {
@@ -41,13 +112,13 @@ function updateRentalPrice() {
         const days = hours / 24;
         const priceElement = document.getElementById(`price-${days}`);
         if (priceElement) {
-            priceElement.textContent = `$${(price * 2).toFixed(2)}`;
+            priceElement.textContent = `N${price.toFixed(2)}`;
         }
     });
     
     const totalElement = document.getElementById('rental-total');
     if (totalElement) {
-        totalElement.textContent = `$${(totalPrice * 2).toFixed(2)}`;
+        totalElement.textContent = `N${totalPrice.toFixed(2)}`;
     }
     
     const days = duration / 24;
@@ -254,7 +325,7 @@ async function extendRental(rentalId) {
         showLoading(false);
         
         if (res.ok) {
-            showNotification(`✅ Extended! Cost: $${data.cost}`, 'success');
+            showNotification(`✅ Extended! Cost: N${data.cost}`, 'success');
             document.getElementById('user-credits').textContent = data.remaining_credits.toFixed(2);
             loadActiveRentals();
         } else {
@@ -317,4 +388,82 @@ function selectDuration(days) {
     });
     
     updateRentalPrice();
+}
+
+function checkEmailAndShowRental() {
+    // Check if user is logged in
+    if (!window.token) {
+        showNotification('🔒 Please login first', 'error');
+        return;
+    }
+    
+    // Get current user info to check email verification
+    fetch(`${API_BASE}/auth/me`, {
+        headers: {'Authorization': `Bearer ${window.token}`}
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.email_verified) {
+            showRentalModal();
+        } else {
+            showEmailVerificationPrompt();
+        }
+    })
+    .catch(() => {
+        showNotification('⚠️ Please verify your email for rentals', 'error');
+    });
+}
+
+function showEmailVerificationPrompt() {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 500px;">
+            <h2>📬 Email Verification Required</h2>
+            <p style="color: #6b7280; margin-bottom: 20px;">Number rentals require email verification for security. Please check your email and click the verification link.</p>
+            
+            <div style="background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <span style="font-size: 20px;">ℹ️</span>
+                    <strong style="color: #92400e;">Why Email Verification?</strong>
+                </div>
+                <ul style="color: #92400e; margin: 0; padding-left: 20px; font-size: 14px;">
+                    <li>Secure your rented numbers</li>
+                    <li>Receive important rental notifications</li>
+                    <li>Enable account recovery</li>
+                    <li>Prevent unauthorized access</li>
+                </ul>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button onclick="resendVerificationEmail()" style="flex: 1; background: #10b981;">📬 Resend Email</button>
+                <button onclick="closeEmailPrompt()" style="flex: 1; background: #6b7280;">Maybe Later</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function closeEmailPrompt() {
+    const modal = document.querySelector('.modal');
+    if (modal) modal.remove();
+}
+
+async function resendVerificationEmail() {
+    try {
+        const res = await fetch(`${API_BASE}/auth/resend-verification`, {
+            method: 'POST',
+            headers: {'Authorization': `Bearer ${window.token}`}
+        });
+        
+        if (res.ok) {
+            showNotification('✅ Verification email sent! Check your inbox.', 'success');
+            closeEmailPrompt();
+        } else {
+            showNotification('⚠️ Failed to send email. Try again later.', 'error');
+        }
+    } catch (err) {
+        showNotification('🌐 Network error. Try again later.', 'error');
+    }
 }

@@ -6,15 +6,21 @@ Enterprise-grade SMS verification service providing instant temporary phone numb
 
 ### SMS Verification Service
 - Instant temporary phone numbers for receiving SMS verification codes
-- Support for 1,807+ services including WhatsApp, Telegram, Instagram, Facebook, Discord
+- Support for 1,807+ services with dynamic tier-based pricing
 - 60-120 second average delivery time
 - 95%+ success rate with automatic refunds
 - Service-specific timers for optimal delivery
 
+### Dynamic Pricing Tiers
+- **Tier 1 (High-Demand)**: N0.75 ($1.50) - WhatsApp, Telegram, Discord, Google
+- **Tier 2 (Standard)**: N1.00 ($2.00) - Instagram, Facebook, Twitter, TikTok
+- **Tier 3 (Premium)**: N1.50 ($3.00) - PayPal, Banking, Finance services
+- **Tier 4 (Specialty)**: N2.00 ($4.00) - Rare/unlisted services
+
 ### Voice Verification
 - Voice call verification with transcription and audio recording
 - Support for services requiring phone call confirmation
-- Premium pricing: SMS price + N0.25
+- Premium pricing: SMS price + N0.30 ($0.60)
 
 ### Number Rentals
 - Long-term phone number rentals (7-365 days)
@@ -27,6 +33,12 @@ Enterprise-grade SMS verification service providing instant temporary phone numb
 - Tiered pricing: Pay-as-You-Go, Developer (20% off), Enterprise (35% off)
 - Automatic refund system for failed verifications
 - Real-time payment tracking and webhook notifications
+
+### Subscription Plans
+- **Starter**: Free (1 free verification, 5/month limit)
+- **Pro**: N10.50/month (15% discount, 5 free/month, API access)
+- **Turbo**: N18/month (25% discount, 15 free/month, priority support)
+- **Enterprise**: N28/month (40% discount, 50 free/month, unlimited API)
 
 ### User Management
 - JWT-based authentication with Google OAuth integration
@@ -277,20 +289,30 @@ Change these credentials immediately after first login.
 - Symbol: N (Namaskah Coin)
 - Exchange Rate: 1N = $2 USD
 
-### Verification Pricing
-- Popular Services: N1 ($2.00)
-- General Purpose: N1.25 ($2.50)
-- Voice Verification: +N0.25 additional
+### Dynamic Verification Pricing
+- **Tier 1 (High-Demand)**: N0.75 ($1.50) - 98% success rate
+- **Tier 2 (Standard)**: N1.00 ($2.00) - 95% success rate
+- **Tier 3 (Premium)**: N1.50 ($3.00) - 90% success rate
+- **Tier 4 (Specialty)**: N2.00 ($4.00) - 85% success rate
+- **Voice Verification**: +N0.30 ($0.60) additional
 
-### Pricing Tiers
-- Pay-as-You-Go: Standard pricing
-- Developer: 20% discount (min. N25 funded)
-- Enterprise: 35% discount (min. N100 funded)
+### Volume Discounts
+- **11-50 verifications**: 5% additional discount
+- **51-100 verifications**: 10% additional discount
+- **100+ verifications**: 15% additional discount
 
-### Rental Pricing
-Service-specific rentals start at N5 ($10) for 7 days.
-General use rentals start at N6 ($12) for 7 days.
-Manual mode offers 30% discount.
+### Premium Add-ons
+- **Custom Area Code**: +N5 ($10)
+- **Guaranteed Carrier**: +N12.5 ($25)
+- **Priority Queue**: +N2.5 ($5)
+
+### Enhanced Rental Pricing
+- **Hourly Rentals**: N1-N2.5 ($2-$5) for 1-24 hours
+- **Service-Specific**: N10 ($20) for 7 days, up to N100 ($200) annually
+- **General Use**: N15 ($30) for 7 days, up to N150 ($300) annually
+- **Manual Mode**: 50% discount on all rentals
+- **Auto-Renewal**: Additional 10% discount
+- **Bulk Rentals (5+)**: Additional 15% discount
 
 ## Support
 
@@ -322,6 +344,14 @@ Report security vulnerabilities to: security@namaskah.app
 
 ## Changelog
 
+### Version 2.2.0 (2025-01-19)
+- **Dynamic Pricing System**: 4-tier pricing based on service success rates
+- **Enhanced Subscription Plans**: Pro, Turbo, Enterprise with volume discounts
+- **Smart Rental Pricing**: Hourly, bulk, and auto-renewal discounts
+- **Premium Add-ons**: Area code, carrier selection, priority queue
+- **Real-time Price Display**: Dynamic pricing in frontend
+- **Pricing Analytics**: Admin dashboard for revenue optimization
+
 ### Version 2.1.0 (2025-01-18)
 - Admin panel enhancements with verification reports
 - Mobile responsive design improvements
@@ -332,4 +362,4 @@ Report security vulnerabilities to: security@namaskah.app
 ---
 
 **Namaskah SMS** - Enterprise SMS Verification Platform
-Version 2.1.0 | Production Ready
+Version 2.2.0 | Production Ready
