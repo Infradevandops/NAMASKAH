@@ -76,7 +76,22 @@ async function createVerification() {
         return;
     }
     
+    // Get carrier and area code selections
+    const carrierSelect = document.getElementById('carrier-select');
+    const areaCodeSelect = document.getElementById('area-code-select');
+    const carrier = carrierSelect ? carrierSelect.value : null;
+    const areaCode = areaCodeSelect ? areaCodeSelect.value : null;
+    
     showLoading(true);
+    
+    // Build request body with optional carrier and area code
+    const requestBody = {
+        service_name: service, 
+        capability: capability
+    };
+    
+    if (carrier) requestBody.carrier = carrier;
+    if (areaCode) requestBody.area_code = areaCode;
     
     try {
         const res = await fetch(`${API_BASE}/verify/create`, {
@@ -85,7 +100,7 @@ async function createVerification() {
                 'Authorization': `Bearer ${window.token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({service_name: service, capability: capability})
+            body: JSON.stringify(requestBody)
         });
         
         const data = await res.json();
@@ -130,6 +145,27 @@ function displayVerification(data) {
     const statusBadge = document.getElementById('status');
     statusBadge.textContent = data.status;
     statusBadge.className = `badge ${data.status}`;
+    
+    // Display carrier and area code info if available
+    const infoContainer = document.getElementById('verification-info');
+    if (infoContainer && (data.carrier_info || data.user_selections)) {
+        let infoHTML = '';
+        
+        if (data.carrier_info && data.carrier_info.name) {
+            infoHTML += `<div class="detail-row"><strong>Carrier:</strong> <span>${data.carrier_info.full_display || data.carrier_info.name}</span></div>`;
+        }
+        
+        if (data.user_selections) {
+            if (data.user_selections.requested_carrier) {
+                infoHTML += `<div class="detail-row"><strong>Requested Carrier:</strong> <span class="requested-badge">${data.user_selections.requested_carrier}</span></div>`;
+            }
+            if (data.user_selections.requested_area_code) {
+                infoHTML += `<div class="detail-row"><strong>Requested Area Code:</strong> <span class="requested-badge">${data.user_selections.requested_area_code}</span></div>`;
+            }
+        }
+        
+        infoContainer.innerHTML = infoHTML;
+    }
     
     document.getElementById('verification-details').classList.remove('hidden');
     document.getElementById('messages-section').classList.add('hidden');
@@ -233,25 +269,28 @@ async function retryWithVoice() {
     showLoading(true);
     
     try {
-        const res = await fetch(`${API_BASE}/verify/${currentVerificationId}/retry?retry_type=voice`, {
+        const res = await fetch(`${API_BASE}/verify/${currentVerificationId}/retry`, {
             method: 'POST',
-            headers: {'Authorization': `Bearer ${window.token}`}
+            headers: {
+                'Authorization': `Bearer ${window.token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({retry_type: 'voice'})
         });
         
         const data = await res.json();
         showLoading(false);
         
         if (res.ok) {
-            currentVerificationId = data.id;
             displayVerification(data);
-            showNotification('Switched to voice verification', 'success');
+            showNotification('✅ Switched to voice verification', 'success');
             startAutoRefresh();
         } else {
-            showNotification(data.detail || 'Failed to switch to voice', 'error');
+            showNotification(`❌ ${data.detail || 'Failed to switch to voice'}`, 'error');
         }
     } catch (err) {
         showLoading(false);
-        showNotification('Network error', 'error');
+        showNotification('🌐 Network error', 'error');
     }
 }
 
@@ -260,9 +299,13 @@ async function retryWithSame() {
     showLoading(true);
     
     try {
-        const res = await fetch(`${API_BASE}/verify/${currentVerificationId}/retry?retry_type=same`, {
+        const res = await fetch(`${API_BASE}/verify/${currentVerificationId}/retry`, {
             method: 'POST',
-            headers: {'Authorization': `Bearer ${window.token}`}
+            headers: {
+                'Authorization': `Bearer ${window.token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({retry_type: 'same'})
         });
         
         const data = await res.json();
@@ -270,14 +313,14 @@ async function retryWithSame() {
         
         if (res.ok) {
             displayVerification(data);
-            showNotification('Retrying with same number', 'success');
+            showNotification('✅ Retrying with same number', 'success');
             startAutoRefresh();
         } else {
-            showNotification(data.detail || 'Failed to retry', 'error');
+            showNotification(`❌ ${data.detail || 'Failed to retry'}`, 'error');
         }
     } catch (err) {
         showLoading(false);
-        showNotification('Network error', 'error');
+        showNotification('🌐 Network error', 'error');
     }
 }
 
@@ -286,9 +329,13 @@ async function retryWithNew() {
     showLoading(true);
     
     try {
-        const res = await fetch(`${API_BASE}/verify/${currentVerificationId}/retry?retry_type=new`, {
+        const res = await fetch(`${API_BASE}/verify/${currentVerificationId}/retry`, {
             method: 'POST',
-            headers: {'Authorization': `Bearer ${window.token}`}
+            headers: {
+                'Authorization': `Bearer ${window.token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({retry_type: 'new'})
         });
         
         const data = await res.json();
@@ -297,14 +344,14 @@ async function retryWithNew() {
         if (res.ok) {
             currentVerificationId = data.id;
             displayVerification(data);
-            showNotification('New number assigned', 'success');
+            showNotification('✅ New number assigned', 'success');
             startAutoRefresh();
         } else {
-            showNotification(data.detail || 'Failed to get new number', 'error');
+            showNotification(`❌ ${data.detail || 'Failed to get new number'}`, 'error');
         }
     } catch (err) {
         showLoading(false);
-        showNotification('Network error', 'error');
+        showNotification('🌐 Network error', 'error');
     }
 }
 
@@ -491,12 +538,16 @@ function tryAnotherService() {
 }
 
 async function cancelVerification() {
-    if (!currentVerificationId) return;
+    if (!currentVerificationId) {
+        showNotification('⚠️ No active verification to cancel', 'error');
+        return;
+    }
     
-    if (!confirm('Cancel this verification?')) return;
+    if (!confirm('Cancel this verification and get refund?')) return;
     
     showLoading(true);
     stopCountdown();
+    stopAutoRefresh();
     
     try {
         const res = await fetch(`${API_BASE}/verify/${currentVerificationId}`, {
@@ -504,22 +555,33 @@ async function cancelVerification() {
             headers: {'Authorization': `Bearer ${window.token}`}
         });
         
+        const data = await res.json();
         showLoading(false);
         
         if (res.ok) {
-            const data = await res.json();
-            document.getElementById('user-credits').textContent = data.new_balance.toFixed(2);
-            showNotification(`Cancelled! Refunded ₵${data.refunded.toFixed(2)}`, 'success');
+            if (typeof updateUserCredits === 'function') {
+                updateUserCredits(data.new_balance);
+            } else {
+                document.getElementById('user-credits').textContent = data.new_balance.toFixed(2);
+            }
+            showNotification(`✅ Cancelled! Refunded N${data.refunded.toFixed(2)}`, 'success');
             clearSession();
-            loadHistory();
-            loadTransactions(true);
+            if (typeof loadHistory === 'function') loadHistory();
+            if (typeof loadTransactions === 'function') loadTransactions(true);
         } else {
-            const data = await res.json();
-            showNotification(data.detail || 'Failed to cancel', 'error');
+            if (res.status === 404) {
+                showNotification('❌ Verification not found or already cancelled', 'error');
+            } else if (res.status === 401) {
+                showNotification('🔒 Session expired. Please login again', 'error');
+                setTimeout(() => logout(), 2000);
+            } else {
+                showNotification(`❌ ${data.detail || 'Failed to cancel verification'}`, 'error');
+            }
         }
     } catch (err) {
         showLoading(false);
-        showNotification('Network error', 'error');
+        showNotification('🌐 Network error. Please try again', 'error');
+        console.error('Cancel verification error:', err);
     }
 }
 

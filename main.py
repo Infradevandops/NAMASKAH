@@ -346,7 +346,7 @@ class NumberRental(Base):
     cost = Column(Float, nullable=False)
     mode = Column(String, default="always_ready")  # always_ready or manual
     status = Column(String, default="active")  # active, expired, released
-    started_at = Column(DateTime, nullable=False)
+    started_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     expires_at = Column(DateTime, nullable=False)
     released_at = Column(DateTime)
     auto_extend = Column(Boolean, default=False)
@@ -1940,6 +1940,35 @@ def get_transactions(
         ]
     }
 
+@app.get("/wallet/transactions", tags=["Wallet"], summary="Get Wallet Transactions")
+def get_wallet_transactions(
+    type: str = None,
+    limit: int = 50,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get wallet transaction history with filtering (credits/debits) for current user"""
+    query = db.query(Transaction).filter(Transaction.user_id == user.id)
+    
+    # Filter by type
+    if type and type in ['credit', 'debit']:
+        query = query.filter(Transaction.type == type)
+    
+    transactions = query.order_by(Transaction.created_at.desc()).limit(limit).all()
+    
+    return {
+        "transactions": [
+            {
+                "id": t.id,
+                "amount": t.amount,
+                "type": t.type,
+                "description": t.description,
+                "created_at": t.created_at.isoformat()
+            }
+            for t in transactions
+        ]
+    }
+
 @app.get("/transactions/export", tags=["Wallet"], summary="Export Transactions to CSV")
 def export_user_transactions(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Export user's transactions to CSV"""
@@ -2191,56 +2220,55 @@ def get_voice_call(verification_id: str, user: User = Depends(get_current_user),
         "received_at": verification.completed_at.isoformat() if verification.completed_at else None
     }
 
+class RetryRequest(BaseModel):
+    retry_type: str
+
 @app.post("/verify/{verification_id}/retry", tags=["Verification"], summary="Retry Verification")
-def retry_verification(verification_id: str, retry_type: str, db: Session = Depends(get_db)):
+def retry_verification(verification_id: str, req: RetryRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Retry verification with voice, same number, or new number
     
     - **retry_type**: 'voice', 'same', 'new'
     """
-    verification = db.query(Verification).filter(
-        Verification.id == verification_id
-    ).first()
-    
-    if not verification:
-        raise HTTPException(status_code=404, detail="Verification not found")
-    
-    # Mark number as banned if no SMS received
-    # Extract area code and carrier from phone number
-    area_code = verification.phone_number[:3] if verification.phone_number and len(verification.phone_number) >= 10 else None
-    
-    # Try to get carrier info from TextVerified
-    carrier = None
     try:
-        details = tv_client.get_verification(verification_id)
-        carrier = details.get('carrier') or details.get('network')
-    except:
-        pass
-    
-    banned = db.query(BannedNumber).filter(
-        BannedNumber.phone_number == verification.phone_number,
-        BannedNumber.service_name == verification.service_name
-    ).first()
-    
-    if banned:
-        banned.fail_count += 1
-        banned.last_failed_at = datetime.now(timezone.utc)
-        if carrier:
-            banned.carrier = carrier
-    else:
-        banned = BannedNumber(
-            id=f"banned_{datetime.now(timezone.utc).timestamp()}",
-            phone_number=verification.phone_number,
-            service_name=verification.service_name,
-            area_code=area_code,
-            carrier=carrier
-        )
-        db.add(banned)
-    
-    verification.status = "cancelled"
-    
-    if retry_type == "new":
-        # Get new number - NO AUTH MODE
-        try:
+        verification = db.query(Verification).filter(
+            Verification.id == verification_id,
+            Verification.user_id == user.id
+        ).first()
+        
+        if not verification:
+            raise HTTPException(status_code=404, detail="Verification not found")
+        
+        if req.retry_type == "voice":
+            # Convert to voice verification
+            verification.capability = "voice"
+            verification.status = "pending"
+            db.commit()
+            
+            return {
+                "id": verification.id,
+                "phone_number": verification.phone_number,
+                "capability": "voice",
+                "status": "pending",
+                "message": "Switched to voice verification"
+            }
+        
+        elif req.retry_type == "same":
+            # Retry with same number
+            verification.status = "pending"
+            db.commit()
+            
+            return {
+                "id": verification.id,
+                "phone_number": verification.phone_number,
+                "status": "pending",
+                "message": "Retrying with same number"
+            }
+        
+        elif req.retry_type == "new":
+            # Cancel current and create new
+            verification.status = "cancelled"
+            
+            # Create new verification
             new_verification_id = tv_client.create_verification(
                 verification.service_name,
                 verification.capability
@@ -2249,7 +2277,7 @@ def retry_verification(verification_id: str, retry_type: str, db: Session = Depe
             
             new_verification = Verification(
                 id=new_verification_id,
-                user_id="guest",
+                user_id=user.id,
                 service_name=verification.service_name,
                 phone_number=details.get("number"),
                 capability=verification.capability,
@@ -2266,11 +2294,16 @@ def retry_verification(verification_id: str, retry_type: str, db: Session = Depe
                 "cost": 0,
                 "message": "New number assigned"
             }
-        except Exception as e:
-            raise HTTPException(status_code=503, detail=f"Failed to get new number: {str(e)}")
-    
-    else:
-        raise HTTPException(status_code=400, detail="Invalid retry_type. Use 'new' only")
+        
+        else:
+            raise HTTPException(status_code=400, detail="Invalid retry_type. Use 'voice', 'same', or 'new'")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Retry verification error: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to retry verification")
 
 @app.delete("/verify/{verification_id}", tags=["Verification"], summary="Cancel Verification")
 def cancel_verification(verification_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -4287,12 +4320,17 @@ Base.metadata.create_all(bind=engine)
 
 def calculate_refund(rental: NumberRental) -> float:
     """Calculate refund for early release (50% of unused time, min 1hr used)"""
-    used_hours = (datetime.now(timezone.utc) - rental.started_at).total_seconds() / 3600
-    if used_hours < 1:
-        used_hours = 1
-    unused_hours = max(0, rental.duration_hours - used_hours)
-    hourly_rate = rental.cost / rental.duration_hours
-    return round((unused_hours * hourly_rate) * 0.5, 2)
+    try:
+        started_at = rental.started_at or rental.created_at
+        used_hours = (datetime.now(timezone.utc) - started_at).total_seconds() / 3600
+        if used_hours < 1:
+            used_hours = 1
+        unused_hours = max(0, rental.duration_hours - used_hours)
+        hourly_rate = rental.cost / rental.duration_hours if rental.duration_hours > 0 else 0
+        return round((unused_hours * hourly_rate) * 0.5, 2)
+    except Exception as e:
+        logger.error(f"Refund calculation error: {e}")
+        return 0.0
 
 @app.get("/admin/pricing/services", tags=["Admin"], summary="Get All Service Pricing")
 def get_service_pricing(admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
@@ -4673,38 +4711,45 @@ def extend_rental(rental_id: str, req: ExtendRentalRequest, user: User = Depends
 @app.post("/rentals/{rental_id}/release", tags=["Rentals"], summary="Release Rental Early")
 def release_rental(rental_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Release rental early and get 50% refund for unused time"""
-    rental = db.query(NumberRental).filter(
-        NumberRental.id == rental_id,
-        NumberRental.user_id == user.id,
-        NumberRental.status == "active"
-    ).first()
-    
-    if not rental:
-        raise HTTPException(status_code=404, detail="Active rental not found")
-    
-    refund = calculate_refund(rental)
-    user.credits += refund
-    rental.status = "released"
-    rental.released_at = datetime.now(timezone.utc)
-    
-    if refund > 0:
-        db.add(Transaction(
-            id=f"txn_{datetime.now(timezone.utc).timestamp()}",
-            user_id=user.id,
-            amount=refund,
-            type="credit",
-            description=f"Refund for early release of rental {rental_id}"
-        ))
-    
-    db.commit()
-    
-    return {
-        "id": rental.id,
-        "status": "released",
-        "refund": refund,
-        "remaining_credits": user.credits,
-        "message": f"Refunded N{refund} for unused time"
-    }
+    try:
+        rental = db.query(NumberRental).filter(
+            NumberRental.id == rental_id,
+            NumberRental.user_id == user.id,
+            NumberRental.status == "active"
+        ).first()
+        
+        if not rental:
+            raise HTTPException(status_code=404, detail="Active rental not found")
+        
+        refund = calculate_refund(rental)
+        user.credits += refund
+        rental.status = "released"
+        rental.released_at = datetime.now(timezone.utc)
+        
+        if refund > 0:
+            db.add(Transaction(
+                id=f"txn_{datetime.now(timezone.utc).timestamp()}",
+                user_id=user.id,
+                amount=refund,
+                type="credit",
+                description=f"Refund for early release of rental {rental_id}"
+            ))
+        
+        db.commit()
+        
+        return {
+            "id": rental.id,
+            "status": "released",
+            "refund": refund,
+            "remaining_credits": user.credits,
+            "message": f"Refunded N{refund} for unused time"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Rental release error: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to release rental")
 
 @app.get("/rentals/{rental_id}/messages", tags=["Rentals"], summary="Get Rental Messages")
 def get_rental_messages(rental_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
