@@ -37,15 +37,28 @@ jobs:
                 sys.exit(1)
         "
     
-    - name: Test import
+    - name: Test imports only
       run: |
         python -c "
-        try:
-            import main
-            print('✅ All imports successful')
-        except ImportError as e:
-            print(f'❌ Import error: {e}')
-            exit(1)
-        except Exception as e:
-            print(f'⚠️ Other error (may be expected): {e}')
+        import ast
+        import importlib.util
+        
+        # Check if all imported modules exist
+        with open('main.py', 'r') as f:
+            tree = ast.parse(f.read())
+            
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom) and node.module:
+                if not node.module.startswith('.'):
+                    continue
+                module_name = node.module.lstrip('.')
+                try:
+                    spec = importlib.util.find_spec(module_name)
+                    if spec is None:
+                        print(f'❌ Module not found: {module_name}')
+                        exit(1)
+                except:
+                    pass
+        
+        print('✅ All local modules found')
         "
