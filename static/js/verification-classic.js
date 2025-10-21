@@ -135,14 +135,19 @@ function selectServiceClassic(serviceName) {
     if (serviceInfo) {
         serviceInfo.classList.remove('hidden');
         
-        // Update service name and price
+        // Update service name and price using local tier data
         const tier = getServiceTier(serviceName);
+        const smsPrice = tier.price;
+        const voicePrice = tier.price + 0.30;
+        
         document.getElementById('selected-service-name').textContent = formatServiceName(serviceName);
-        document.getElementById('selected-service-price').textContent = `N${tier.price.toFixed(2)}`;
+        document.getElementById('selected-service-price').textContent = `N${smsPrice.toFixed(2)}`;
         
         // Update modal prices
-        document.getElementById('sms-price-modal').textContent = `N${tier.price.toFixed(2)}`;
-        document.getElementById('voice-price-modal').textContent = `N${(tier.price + 0.30).toFixed(2)}`;
+        const smsModal = document.getElementById('sms-price-modal');
+        const voiceModal = document.getElementById('voice-price-modal');
+        if (smsModal) smsModal.textContent = `N${smsPrice.toFixed(2)}`;
+        if (voiceModal) voiceModal.textContent = `N${voicePrice.toFixed(2)}`;
     }
     
     // Enable create button
