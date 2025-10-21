@@ -1,64 +1,72 @@
-# ISP/Carrier utilities for Namaskah SMS
-AREA_CODE_MAP = {
-    "212": {"city": "New York", "state": "NY", "region": "Manhattan"},
-    "310": {"city": "Los Angeles", "state": "CA", "region": "West LA"},
-    "415": {"city": "San Francisco", "state": "CA", "region": "SF"},
-    "312": {"city": "Chicago", "state": "IL", "region": "Downtown"},
-    "214": {"city": "Dallas", "state": "TX", "region": "Dallas"},
-    "305": {"city": "Miami", "state": "FL", "region": "Miami-Dade"},
-}
+# Carrier and Location Utilities Module
 
 SUPPORTED_CARRIERS = {
-    "verizon": {"name": "Verizon Wireless", "type": "Mobile"},
-    "att": {"name": "AT&T Wireless", "type": "Mobile"},
-    "tmobile": {"name": "T-Mobile US", "type": "Mobile"},
-    "sprint": {"name": "Sprint (T-Mobile)", "type": "Mobile"},
+    'verizon': {'name': 'Verizon', 'type': 'mobile'},
+    'att': {'name': 'AT&T', 'type': 'mobile'},
+    'tmobile': {'name': 'T-Mobile', 'type': 'mobile'},
+    'sprint': {'name': 'Sprint', 'type': 'mobile'},
+    'cricket': {'name': 'Cricket', 'type': 'mobile'},
+    'boost': {'name': 'Boost Mobile', 'type': 'mobile'},
+    'metropcs': {'name': 'Metro PCS', 'type': 'mobile'},
+    'tracfone': {'name': 'TracFone', 'type': 'mobile'},
+    'straighttalk': {'name': 'Straight Talk', 'type': 'mobile'},
+    'uscellular': {'name': 'U.S. Cellular', 'type': 'mobile'}
+}
+
+AREA_CODE_MAP = {
+    '212': {'city': 'New York', 'state': 'NY', 'region': 'Northeast'},
+    '310': {'city': 'Los Angeles', 'state': 'CA', 'region': 'West'},
+    '415': {'city': 'San Francisco', 'state': 'CA', 'region': 'West'},
+    '312': {'city': 'Chicago', 'state': 'IL', 'region': 'Midwest'},
+    '214': {'city': 'Dallas', 'state': 'TX', 'region': 'South'},
+    '305': {'city': 'Miami', 'state': 'FL', 'region': 'South'},
+    '404': {'city': 'Atlanta', 'state': 'GA', 'region': 'South'},
+    '617': {'city': 'Boston', 'state': 'MA', 'region': 'Northeast'},
+    '206': {'city': 'Seattle', 'state': 'WA', 'region': 'West'},
+    '303': {'city': 'Denver', 'state': 'CO', 'region': 'West'},
+    '702': {'city': 'Las Vegas', 'state': 'NV', 'region': 'West'},
+    '713': {'city': 'Houston', 'state': 'TX', 'region': 'South'},
+    '602': {'city': 'Phoenix', 'state': 'AZ', 'region': 'West'},
+    '215': {'city': 'Philadelphia', 'state': 'PA', 'region': 'Northeast'},
+    '313': {'city': 'Detroit', 'state': 'MI', 'region': 'Midwest'}
 }
 
 def extract_area_code(phone_number):
+    """Extract area code from phone number"""
     if not phone_number:
         return None
-    clean_number = ''.join(filter(str.isdigit, phone_number))
-    if len(clean_number) == 10:
-        return clean_number[:3]
-    elif len(clean_number) == 11 and clean_number.startswith('1'):
-        return clean_number[1:4]
+    
+    # Remove non-digits
+    digits = ''.join(filter(str.isdigit, phone_number))
+    
+    # US numbers should have 10 or 11 digits
+    if len(digits) == 11 and digits[0] == '1':
+        return digits[1:4]
+    elif len(digits) == 10:
+        return digits[:3]
+    
     return None
 
 def get_location_info(phone_number):
+    """Get location information from phone number"""
     area_code = extract_area_code(phone_number)
     if area_code and area_code in AREA_CODE_MAP:
-        location = AREA_CODE_MAP[area_code]
-        return {
-            "area_code": area_code,
-            "city": location["city"],
-            "state": location["state"],
-            "region": location["region"],
-            "display": f"{location['city']}, {location['state']} ({area_code})"
-        }
-    return {
-        "area_code": area_code or "Unknown",
-        "city": "Unknown",
-        "state": "Unknown", 
-        "region": "Unknown",
-        "display": f"Unknown ({area_code})" if area_code else "Unknown"
-    }
+        return AREA_CODE_MAP[area_code]
+    
+    return {'city': 'Unknown', 'state': 'Unknown', 'region': 'Unknown'}
 
-def format_carrier_info(requested_carrier, phone_number):
-    location = get_location_info(phone_number)
-    carrier_info = {
-        "requested_carrier": None,
-        "carrier_display": "Unknown Carrier",
-        "location": location,
-        "full_display": f"{location['display']} • Unknown Carrier"
+def format_carrier_info(carrier_id, phone_number=None):
+    """Format carrier information for display"""
+    if carrier_id and carrier_id in SUPPORTED_CARRIERS:
+        carrier = SUPPORTED_CARRIERS[carrier_id]
+        return {
+            'name': carrier['name'],
+            'type': carrier['type'],
+            'requested': True
+        }
+    
+    return {
+        'name': 'Auto-Selected',
+        'type': 'mobile',
+        'requested': False
     }
-    
-    if requested_carrier and requested_carrier in SUPPORTED_CARRIERS:
-        carrier_data = SUPPORTED_CARRIERS[requested_carrier]
-        carrier_info.update({
-            "requested_carrier": requested_carrier,
-            "carrier_display": carrier_data["name"],
-            "full_display": f"{location['display']} • {carrier_data['name']}"
-        })
-    
-    return carrier_info
