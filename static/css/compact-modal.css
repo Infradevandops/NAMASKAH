@@ -146,16 +146,17 @@
     display: flex;
     gap: 10px;
     margin-bottom: 15px;
+    justify-content: flex-start;
 }
 
 .category-compact {
-    flex: 0 0 160px;
-    min-width: 160px;
+    width: 200px !important;
+    flex: none;
 }
 
 .search-compact {
-    flex: 1;
-    min-width: 200px;
+    width: 200px !important;
+    flex: none;
 }
 
 .service-suggestions {
@@ -180,8 +181,10 @@
 }
 
 .services-grid-compact {
-    max-height: 250px !important;
+    height: 200px !important;
+    max-height: 200px !important;
     overflow-y: auto;
+    border-radius: 8px !important;
 }
 
 /* Messages Section Compact */
@@ -205,13 +208,19 @@
     .service-selection-header {
         flex-direction: column;
         gap: 8px;
+        align-items: stretch;
     }
     
     .category-compact,
     .search-compact {
-        width: 100%;
+        width: 100% !important;
         flex: none;
     }
+    
+    .services-grid-compact {
+        height: 180px !important;
+    }
+}
     
     .phone-service-row {
         flex-direction: column;
@@ -256,7 +265,8 @@
     }
     
     .services-grid-compact {
-        max-height: 200px !important;
+        height: 160px !important;
+        max-height: 160px !important;
     }
 }
 

@@ -329,8 +329,8 @@
                     </div>
                 </div>
                 <div class="service-selection-header" style="display: flex; gap: 10px; margin-bottom: 15px;">
-                    <select id="category-filter" onchange="filterByCategory()" class="category-compact" style="flex: 0 0 160px; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-weight: 600;">
-                        <option value="">📂 Category</option>
+                    <select id="category-filter" onchange="filterByCategory()" class="category-compact" style="width: 200px; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-weight: 600;">
+                        <option value="">📂 All Categories</option>
                         <option value="Social">📱 Social</option>
                         <option value="Finance">💰 Finance</option>
                         <option value="Dating">💕 Dating</option>
@@ -341,8 +341,8 @@
                         <option value="Messaging">💬 Messaging</option>
                         <option value="Other">🌐 Other</option>
                     </select>
-                    <input type="text" id="service-search" placeholder="🔍 Search 1,807+ services..." 
-                           oninput="filterServices()" class="search-compact" style="flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: 8px;">
+                    <input type="text" id="service-search" placeholder="🔍 Search services..." 
+                           oninput="filterServices()" class="search-compact" style="width: 200px; padding: 12px; border: 2px solid var(--border); border-radius: 8px;">
                 </div>
                 
                 <!-- Service suggestions (shown on category select) -->
@@ -350,8 +350,8 @@
                     <div class="suggestion-header" style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">Popular in this category:</div>
                     <div class="suggestion-grid" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
                 </div>
-                <div id="services-grid" class="services-grid-compact" style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 15px; max-height: 250px; overflow-y: auto;">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px;" id="categories-container">
+                <div id="services-grid" class="services-grid-compact" style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 12px; height: 200px; overflow-y: auto;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px;" id="categories-container">
                         Loading services...
                     </div>
                 </div>

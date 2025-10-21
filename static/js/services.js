@@ -76,18 +76,18 @@ function renderServices() {
                 services = services.filter(s => s.toLowerCase().includes(search));
             }
             if (services.length > 0) {
-                html += `<div style="min-width: 100px;">`;
-                html += `<div style="font-weight: bold; font-size: 0.75rem; color: var(--accent); margin-bottom: 8px; border-bottom: 2px solid var(--accent); padding-bottom: 4px;">${category}</div>`;
-                services.slice(0, 10).forEach(service => {
+                html += `<div style="min-width: 85px;">`;
+                html += `<div style="font-weight: bold; font-size: 0.7rem; color: var(--accent); margin-bottom: 6px; border-bottom: 1px solid var(--accent); padding-bottom: 2px;">${category}</div>`;
+                services.slice(0, 8).forEach(service => {
                     const tier = getServiceTier(service);
                     const tierData = tierInfo[tier];
-                    html += `<div onclick="selectService('${service}')" style="font-size: 0.7rem; padding: 4px; cursor: pointer; border-radius: 4px; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center;" onmouseover="this.style.background='var(--accent)'; this.style.color='white'" onmouseout="this.style.background=''; this.style.color=''">
+                    html += `<div onclick="selectService('${service}')" style="font-size: 0.65rem; padding: 3px; cursor: pointer; border-radius: 3px; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;" onmouseover="this.style.background='var(--accent)'; this.style.color='white'" onmouseout="this.style.background=''; this.style.color=''">
                         <span>${formatServiceName(service)}</span>
-                        <span style="font-size: 0.6rem; background: ${tierData.color}; color: white; padding: 1px 4px; border-radius: 3px; font-weight: bold;">${tierData.price}</span>
+                        <span style="font-size: 0.55rem; background: ${tierData.color}; color: white; padding: 1px 3px; border-radius: 2px; font-weight: bold;">${tierData.price}</span>
                     </div>`;
                 });
-                if (services.length > 10) {
-                    html += `<div style="font-size: 0.65rem; color: var(--text-secondary); padding: 4px;">+${services.length - 10} more</div>`;
+                if (services.length > 8) {
+                    html += `<div style="font-size: 0.6rem; color: var(--text-secondary); padding: 2px;">+${services.length - 8} more</div>`;
                 }
                 html += `</div>`;
             }
