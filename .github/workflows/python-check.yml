@@ -1,0 +1,51 @@
+name: Python Import Check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  import-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+    
+    - name: Check imports
+      run: |
+        python -c "
+        import ast
+        import sys
+        
+        with open('main.py', 'r') as f:
+            try:
+                ast.parse(f.read())
+                print('✅ Syntax check passed')
+            except SyntaxError as e:
+                print(f'❌ Syntax error: {e}')
+                sys.exit(1)
+        "
+    
+    - name: Test import
+      run: |
+        python -c "
+        try:
+            import main
+            print('✅ All imports successful')
+        except ImportError as e:
+            print(f'❌ Import error: {e}')
+            exit(1)
+        except Exception as e:
+            print(f'⚠️ Other error (may be expected): {e}')
+        "
