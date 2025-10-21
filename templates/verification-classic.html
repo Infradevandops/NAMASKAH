@@ -1,0 +1,137 @@
+<!-- Classic Verification UI - Clean and Simple -->
+<div id="verification-classic-container" class="verification-modal-classic">
+    <!-- Service Selection -->
+    <div id="service-selection-classic">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin: 0; font-size: 24px; color: var(--text-primary);">SMS Verifications</h2>
+            <div style="display: flex; gap: 8px;">
+                <button onclick="showFundWallet()" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                    💰 Fund Wallet
+                </button>
+                <button onclick="showUnlistedModal()" style="background: #f59e0b; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                    🌐 Any Service
+                </button>
+            </div>
+        </div>
+        
+        <!-- Search and Filter -->
+        <div class="search-filter-row">
+            <input type="text" id="service-search-classic" class="search-input-classic" placeholder="🔍 Search services..." />
+            <select id="category-filter-classic" class="filter-select-classic">
+                <option value="">All Categories</option>
+                <option value="Social">📱 Social</option>
+                <option value="Finance">💰 Finance</option>
+                <option value="Dating">💕 Dating</option>
+                <option value="Shopping">🛒 Shopping</option>
+                <option value="Food">🍔 Food</option>
+                <option value="Gaming">🎮 Gaming</option>
+                <option value="Crypto">₿ Crypto</option>
+                <option value="Messaging">💬 Messaging</option>
+                <option value="Other">🌐 Other</option>
+            </select>
+        </div>
+        
+        <!-- Services Grid -->
+        <div id="services-grid-classic" class="service-grid-classic">
+            <div style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 20px;">
+                Loading services...
+            </div>
+        </div>
+        
+        <!-- Verification Type Selection -->
+        <div id="verification-type-selection" class="hidden">
+            <h3 style="margin: 20px 0 16px 0; font-size: 18px; color: var(--text-primary);">Select Verification Method</h3>
+            <div class="verification-type-classic">
+                <div id="type-sms-classic" class="type-button-classic selected" onclick="selectVerificationTypeClassic('sms')">
+                    <span class="type-icon">📱</span>
+                    <div class="type-name">SMS</div>
+                    <div class="type-price" id="sms-price-classic">N1.00</div>
+                </div>
+                <div id="type-voice-classic" class="type-button-classic" onclick="selectVerificationTypeClassic('voice')">
+                    <span class="type-icon">📞</span>
+                    <div class="type-name">Voice Call</div>
+                    <div class="type-price" id="voice-price-classic">N1.30</div>
+                </div>
+            </div>
+            
+            <button id="create-verification-classic" class="create-btn-classic" onclick="createVerificationClassic()" disabled>
+                Create Verification
+            </button>
+        </div>
+    </div>
+    
+    <!-- Verification Status -->
+    <div id="verification-status-classic" class="verification-status-classic hidden">
+        <div class="status-header-classic">
+            <div>
+                <div class="phone-display-classic" id="phone-number-classic">Loading...</div>
+                <div style="font-size: 14px; color: var(--text-secondary); margin-top: 4px;">
+                    Service: <span id="service-name-classic" style="font-weight: 600;">-</span>
+                </div>
+            </div>
+            <div id="status-badge-classic" class="status-badge-classic pending">Pending</div>
+        </div>
+        
+        <!-- Timer Display -->
+        <div id="timer-display-classic" class="timer-display-classic hidden">
+            <div class="timer-countdown-classic" id="timer-countdown-classic">2:00</div>
+            <div class="timer-label-classic">Time remaining for SMS delivery</div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="actions-row-classic">
+            <button onclick="checkMessagesClassic()" class="action-btn-classic action-btn-primary">
+                📨 Check Messages
+            </button>
+            <button onclick="resetVerificationFlowClassic()" class="action-btn-classic action-btn-secondary">
+                🔄 New Verification
+            </button>
+            <button onclick="cancelVerificationClassic()" class="action-btn-classic action-btn-danger">
+                ❌ Cancel & Refund
+            </button>
+        </div>
+    </div>
+    
+    <!-- Messages Display -->
+    <div id="messages-display-classic" class="messages-display-classic hidden">
+        <h3 style="margin: 0 0 20px 0; font-size: 20px; color: var(--text-primary);">📨 SMS Messages</h3>
+        <div id="messages-list-classic"></div>
+        
+        <div style="margin-top: 20px; text-align: center;">
+            <button onclick="resetVerificationFlowClassic()" class="action-btn-classic action-btn-primary" style="width: auto; padding: 12px 24px;">
+                ✨ Create Another Verification
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Include Classic Verification CSS and JS -->
+<link rel="stylesheet" href="/static/css/verification-redesign.css">
+<script src="/static/js/verification-classic.js"></script>
+
+<style>
+/* Quick override for better integration */
+.verification-modal-classic {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Ensure proper spacing */
+.verification-modal-classic h2 {
+    font-weight: 700;
+}
+
+.verification-modal-classic h3 {
+    font-weight: 600;
+}
+
+/* Better mobile experience */
+@media (max-width: 768px) {
+    .verification-modal-classic {
+        margin: 0;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+    }
+}
+</style>
