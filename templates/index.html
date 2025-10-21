@@ -290,6 +290,11 @@
                     ⚡ Click a service to select
                 </div>
                 
+                <!-- ISP/Carrier Selection for Pro Users -->
+                <div id="verification-form" style="margin-top: 20px;">
+                    <!-- Carrier and area code dropdowns will be inserted here by carrier-selection.js -->
+                </div>
+                
                 <div id="capability-selection" class="hidden" style="margin-top: 20px;">
                     <h3 style="margin-bottom: 15px; font-size: 18px;">Select Verification Method</h3>
                     <div style="display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 20px;">
@@ -321,6 +326,8 @@
                     <span id="phone-number" class="phone-number"></span>
                     <button onclick="copyPhone()" class="btn-small">Copy</button>
                 </div>
+                <!-- Enhanced verification info container -->
+                <div id="verification-info"></div>
                 <div class="detail-row">
                     <strong>Service:</strong>
                     <span id="service-name"></span>
@@ -852,6 +859,7 @@
     <script src="/static/js/biometric.js?v=1729365000"></script>
     <script src="/static/js/offline-queue.js?v=1729365000"></script>
     <script src="/static/js/receipts.js?v=1729365000"></script>
+    <script src="/static/js/carrier-selection.js?v=1729365000"></script>
     <script src="/static/js/main.js?v=1729365000"></script>
     
     <!-- Enhanced Frontend Functions -->
