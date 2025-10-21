@@ -1,0 +1,304 @@
+/* Compact Modal Styles for Better Mobile UX */
+
+/* Verification Modal Compact Design */
+.verification-modal-compact {
+    max-height: 60vh !important;
+    overflow-y: auto;
+}
+
+.verification-header-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+}
+
+.phone-service-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.phone-compact {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: monospace;
+}
+
+.service-badge {
+    background: #667eea;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-badge-compact {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-badge-compact.pending {
+    background: #f59e0b;
+    color: white;
+}
+
+.status-badge-compact.completed {
+    background: #10b981;
+    color: white;
+}
+
+.status-badge-compact.cancelled {
+    background: #ef4444;
+    color: white;
+}
+
+.timer-row-compact {
+    text-align: center;
+    background: rgba(239, 68, 68, 0.1);
+    padding: 8px;
+    border-radius: 8px;
+    margin-top: 8px;
+}
+
+.countdown-large {
+    font-size: 20px;
+    font-weight: bold;
+    color: #ef4444;
+}
+
+.timer-label {
+    font-size: 11px;
+    color: #6b7280;
+    margin-left: 8px;
+}
+
+.verification-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.detail-compact {
+    background: var(--bg-secondary);
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    text-align: center;
+}
+
+.actions-compact {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-primary-compact,
+.btn-secondary-compact {
+    flex: 1;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 80px;
+}
+
+.btn-primary-compact {
+    background: #667eea;
+    color: white;
+}
+
+.btn-primary-compact:hover {
+    background: #5a67d8;
+}
+
+.btn-secondary-compact {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.btn-secondary-compact:hover {
+    background: #d1d5db;
+}
+
+.btn-danger {
+    background: #ef4444 !important;
+    color: white !important;
+}
+
+.btn-danger:hover {
+    background: #dc2626 !important;
+}
+
+/* Service Selection Compact Layout */
+.service-selection-header {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.category-compact {
+    flex: 0 0 160px;
+    min-width: 160px;
+}
+
+.search-compact {
+    flex: 1;
+    min-width: 200px;
+}
+
+.service-suggestions {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.suggestion-header {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.suggestion-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.services-grid-compact {
+    max-height: 250px !important;
+    overflow-y: auto;
+}
+
+/* Messages Section Compact */
+.messages-compact {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.messages-compact h2 {
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+/* Mobile Responsive Improvements */
+@media (max-width: 768px) {
+    .verification-modal-compact {
+        max-height: 70vh !important;
+        margin: 10px;
+    }
+    
+    .service-selection-header {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .category-compact,
+    .search-compact {
+        width: 100%;
+        flex: none;
+    }
+    
+    .phone-service-row {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+    
+    .verification-details-grid {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+    
+    .actions-compact {
+        flex-direction: column;
+    }
+    
+    .btn-primary-compact,
+    .btn-secondary-compact {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+}
+
+@media (max-width: 480px) {
+    .verification-header-sticky {
+        margin: -15px -15px 10px -15px;
+        padding: 10px 15px;
+    }
+    
+    .phone-compact {
+        font-size: 14px;
+    }
+    
+    .service-badge,
+    .status-badge-compact {
+        font-size: 11px;
+        padding: 3px 6px;
+    }
+    
+    .countdown-large {
+        font-size: 18px;
+    }
+    
+    .services-grid-compact {
+        max-height: 200px !important;
+    }
+}
+
+/* Animation for smooth transitions */
+.verification-modal-compact,
+.service-suggestions {
+    transition: all 0.3s ease;
+}
+
+.service-suggestions.hidden {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+.service-suggestions:not(.hidden) {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Improved scrollbar for compact areas */
+.verification-modal-compact::-webkit-scrollbar,
+.services-grid-compact::-webkit-scrollbar,
+.messages-compact::-webkit-scrollbar {
+    width: 6px;
+}
+
+.verification-modal-compact::-webkit-scrollbar-track,
+.services-grid-compact::-webkit-scrollbar-track,
+.messages-compact::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 3px;
+}
+
+.verification-modal-compact::-webkit-scrollbar-thumb,
+.services-grid-compact::-webkit-scrollbar-thumb,
+.messages-compact::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+.verification-modal-compact::-webkit-scrollbar-thumb:hover,
+.services-grid-compact::-webkit-scrollbar-thumb:hover,
+.messages-compact::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}

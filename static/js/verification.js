@@ -144,25 +144,29 @@ function displayVerification(data) {
     
     const statusBadge = document.getElementById('status');
     statusBadge.textContent = data.status;
-    statusBadge.className = `badge ${data.status}`;
+    statusBadge.className = `badge status-badge-compact ${data.status}`;
     
-    // Display carrier and area code info if available
+    // Display carrier and area code info in compact grid
     const infoContainer = document.getElementById('verification-info');
     if (infoContainer && (data.carrier_info || data.user_selections)) {
         let infoHTML = '';
         
         if (data.carrier_info && data.carrier_info.name) {
-            infoHTML += `<div class="detail-row"><strong>Carrier:</strong> <span>${data.carrier_info.full_display || data.carrier_info.name}</span></div>`;
+            infoHTML += `<div class="detail-compact" style="background: var(--bg-secondary); padding: 8px; border-radius: 6px; font-size: 12px;"><strong>Carrier:</strong><br><span>${data.carrier_info.full_display || data.carrier_info.name}</span></div>`;
         }
         
         if (data.user_selections) {
             if (data.user_selections.requested_carrier) {
-                infoHTML += `<div class="detail-row"><strong>Requested Carrier:</strong> <span class="requested-badge">${data.user_selections.requested_carrier}</span></div>`;
+                infoHTML += `<div class="detail-compact" style="background: var(--bg-secondary); padding: 8px; border-radius: 6px; font-size: 12px;"><strong>Requested:</strong><br><span class="requested-badge">${data.user_selections.requested_carrier}</span></div>`;
             }
             if (data.user_selections.requested_area_code) {
-                infoHTML += `<div class="detail-row"><strong>Requested Area Code:</strong> <span class="requested-badge">${data.user_selections.requested_area_code}</span></div>`;
+                infoHTML += `<div class="detail-compact" style="background: var(--bg-secondary); padding: 8px; border-radius: 6px; font-size: 12px;"><strong>Area Code:</strong><br><span class="requested-badge">${data.user_selections.requested_area_code}</span></div>`;
             }
         }
+        
+        // Add cost and tier info in compact format
+        const tierName = getTierName(data.service_name);
+        infoHTML += `<div class="detail-compact" style="background: var(--bg-secondary); padding: 8px; border-radius: 6px; font-size: 12px;"><strong>Cost:</strong><br><span>N${data.cost} (${tierName})</span></div>`;
         
         infoContainer.innerHTML = infoHTML;
     }
@@ -179,6 +183,9 @@ function displayVerification(data) {
         const timerDuration = getServiceTimer(data.service_name);
         startCountdown(timerDuration);
     }
+    
+    // Scroll to verification details for better UX
+    document.getElementById('verification-details').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function startAutoRefresh() {
@@ -201,7 +208,7 @@ function stopAutoRefresh() {
 
 function startCountdown(duration = 60) {
     countdownSeconds = duration;
-    document.getElementById('timer-row').style.display = 'flex';
+    document.getElementById('timer-row').style.display = 'block';
     document.getElementById('countdown').textContent = `${countdownSeconds}s`;
     
     if (countdownInterval) clearInterval(countdownInterval);
@@ -209,6 +216,16 @@ function startCountdown(duration = 60) {
     countdownInterval = setInterval(() => {
         countdownSeconds--;
         document.getElementById('countdown').textContent = `${countdownSeconds}s`;
+        
+        // Change color as time runs out
+        const countdown = document.getElementById('countdown');
+        if (countdownSeconds <= 10) {
+            countdown.style.color = '#ef4444';
+        } else if (countdownSeconds <= 30) {
+            countdown.style.color = '#f59e0b';
+        } else {
+            countdown.style.color = '#10b981';
+        }
         
         if (countdownSeconds <= 0) {
             clearInterval(countdownInterval);

@@ -159,12 +159,67 @@ function selectUnlistedService() {
 }
 
 function filterServices() {
+    const searchTerm = document.getElementById('service-search').value.toLowerCase();
+    
+    // Hide suggestions when searching
+    if (searchTerm) {
+        document.getElementById('service-suggestions').classList.add('hidden');
+    } else {
+        // Show suggestions if category is selected but no search
+        const category = document.getElementById('category-filter').value;
+        if (category && category !== '') {
+            showCategoryServices(category);
+        }
+    }
+    
     if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
     searchDebounceTimer = setTimeout(() => renderServices(), 200);
 }
 
 function filterByCategory() {
+    const category = document.getElementById('category-filter').value;
+    
+    // Show service suggestions for selected category
+    if (category && category !== '') {
+        showCategoryServices(category);
+    } else {
+        // Hide suggestions when showing all categories
+        document.getElementById('service-suggestions').classList.add('hidden');
+    }
+    
     renderServices();
+}
+
+// Show service suggestions when category is selected
+function showCategoryServices(category) {
+    if (!servicesData || !servicesData.categories) return;
+    
+    const services = servicesData.categories[category] || [];
+    const suggestionsContainer = document.getElementById('service-suggestions');
+    const suggestionGrid = suggestionsContainer.querySelector('.suggestion-grid');
+    
+    if (services.length > 0) {
+        // Show top 8 popular services in this category
+        const popularServices = services.slice(0, 8);
+        suggestionGrid.innerHTML = popularServices.map(service => 
+            `<button onclick="selectServiceFromSuggestion('${service}')" 
+                     style="padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 16px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;" 
+                     onmouseover="this.style.background='#5a67d8'" 
+                     onmouseout="this.style.background='#667eea'">
+                ${formatServiceName(service)}
+            </button>`
+        ).join('');
+        suggestionsContainer.classList.remove('hidden');
+    } else {
+        suggestionsContainer.classList.add('hidden');
+    }
+}
+
+// Select service from suggestion
+function selectServiceFromSuggestion(serviceName) {
+    document.getElementById('service-select').value = serviceName;
+    selectService(serviceName);
+    document.getElementById('service-suggestions').classList.add('hidden');
 }
 
 function selectGeneralPurpose() {

@@ -227,6 +227,11 @@
       "gmx",
       "icq",
       "protonmail"
+    ],
+    "Other": [
+      "general-purpose",
+      "unlisted-service",
+      "custom-service"
     ]
   },
   "uncategorized": [

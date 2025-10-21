@@ -21,6 +21,7 @@
     <link rel="preconnect" href="https://api.paystack.co">
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/mobile.css">
+    <link rel="stylesheet" href="/static/css/compact-modal.css">
     <style>
         /* Anti-flicker */
         html { visibility: visible; opacity: 1; }
@@ -327,9 +328,9 @@
                         <button onclick="showUnlistedModal()" style="background: #f59e0b; padding: 10px 16px; font-weight: 600;">🌐 Any Service</button>
                     </div>
                 </div>
-                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                    <select id="category-filter" onchange="filterByCategory()" style="padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-weight: 600;">
-                        <option value="">All Categories</option>
+                <div class="service-selection-header" style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <select id="category-filter" onchange="filterByCategory()" class="category-compact" style="flex: 0 0 160px; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-weight: 600;">
+                        <option value="">📂 Category</option>
                         <option value="Social">📱 Social</option>
                         <option value="Finance">💰 Finance</option>
                         <option value="Dating">💕 Dating</option>
@@ -338,11 +339,18 @@
                         <option value="Gaming">🎮 Gaming</option>
                         <option value="Crypto">₿ Crypto</option>
                         <option value="Messaging">💬 Messaging</option>
+                        <option value="Other">🌐 Other</option>
                     </select>
-                    <input type="text" id="service-search" placeholder="🔍 Search services..." 
-                           oninput="filterServices()" style="flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: 8px;">
+                    <input type="text" id="service-search" placeholder="🔍 Search 1,807+ services..." 
+                           oninput="filterServices()" class="search-compact" style="flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: 8px;">
                 </div>
-                <div id="services-grid" style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 15px; max-height: 400px; overflow-y: auto;">
+                
+                <!-- Service suggestions (shown on category select) -->
+                <div id="service-suggestions" class="service-suggestions hidden" style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 10px;">
+                    <div class="suggestion-header" style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">Popular in this category:</div>
+                    <div class="suggestion-grid" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
+                </div>
+                <div id="services-grid" class="services-grid-compact" style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 15px; max-height: 250px; overflow-y: auto;">
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px;" id="categories-container">
                         Loading services...
                     </div>
@@ -381,41 +389,40 @@
                 </div>
             </div>
 
-            <div id="verification-details" class="card hidden">
-                <h2>Verification Details</h2>
-                <div class="detail-row">
-                    <strong>Phone Number:</strong>
-                    <span id="phone-number" class="phone-number"></span>
-                    <button onclick="copyPhone()" class="btn-small">Copy</button>
-                </div>
-                <!-- Enhanced verification info container -->
-                <div id="verification-info"></div>
-                <div class="detail-row">
-                    <strong>Service:</strong>
-                    <span id="service-name"></span>
-                </div>
-                <div class="detail-row">
-                    <strong>Status:</strong>
-                    <span id="status" class="badge"></span>
-                </div>
-                <div class="detail-row" id="timer-row" style="display: none;">
-                    <strong>Time Remaining:</strong>
-                    <div style="display: flex; flex-direction: column; align-items: flex-start;">
-                        <span id="countdown" style="font-size: 24px; font-weight: bold; color: #ef4444;">60s</span>
-                        <span id="timer-info" style="font-size: 12px; color: #6b7280;">Service-specific wait time</span>
+            <div id="verification-details" class="card hidden verification-modal-compact">
+                <!-- Compact sticky header with essential info -->
+                <div class="verification-header-sticky" style="background: var(--bg); border-bottom: 1px solid var(--border); padding: 12px; margin: -20px -20px 15px -20px; border-radius: 12px 12px 0 0;">
+                    <div class="phone-service-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span id="phone-number" class="phone-compact" style="font-size: 16px; font-weight: 700; color: var(--text-primary);"></span>
+                            <button onclick="copyPhone()" class="btn-small" style="padding: 4px 8px; font-size: 11px;">Copy</button>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span id="service-name" class="service-badge" style="background: #667eea; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;"></span>
+                            <span id="status" class="badge status-badge-compact" style="padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;"></span>
+                        </div>
+                    </div>
+                    <div class="timer-row-compact" id="timer-row" style="display: none; text-align: center; background: rgba(239, 68, 68, 0.1); padding: 8px; border-radius: 8px;">
+                        <span id="countdown" class="countdown-large" style="font-size: 20px; font-weight: bold; color: #ef4444;">60s</span>
+                        <span class="timer-label" style="font-size: 11px; color: #6b7280; margin-left: 8px;">Auto-check</span>
                     </div>
                 </div>
-                <div class="actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <button onclick="checkMessages()" id="check-messages-btn" style="grid-column: 1 / -1;">📨 Check Messages</button>
-                    <button onclick="checkVoiceCall()" id="check-voice-btn" class="hidden" style="grid-column: 1 / -1;">📞 Get Voice Call</button>
-                    <button onclick="retryVerification()" id="retry-btn" class="hidden" style="background: #667eea;">🔄 Retry</button>
-                    <button onclick="cancelVerification()" class="btn-danger">❌ Cancel</button>
+                
+                <!-- Compact details grid -->
+                <div id="verification-info" class="verification-details-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px;"></div>
+                
+                <!-- Compact actions -->
+                <div class="actions-compact" style="display: flex; gap: 8px;">
+                    <button onclick="checkMessages()" id="check-messages-btn" class="btn-primary-compact" style="flex: 1; padding: 10px; font-size: 14px; font-weight: 600;">📨 Check</button>
+                    <button onclick="checkVoiceCall()" id="check-voice-btn" class="btn-primary-compact hidden" style="flex: 1; padding: 10px; font-size: 14px; font-weight: 600;">📞 Voice</button>
+                    <button onclick="retryVerification()" id="retry-btn" class="btn-secondary-compact hidden" style="flex: 1; padding: 10px; font-size: 14px; font-weight: 600; background: #667eea;">🔄 Retry</button>
+                    <button onclick="cancelVerification()" class="btn-danger btn-secondary-compact" style="flex: 1; padding: 10px; font-size: 14px; font-weight: 600;">❌ Cancel</button>
                 </div>
             </div>
 
-            <div id="messages-section" class="card hidden">
-                <h2>SMS Messages</h2>
-                <div id="messages-list"></div>
+            <div id="messages-section" class="card hidden messages-compact">
+                <h2 style="margin-bottom: 15px; font-size: 18px;">📨 SMS Messages</h2>
+                <div id="messages-list" style="max-height: 300px; overflow-y: auto;"></div>
             </div>
 
             <div id="unlisted-modal" class="modal hidden">
