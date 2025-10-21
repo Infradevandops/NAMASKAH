@@ -2,6 +2,10 @@
 let rentalMessagesCache = {};
 let currentExtendModal = null;
 
+const RENTAL_HOURLY = {
+    1: 1.0, 2: 1.25, 3: 1.5, 6: 2.0, 12: 2.5, 24: 3.0
+};
+
 const RENTAL_SERVICE_SPECIFIC = {
     168: 10.0, 336: 18.0, 720: 32.5, 1440: 60.0, 2160: 85.0, 8760: 100.0
 };
@@ -10,8 +14,21 @@ const RENTAL_GENERAL_USE = {
     168: 15.0, 336: 25.0, 720: 40.0, 1440: 70.0, 2160: 95.0, 8760: 150.0
 };
 
+const HOURLY_RENTAL_RULES = {
+    minimum_duration: 1,
+    maximum_duration: 24,
+    auto_extend_discount: 0.10,
+    manual_mode_discount: 0.30,
+    bulk_discount_threshold: 5,
+    bulk_discount_rate: 0.15,
+    peak_hours_surcharge: 0.20,
+    weekend_discount: 0.05
+};
+
 function showRentalModal() {
     document.getElementById('rental-modal').classList.remove('hidden');
+    // Default to 1 hour rental
+    selectHourlyDuration(1);
     updateRentalPrice();
 }
 
@@ -89,7 +106,7 @@ function addAutoRenewOption() {
     }
 }
 
-function updateRentalPrice() {
+async function updateRentalPrice() {
     const service = document.getElementById('rental-service')?.value || 'telegram';
     const modeChecked = document.querySelector('input[name="rental-mode"]:checked');
     const durationChecked = document.querySelector('input[name="rental-duration"]:checked');
@@ -97,34 +114,144 @@ function updateRentalPrice() {
     if (!modeChecked || !durationChecked) return;
     
     const mode = modeChecked.value;
-    const duration = parseInt(durationChecked.value);
+    const duration = parseFloat(durationChecked.value);
+    const autoRenew = document.getElementById('auto-renew-checkbox')?.checked || false;
     
-    const isGeneral = service.toLowerCase() === 'general';
-    const pricingTable = isGeneral ? RENTAL_GENERAL_USE : RENTAL_SERVICE_SPECIFIC;
-    
-    const basePrice = pricingTable[duration];
-    const modeMultiplier = mode === 'manual' ? 0.7 : 1.0;
-    
-    const totalPrice = (basePrice || 5.0) * modeMultiplier;
-    
-    Object.keys(pricingTable).forEach(hours => {
-        const price = pricingTable[hours] * modeMultiplier;
-        const days = hours / 24;
-        const priceElement = document.getElementById(`price-${days}`);
-        if (priceElement) {
-            priceElement.textContent = `N${price.toFixed(2)}`;
+    try {
+        // Get dynamic pricing from API
+        const response = await fetch(`${API_BASE}/rentals/pricing?hours=${duration}&service_name=${service}&mode=${mode}&auto_renew=${autoRenew}&bulk_count=1`, {
+            headers: {'Authorization': `Bearer ${window.token}`}
+        });
+        
+        if (response.ok) {
+            const pricing = await response.json();
+            
+            // Update total price
+            const totalElement = document.getElementById('rental-total');
+            if (totalElement) {
+                totalElement.textContent = `N${pricing.final_price.toFixed(2)}`;
+            }
+            
+            // Update individual hourly prices
+            [1, 3, 6, 12, 24].forEach(hours => {
+                const priceElement = document.getElementById(`price-${hours}h`);
+                if (priceElement && duration === hours) {
+                    priceElement.textContent = `N${pricing.final_price.toFixed(2)}`;
+                }
+            });
+            
+            // Show pricing breakdown if available
+            showPricingBreakdown(pricing);
+            
+            // Update expiry date
+            const expiryDate = new Date();
+            if (duration < 24) {
+                expiryDate.setHours(expiryDate.getHours() + duration);
+                document.getElementById('rental-expiry').textContent = expiryDate.toLocaleString();
+            } else {
+                const days = duration / 24;
+                expiryDate.setDate(expiryDate.getDate() + days);
+                document.getElementById('rental-expiry').textContent = expiryDate.toLocaleDateString();
+            }
         }
-    });
-    
-    const totalElement = document.getElementById('rental-total');
-    if (totalElement) {
-        totalElement.textContent = `N${totalPrice.toFixed(2)}`;
+    } catch (error) {
+        console.error('Pricing update failed:', error);
+        // Fallback to static pricing
+        const basePrice = duration <= 24 ? RENTAL_HOURLY[duration] || (duration * 0.5) : RENTAL_SERVICE_SPECIFIC[duration * 24] || 10;
+        const modeMultiplier = mode === 'manual' ? 0.7 : 1.0;
+        const totalPrice = basePrice * modeMultiplier;
+        
+        const totalElement = document.getElementById('rental-total');
+        if (totalElement) {
+            totalElement.textContent = `N${totalPrice.toFixed(2)}`;
+        }
+    }
+}
+
+function showPricingBreakdown(pricing) {
+    // Remove existing breakdown
+    const existingBreakdown = document.getElementById('pricing-breakdown');
+    if (existingBreakdown) {
+        existingBreakdown.remove();
     }
     
-    const days = duration / 24;
-    const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + days);
-    document.getElementById('rental-expiry').textContent = expiryDate.toLocaleDateString();
+    // Create new breakdown
+    if (pricing.adjustments && pricing.adjustments.length > 0) {
+        const breakdownHtml = `
+            <div id="pricing-breakdown" style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                <h4 style="margin: 0 0 10px 0; color: #059669;">💰 Pricing Breakdown</h4>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span>Base Price:</span>
+                    <span>N${pricing.base_price.toFixed(2)}</span>
+                </div>
+                ${pricing.adjustments.map(adj => `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 14px; color: #059669;">
+                        <span>${adj.type} (${adj.rate}):</span>
+                        <span>${adj.amount >= 0 ? '+' : ''}N${adj.amount.toFixed(2)}</span>
+                    </div>
+                `).join('')}
+                <hr style="border: none; border-top: 1px solid #10b981; margin: 10px 0;">
+                <div style="display: flex; justify-content: space-between; font-weight: bold; color: #059669;">
+                    <span>Final Price:</span>
+                    <span>N${pricing.final_price.toFixed(2)}</span>
+                </div>
+                ${pricing.savings > 0 ? `
+                    <div style="text-align: center; margin-top: 8px; font-size: 14px; color: #059669;">
+                        🎉 You save N${pricing.savings.toFixed(2)}!
+                    </div>
+                ` : ''}
+            </div>
+        `;
+        
+        const totalCostDiv = document.querySelector('#rental-modal .modal-content > div:nth-last-child(2)');
+        if (totalCostDiv) {
+            totalCostDiv.insertAdjacentHTML('afterend', breakdownHtml);
+        }
+    }
+}
+
+function selectHourlyDuration(hours) {
+    // Clear all selections
+    document.querySelectorAll('input[name="rental-duration"]').forEach(radio => {
+        radio.checked = false;
+    });
+    document.querySelectorAll('[id*="duration-"][id*="-label"]').forEach(label => {
+        label.style.borderColor = 'transparent';
+    });
+    
+    // Select hourly duration
+    const radio = document.getElementById(`duration-${hours}h`);
+    const label = document.getElementById(`duration-${hours}h-label`);
+    if (radio && label) {
+        radio.checked = true;
+        label.style.borderColor = '#fbbf24';
+    }
+    
+    updateRentalPrice();
+}
+
+function selectExtendedDuration(days) {
+    // Clear all selections
+    document.querySelectorAll('input[name="rental-duration"]').forEach(radio => {
+        radio.checked = false;
+    });
+    document.querySelectorAll('[id*="duration-"][id*="-label"]').forEach(label => {
+        label.style.borderColor = 'transparent';
+    });
+    
+    // Select extended duration
+    const radio = document.getElementById(`duration-${days}`);
+    const label = document.getElementById(`duration-${days}-label`);
+    if (radio && label) {
+        radio.checked = true;
+        label.style.borderColor = '#667eea';
+    }
+    
+    updateRentalPrice();
+}
+
+function selectDuration(days) {
+    selectExtendedDuration(days);
 }
 
 function toggleCustomRentalService() {
@@ -149,7 +276,8 @@ async function createRentalNumber() {
     }
     
     const mode = document.querySelector('input[name="rental-mode"]:checked').value;
-    const duration = parseInt(document.querySelector('input[name="rental-duration"]:checked').value);
+    const duration = parseFloat(document.querySelector('input[name="rental-duration"]:checked').value);
+    const autoExtend = document.getElementById('auto-renew-checkbox')?.checked || false;
     
     showLoading(true);
     
@@ -164,7 +292,7 @@ async function createRentalNumber() {
                 service_name: service,
                 duration_hours: duration,
                 mode: mode,
-                auto_extend: false
+                auto_extend: autoExtend
             })
         });
         
@@ -172,13 +300,15 @@ async function createRentalNumber() {
         showLoading(false);
         
         if (res.ok) {
-            showNotification(`✅ Number rented! ${data.phone_number}`, 'success');
+            const rentalType = duration <= 24 ? 'Hourly' : 'Extended';
+            const durationText = duration < 24 ? `${duration}h` : `${duration/24}d`;
+            showNotification(`✅ ${rentalType} rental created! ${data.phone_number} (${durationText})`, 'success');
             document.getElementById('user-credits').textContent = data.remaining_credits.toFixed(2);
             closeRentalModal();
             loadActiveRentals();
             loadTransactions(true);
         } else {
-            showNotification(`❌ ${data.detail}`, 'error');
+            showNotification(`❌ ${data.detail || data.error}`, 'error');
         }
     } catch (err) {
         showLoading(false);
@@ -306,10 +436,39 @@ async function toggleRentalMessages(rentalId) {
 }
 
 async function extendRental(rentalId) {
-    const hours = prompt('How many hours to extend? (168 = 7 days)', '168');
-    if (!hours) return;
-    
+    // Show extension modal with hourly options
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 500px;">
+            <h2>🔄 Extend Rental</h2>
+            <p style="color: #6b7280; margin-bottom: 20px;">Choose extension duration:</p>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                <button onclick="extendRentalHours('${rentalId}', 1)" style="padding: 15px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600;">+1h<br><small>~N1.20</small></button>
+                <button onclick="extendRentalHours('${rentalId}', 3)" style="padding: 15px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600;">+3h<br><small>~N1.80</small></button>
+                <button onclick="extendRentalHours('${rentalId}', 6)" style="padding: 15px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600;">+6h<br><small>~N2.40</small></button>
+                <button onclick="extendRentalHours('${rentalId}', 12)" style="padding: 15px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600;">+12h<br><small>~N3.00</small></button>
+                <button onclick="extendRentalHours('${rentalId}', 24)" style="padding: 15px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600;">+24h<br><small>~N3.60</small></button>
+                <button onclick="extendRentalHours('${rentalId}', 168)" style="padding: 15px; background: #667eea; color: white; border: none; border-radius: 8px; font-weight: 600;">+7d<br><small>~N10.00</small></button>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <input type="number" id="custom-extend-hours" placeholder="Custom hours" min="1" style="flex: 1; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px;">
+                <button onclick="extendRentalCustom('${rentalId}')" style="background: #f59e0b; padding: 12px 20px;">Extend</button>
+            </div>
+            
+            <button onclick="closeExtendModal()" style="width: 100%; margin-top: 15px; background: #6b7280;">Cancel</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    currentExtendModal = modal;
+}
+
+async function extendRentalHours(rentalId, hours) {
     showLoading(true);
+    closeExtendModal();
     
     try {
         const res = await fetch(`${API_BASE}/rentals/${rentalId}/extend`, {
@@ -318,22 +477,39 @@ async function extendRental(rentalId) {
                 'Authorization': `Bearer ${window.token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ additional_hours: parseFloat(hours) })
+            body: JSON.stringify({ additional_hours: hours })
         });
         
         const data = await res.json();
         showLoading(false);
         
         if (res.ok) {
-            showNotification(`✅ Extended! Cost: N${data.cost}`, 'success');
+            const durationText = hours < 24 ? `${hours}h` : `${hours/24}d`;
+            showNotification(`✅ Extended by ${durationText}! Cost: N${data.extension_cost.toFixed(2)}`, 'success');
             document.getElementById('user-credits').textContent = data.remaining_credits.toFixed(2);
             loadActiveRentals();
         } else {
-            showNotification(`❌ ${data.detail}`, 'error');
+            showNotification(`❌ ${data.detail || data.error}`, 'error');
         }
     } catch (err) {
         showLoading(false);
         showNotification('🌐 Network error', 'error');
+    }
+}
+
+function extendRentalCustom(rentalId) {
+    const hours = parseFloat(document.getElementById('custom-extend-hours').value);
+    if (!hours || hours < 1) {
+        showNotification('⚠️ Please enter valid hours (minimum 1)', 'error');
+        return;
+    }
+    extendRentalHours(rentalId, hours);
+}
+
+function closeExtendModal() {
+    if (currentExtendModal) {
+        currentExtendModal.remove();
+        currentExtendModal = null;
     }
 }
 

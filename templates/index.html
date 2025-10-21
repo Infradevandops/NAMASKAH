@@ -421,52 +421,86 @@
                     
                     <div style="margin-bottom: 20px;">
                         <label style="font-weight: bold; display: block; margin-bottom: 10px;">Select Duration</label>
-                        <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
-                            <label id="duration-7-label" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--bg-secondary); border: 2px solid #667eea; border-radius: 8px; cursor: pointer;" onclick="selectDuration(7)">
-                                <div>
-                                    <input type="radio" name="rental-duration" id="duration-7" value="168" checked onchange="updateRentalPrice()" style="margin-right: 10px;">
-                                    <strong>7 days</strong>
-                                </div>
-                                <span id="price-7" style="font-weight: bold; color: #667eea;">$50.00</span>
-                            </label>
-                            <label id="duration-14-label" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--bg-secondary); border: 2px solid transparent; border-radius: 8px; cursor: pointer;" onclick="selectDuration(14)">
-                                <div>
-                                    <input type="radio" name="rental-duration" id="duration-14" value="336" onchange="updateRentalPrice()" style="margin-right: 10px;">
-                                    <strong>14 days</strong>
-                                </div>
-                                <span id="price-14" style="font-weight: bold; color: #667eea;">$90.00</span>
-                            </label>
-                            <label id="duration-30-label" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--bg-secondary); border: 2px solid transparent; border-radius: 8px; cursor: pointer;" onclick="selectDuration(30)">
-                                <div>
-                                    <input type="radio" name="rental-duration" id="duration-30" value="720" onchange="updateRentalPrice()" style="margin-right: 10px;">
-                                    <strong>30 days</strong>
-                                </div>
-                                <span id="price-30" style="font-weight: bold; color: #667eea;">$180.00</span>
-                            </label>
-                            <label id="duration-60-label" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--bg-secondary); border: 2px solid transparent; border-radius: 8px; cursor: pointer;" onclick="selectDuration(60)">
-                                <div>
-                                    <input type="radio" name="rental-duration" id="duration-60" value="1440" onchange="updateRentalPrice()" style="margin-right: 10px;">
-                                    <strong>60 days</strong>
-                                </div>
-                                <span id="price-60" style="font-weight: bold; color: #667eea;">$340.00</span>
-                            </label>
-                            <label id="duration-90-label" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--bg-secondary); border: 2px solid transparent; border-radius: 8px; cursor: pointer;" onclick="selectDuration(90)">
-                                <div>
-                                    <input type="radio" name="rental-duration" id="duration-90" value="2160" onchange="updateRentalPrice()" style="margin-right: 10px;">
-                                    <strong>90 days</strong>
-                                </div>
-                                <span id="price-90" style="font-weight: bold; color: #667eea;">$480.00</span>
-                            </label>
+                        
+                        <!-- Hourly Rentals Section -->
+                        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <h4 style="margin: 0 0 10px 0; font-size: 16px;">⚡ Hourly Rentals (NEW!)</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 8px;">
+                                <label id="duration-1h-label" style="display: flex; flex-direction: column; align-items: center; padding: 10px; background: rgba(255,255,255,0.2); border: 2px solid #fbbf24; border-radius: 6px; cursor: pointer; font-size: 14px;" onclick="selectHourlyDuration(1)">
+                                    <input type="radio" name="rental-duration" id="duration-1h" value="1" checked onchange="updateRentalPrice()" style="display: none;">
+                                    <strong>1h</strong>
+                                    <span id="price-1h" style="font-size: 12px; opacity: 0.9;">N1.20</span>
+                                </label>
+                                <label id="duration-3h-label" style="display: flex; flex-direction: column; align-items: center; padding: 10px; background: rgba(255,255,255,0.2); border: 2px solid transparent; border-radius: 6px; cursor: pointer; font-size: 14px;" onclick="selectHourlyDuration(3)">
+                                    <input type="radio" name="rental-duration" id="duration-3h" value="3" onchange="updateRentalPrice()" style="display: none;">
+                                    <strong>3h</strong>
+                                    <span id="price-3h" style="font-size: 12px; opacity: 0.9;">N1.80</span>
+                                </label>
+                                <label id="duration-6h-label" style="display: flex; flex-direction: column; align-items: center; padding: 10px; background: rgba(255,255,255,0.2); border: 2px solid transparent; border-radius: 6px; cursor: pointer; font-size: 14px;" onclick="selectHourlyDuration(6)">
+                                    <input type="radio" name="rental-duration" id="duration-6h" value="6" onchange="updateRentalPrice()" style="display: none;">
+                                    <strong>6h</strong>
+                                    <span id="price-6h" style="font-size: 12px; opacity: 0.9;">N2.40</span>
+                                </label>
+                                <label id="duration-12h-label" style="display: flex; flex-direction: column; align-items: center; padding: 10px; background: rgba(255,255,255,0.2); border: 2px solid transparent; border-radius: 6px; cursor: pointer; font-size: 14px;" onclick="selectHourlyDuration(12)">
+                                    <input type="radio" name="rental-duration" id="duration-12h" value="12" onchange="updateRentalPrice()" style="display: none;">
+                                    <strong>12h</strong>
+                                    <span id="price-12h" style="font-size: 12px; opacity: 0.9;">N3.00</span>
+                                </label>
+                                <label id="duration-24h-label" style="display: flex; flex-direction: column; align-items: center; padding: 10px; background: rgba(255,255,255,0.2); border: 2px solid transparent; border-radius: 6px; cursor: pointer; font-size: 14px;" onclick="selectHourlyDuration(24)">
+                                    <input type="radio" name="rental-duration" id="duration-24h" value="24" onchange="updateRentalPrice()" style="display: none;">
+                                    <strong>24h</strong>
+                                    <span id="price-24h" style="font-size: 12px; opacity: 0.9;">N3.60</span>
+                                </label>
+                            </div>
                         </div>
+                        
+                        <!-- Extended Rentals Section -->
+                        <div style="background: var(--bg-secondary); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+                            <h4 style="margin: 0 0 10px 0; font-size: 16px; color: var(--text-primary);">📅 Extended Rentals</h4>
+                            <div style="display: grid; grid-template-columns: 1fr; gap: 8px;">
+                                <label id="duration-7-label" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--bg); border: 2px solid transparent; border-radius: 6px; cursor: pointer; font-size: 14px;" onclick="selectExtendedDuration(7)">
+                                    <div>
+                                        <input type="radio" name="rental-duration" id="duration-7" value="168" onchange="updateRentalPrice()" style="margin-right: 8px;">
+                                        <strong>7 days</strong>
+                                    </div>
+                                    <span id="price-7" style="font-weight: bold; color: #667eea;">N10.00</span>
+                                </label>
+                                <label id="duration-14-label" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--bg); border: 2px solid transparent; border-radius: 6px; cursor: pointer; font-size: 14px;" onclick="selectExtendedDuration(14)">
+                                    <div>
+                                        <input type="radio" name="rental-duration" id="duration-14" value="336" onchange="updateRentalPrice()" style="margin-right: 8px;">
+                                        <strong>14 days</strong>
+                                    </div>
+                                    <span id="price-14" style="font-weight: bold; color: #667eea;">N18.00</span>
+                                </label>
+                                <label id="duration-30-label" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--bg); border: 2px solid transparent; border-radius: 6px; cursor: pointer; font-size: 14px;" onclick="selectExtendedDuration(30)">
+                                    <div>
+                                        <input type="radio" name="rental-duration" id="duration-30" value="720" onchange="updateRentalPrice()" style="margin-right: 8px;">
+                                        <strong>30 days</strong>
+                                    </div>
+                                    <span id="price-30" style="font-weight: bold; color: #667eea;">N32.50</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Auto-Renewal Option -->
+                    <div style="background: var(--bg-secondary); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border);">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" id="auto-renew-checkbox" onchange="updateRentalPrice()" style="width: 18px; height: 18px;">
+                            <div>
+                                <div style="font-weight: 600; color: var(--text-primary);">🔄 Auto-Renewal (10% discount)</div>
+                                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">Automatically extend when rental expires</div>
+                            </div>
+                        </label>
                     </div>
                     
                     <div style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                             <strong>Total Cost:</strong>
-                            <span id="rental-total" style="font-size: 1.5rem; font-weight: bold; color: #10b981;">$50.00</span>
+                            <span id="rental-total" style="font-size: 1.5rem; font-weight: bold; color: #10b981;">N1.20</span>
                         </div>
                         <div style="font-size: 0.85rem; color: #059669;">
-                            <div>Expires: <span id="rental-expiry">7 days from now</span></div>
+                            <div>Expires: <span id="rental-expiry">1 hour from now</span></div>
                         </div>
                     </div>
                     
@@ -512,10 +546,37 @@
                 <div id="transactions"></div>
             </div>
 
+            <!-- Receipts Section -->
+            <div id="receipts-section" class="card" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <h2 style="margin: 0;">🧾 Verification Receipts</h2>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="receiptManager.loadReceipts()" class="btn-small" style="font-weight: 600;">🔄 Refresh</button>
+                        <button onclick="toggleReceipts()" class="btn-small" style="background: #ef4444; font-weight: 600;">❌ Hide</button>
+                    </div>
+                </div>
+                <div id="receipts-list"></div>
+            </div>
+
+            <!-- Notifications Section -->
+            <div id="notifications-section" class="card" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <h2 style="margin: 0;">🔔 Notifications <span id="notification-badge" class="notification-badge" style="display: none;">0</span></h2>
+                    <div style="display: flex; gap: 8px;">
+                        <button id="mark-all-read" class="btn-small" style="background: #10b981; font-weight: 600;">✅ Mark All Read</button>
+                        <button onclick="receiptManager.loadNotifications()" class="btn-small" style="font-weight: 600;">🔄 Refresh</button>
+                        <button onclick="toggleNotifications()" class="btn-small" style="background: #ef4444; font-weight: 600;">❌ Hide</button>
+                    </div>
+                </div>
+                <div id="notifications-list"></div>
+            </div>
+
             <div class="card">
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                     <button onclick="toggleHistory()" id="toggle-history-btn" style="flex: 1; padding: 12px; background: #667eea; font-weight: 600;">📜 Show Verifications</button>
                     <button onclick="toggleTransactions()" id="toggle-transactions-btn" style="flex: 1; padding: 12px; background: #667eea; font-weight: 600;">💳 Show Transactions</button>
+                    <button onclick="toggleReceipts()" id="toggle-receipts-btn" style="flex: 1; padding: 12px; background: #667eea; font-weight: 600;">🧾 Show Receipts</button>
+                    <button onclick="toggleNotifications()" id="toggle-notifications-btn" style="flex: 1; padding: 12px; background: #667eea; font-weight: 600;">🔔 Show Notifications</button>
                 </div>
             </div>
 
@@ -563,25 +624,9 @@
 
                     <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border);">
                         <h3 style="margin: 0 0 15px 0;">🔔 Notification Settings</h3>
-                        <p style="color: #6b7280; margin-bottom: 15px; font-size: 14px;">Configure email notifications</p>
-                        <div style="margin-bottom: 15px;">
-                            <label style="cursor: pointer; color: var(--text-primary); display: inline-flex; align-items: center; gap: 10px;">
-                                <input type="checkbox" id="email-on-sms" onchange="updateNotificationSettings()">
-                                <span>📧 Email me when SMS is received</span>
-                            </label>
-                        </div>
-                        <div style="margin-bottom: 15px;">
-                            <label style="cursor: pointer; color: var(--text-primary); display: inline-flex; align-items: center; gap: 10px;">
-                                <input type="checkbox" id="email-on-low-balance" onchange="updateNotificationSettings()">
-                                <span>⚠️ Email me when balance is low</span>
-                            </label>
-                        </div>
-                        <div style="margin-top: 15px;">
-                            <label style="font-weight: bold; display: block; margin-bottom: 5px;">Low Balance Threshold (N)</label>
-                            <input type="number" id="low-balance-threshold" min="0.5" step="0.5" value="1.0" 
-                                   onchange="updateNotificationSettings()" 
-                                   style="width: 150px; padding: 8px; border: 2px solid #e5e7eb; border-radius: 6px;">
-                        </div>
+                        <p style="color: #6b7280; margin-bottom: 15px; font-size: 14px;">Configure notifications and receipts</p>
+                        <div id="notification-settings"></div>
+                        <button onclick="receiptManager.loadNotificationSettings()" style="width: 100%; margin-top: 15px; padding: 10px; background: #667eea; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">⚙️ Manage Settings</button>
                     </div>
 
                     <div id="biometric-section" style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; margin-top: 20px; border: 1px solid var(--border); display: none;">
@@ -767,9 +812,9 @@
             <span>🏠</span>
             <span>Rentals</span>
         </div>
-        <div class="bottom-nav-item" data-section="history" onclick="navigateToSection('history')">
-            <span>📜</span>
-            <span>History</span>
+        <div class="bottom-nav-item" data-section="receipts" onclick="navigateToSection('receipts')">
+            <span>🧾</span>
+            <span>Receipts</span>
         </div>
         <div class="bottom-nav-item" data-section="settings" onclick="navigateToSection('settings')">
             <span>⚙️</span>
@@ -806,7 +851,143 @@
     <script src="/static/js/mobile.js?v=1729365000"></script>
     <script src="/static/js/biometric.js?v=1729365000"></script>
     <script src="/static/js/offline-queue.js?v=1729365000"></script>
+    <script src="/static/js/receipts.js?v=1729365000"></script>
     <script src="/static/js/main.js?v=1729365000"></script>
+    
+    <!-- Enhanced Frontend Functions -->
+    <script>
+        // Quick Actions Modal
+        function showQuickActions() {
+            document.getElementById('quick-actions-modal').style.display = 'flex';
+            loadRecentActivity();
+        }
+        
+        function closeQuickActions() {
+            document.getElementById('quick-actions-modal').style.display = 'none';
+        }
+        
+        // Load recent activity for quick actions
+        async function loadRecentActivity() {
+            const container = document.getElementById('recent-activity');
+            try {
+                const response = await fetch('/verifications/history?limit=3', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.verifications.length > 0) {
+                        container.innerHTML = data.verifications.map(v => 
+                            `<div style="padding: 5px 0; border-bottom: 1px solid var(--border);">
+                                <strong>${v.service_name}</strong> - ${v.status} 
+                                <span style="float: right; font-size: 11px;">${new Date(v.created_at).toLocaleDateString()}</span>
+                            </div>`
+                        ).join('');
+                    } else {
+                        container.innerHTML = '<div style="color: var(--text-tertiary);">No recent activity</div>';
+                    }
+                } else {
+                    container.innerHTML = '<div style="color: var(--error);">Failed to load activity</div>';
+                }
+            } catch (error) {
+                container.innerHTML = '<div style="color: var(--error);">Error loading activity</div>';
+            }
+        }
+        
+        // Update notification indicators
+        function updateNotificationIndicators(unreadCount) {
+            const indicators = [
+                'notification-badge',
+                'quick-notification-badge', 
+                'feature-notification-badge'
+            ];
+            
+            indicators.forEach(id => {
+                const badge = document.getElementById(id);
+                if (badge) {
+                    if (unreadCount > 0) {
+                        badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                        badge.style.display = 'block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            });
+            
+            // Update notification indicator in user info
+            const indicator = document.getElementById('notification-indicator');
+            const unreadCountSpan = document.getElementById('unread-count');
+            if (indicator && unreadCountSpan) {
+                if (unreadCount > 0) {
+                    unreadCountSpan.textContent = unreadCount;
+                    indicator.style.display = 'block';
+                } else {
+                    indicator.style.display = 'none';
+                }
+            }
+        }
+        
+        // Update feature status indicators
+        function updateFeatureStatus() {
+            const statuses = {
+                'receipts-status': window.receiptManager ? 'active' : 'inactive',
+                'notifications-status': window.receiptManager ? 'active' : 'inactive',
+                'rentals-status': 'active',
+                'pricing-status': 'active'
+            };
+            
+            Object.entries(statuses).forEach(([id, status]) => {
+                const dot = document.getElementById(id);
+                if (dot) {
+                    dot.className = `status-dot ${status}`;
+                }
+            });
+        }
+        
+        // Enhanced feature button updates
+        function updateFeatureButton(buttonId, isVisible) {
+            const button = document.getElementById(buttonId);
+            if (button) {
+                const statusSpan = button.querySelector('.feature-status');
+                if (statusSpan) {
+                    statusSpan.textContent = isVisible ? 'Hide' : 'Show';
+                }
+                button.style.background = isVisible ? '#ef4444' : '#667eea';
+            }
+        }
+        
+        // Initialize enhanced frontend
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(updateFeatureStatus, 1000);
+            
+            if (window.receiptManager) {
+                setTimeout(() => {
+                    receiptManager.loadNotifications().then(() => {
+                        updateNotificationIndicators(receiptManager.unreadCount || 0);
+                    });
+                }, 2000);
+            }
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.ctrlKey || e.metaKey) {
+                    switch(e.key) {
+                        case '1': e.preventDefault(); navigateToSection('verify'); break;
+                        case '2': e.preventDefault(); navigateToSection('rentals'); break;
+                        case '3': e.preventDefault(); toggleReceipts(); break;
+                        case '4': e.preventDefault(); toggleNotifications(); break;
+                        case 'q': e.preventDefault(); showQuickActions(); break;
+                    }
+                }
+            });
+        });
+        
+        window.showQuickActions = showQuickActions;
+        window.closeQuickActions = closeQuickActions;
+        window.updateNotificationIndicators = updateNotificationIndicators;
+        window.updateFeatureStatus = updateFeatureStatus;
+        window.updateFeatureButton = updateFeatureButton;
+    </script>
     <script>
         // Register Service Worker
         if ('serviceWorker' in navigator) {

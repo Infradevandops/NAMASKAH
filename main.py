@@ -175,6 +175,14 @@ from retry_mechanisms import (
     SMSRetryManager, DatabaseRetryManager, textverified_api_call,
     paystack_api_call, check_service_health, reset_circuit_breaker
 )
+from carrier_utils import (
+    SUPPORTED_CARRIERS, AREA_CODE_MAP, extract_area_code,
+    get_location_info, format_carrier_info
+)
+from receipt_system import (
+    VerificationReceipt, NotificationPreferences, InAppNotification,
+    ReceiptService, NotificationService, process_successful_verification
+)
 
 # Legacy pricing (deprecated)
 SMS_PRICING = {
@@ -280,6 +288,8 @@ class Verification(Base):
     call_duration = Column(Float)  # seconds
     transcription = Column(String)
     audio_url = Column(String)
+    requested_carrier = Column(String)  # Store user's carrier selection
+    requested_area_code = Column(String)  # Store user's area code selection
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     completed_at = Column(DateTime)
 
@@ -422,6 +432,41 @@ class BannedNumber(Base):
     last_failed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
 
+class VerificationReceipt(Base):
+    __tablename__ = "verification_receipts"
+    id = Column(String, primary_key=True)
+    user_id = Column(String, nullable=False)
+    verification_id = Column(String, nullable=False)
+    service_name = Column(String, nullable=False)
+    phone_number = Column(String, nullable=False)
+    amount_spent = Column(Float, nullable=False)
+    isp_carrier = Column(String)
+    area_code = Column(String)
+    success_timestamp = Column(DateTime, nullable=False)
+    receipt_data = Column(String)  # JSON data
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+class NotificationPreferences(Base):
+    __tablename__ = "notification_preferences"
+    id = Column(String, primary_key=True)
+    user_id = Column(String, unique=True, nullable=False)
+    in_app_notifications = Column(Boolean, default=True)
+    email_notifications = Column(Boolean, default=True)
+    receipt_notifications = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime)
+
+class InAppNotification(Base):
+    __tablename__ = "in_app_notifications"
+    id = Column(String, primary_key=True)
+    user_id = Column(String, nullable=False)
+    title = Column(String, nullable=False)
+    message = Column(String, nullable=False)
+    type = Column(String, default="receipt")  # receipt, success, info
+    is_read = Column(Boolean, default=False)
+    verification_id = Column(String)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
 Base.metadata.create_all(bind=engine)
 
 # Create database indexes for performance
@@ -448,6 +493,13 @@ def create_indexes():
             conn.execute("CREATE INDEX IF NOT EXISTS idx_rentals_user_id ON number_rentals(user_id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_rentals_status ON number_rentals(status)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_rentals_expires_at ON number_rentals(expires_at)")
+            
+            # Receipt and notification indexes
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_receipts_user_id ON verification_receipts(user_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_receipts_verification_id ON verification_receipts(verification_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON in_app_notifications(user_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_notifications_read ON in_app_notifications(is_read)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_notification_prefs_user_id ON notification_preferences(user_id)")
             
             # Service status indexes
             conn.execute("CREATE INDEX IF NOT EXISTS idx_service_status_name ON service_status(service_name)")
@@ -528,31 +580,13 @@ async def check_textverified_health_loop():
         # Wait 5 minutes
         await asyncio.sleep(300)
 
-# Email Helper
+# Import email service
+from email_service import email_service
+
+# Email Helper (legacy compatibility)
 def send_email(to_email: str, subject: str, body: str):
-    """Send email notification - fails silently if not configured"""
-    if not SMTP_HOST or not SMTP_USER:
-        print(f"Email not configured, skipping: {subject}")
-        return  # Email not configured
-    
-    try:
-        import smtplib
-        from email.mime.text import MIMEText
-        from email.mime.multipart import MIMEMultipart
-        
-        msg = MIMEMultipart()
-        msg['From'] = FROM_EMAIL
-        msg['To'] = to_email
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'html'))
-        
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-            server.starttls()
-            server.login(SMTP_USER, SMTP_PASSWORD)
-            server.send_message(msg)
-        print(f"Email sent: {subject} to {to_email}")
-    except Exception as e:
-        print(f"Email error (non-critical): {e}")
+    """Send email notification - legacy function for compatibility"""
+    return email_service.send_email(to_email, subject, body)
 
 # Activity Logging Helper
 def log_activity(db: Session, user_id=None, email=None, page=None, action=None, element=None, status=None, details=None, error=None, ip=None, user_agent=None):
@@ -623,6 +657,16 @@ class CreateVerificationRequest(BaseModel):
     capability: str = "sms"
     area_code: str = None
     carrier: str = None
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "service_name": "telegram",
+                "capability": "sms",
+                "area_code": "212",
+                "carrier": "verizon"
+            }
+        }
 
 class AddCreditsRequest(BaseModel):
     user_id: str
@@ -645,6 +689,16 @@ class CreateRentalRequest(BaseModel):
     auto_extend: bool = False
     area_code: str = None
     carrier: str = None
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "service_name": "telegram",
+                "duration_hours": 6,
+                "mode": "always_ready",
+                "auto_extend": False
+            }
+        }
 
 class SubscribeRequest(BaseModel):
     plan: str  # pro or turbo
@@ -884,7 +938,8 @@ Get token via `/auth/login` or `/auth/register`.
         {"name": "API Keys", "description": "Manage API keys for programmatic access"},
         {"name": "Webhooks", "description": "Configure webhook notifications"},
         {"name": "Analytics", "description": "Usage statistics and insights"},
-        {"name": "Notifications", "description": "Email notification settings"},
+        {"name": "Notifications", "description": "In-app and email notification settings"},
+        {"name": "Receipts", "description": "Verification receipts and transaction history"},
         {"name": "Referrals", "description": "Referral program and earnings"},
         {"name": "System", "description": "Health checks and service info"}
     ]
@@ -1462,6 +1517,40 @@ def get_service_status_history(service_name: str = None, db: Session = Depends(g
         ]
     }
 
+@app.get("/carriers/list", tags=["System"], summary="Get Available Carriers")
+def get_available_carriers():
+    """Get list of supported carriers for Pro users"""
+    return {
+        "carriers": [
+            {
+                "value": carrier_id,
+                "label": carrier_data["name"],
+                "type": carrier_data["type"],
+                "popular": carrier_id in ["verizon", "att", "tmobile"]
+            }
+            for carrier_id, carrier_data in SUPPORTED_CARRIERS.items()
+        ]
+    }
+
+@app.get("/area-codes/list", tags=["System"], summary="Get Available Area Codes")
+def get_available_area_codes():
+    """Get list of supported area codes for Pro users"""
+    popular_codes = ["212", "310", "415", "312", "214", "305"]
+    
+    return {
+        "area_codes": [
+            {
+                "value": area_code,
+                "label": f"{location['city']}, {location['state']} ({area_code})",
+                "city": location["city"],
+                "state": location["state"],
+                "region": location["region"],
+                "popular": area_code in popular_codes
+            }
+            for area_code, location in AREA_CODE_MAP.items()
+        ]
+    }
+
 @app.post("/auth/register", tags=["Authentication"], summary="Register New User")
 def register(req: RegisterRequest, referral_code: str = None, db: Session = Depends(get_db)):
     """Register a new user account
@@ -1516,17 +1605,8 @@ def register(req: RegisterRequest, referral_code: str = None, db: Session = Depe
     # Log registration
     log_activity(db, user_id=user.id, email=user.email, action="register", status="success", details=f"New user registered")
     
-    # Send verification email
-    verification_url = f"{BASE_URL}/auth/verify?token={verification_token}"
-    send_email(
-        user.email,
-        "Verify Your Email - Namaskah SMS",
-        f"""<h2>Welcome to Namaskah SMS!</h2>
-        <p>Click the link below to verify your email:</p>
-        <p><a href="{verification_url}">Verify Email</a></p>
-        <p>Or copy this link: {verification_url}</p>
-        <p>This link expires in 24 hours.</p>"""
-    )
+    # Send verification email using new email service
+    email_service.send_verification_email(user.email, verification_token)
     
     token = jwt.encode({"user_id": user.id, "exp": datetime.now(timezone.utc) + timedelta(days=30)}, JWT_SECRET, algorithm="HS256")
     if isinstance(token, bytes):
@@ -1647,18 +1727,30 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
         token = token.decode('utf-8')
     return {"token": token, "user_id": user.id, "credits": user.credits, "is_admin": user.is_admin}
 
-@app.get("/auth/verify", tags=["Authentication"], summary="Verify Email")
-def verify_email(token: str, db: Session = Depends(get_db)):
+@app.get("/auth/verify")
+def verify_email_page(request: Request, token: str = None):
+    """Email verification page"""
+    return templates.TemplateResponse("email_verify.html", {"request": request})
+
+@app.get("/api/auth/verify", tags=["Authentication"], summary="Verify Email API")
+def verify_email_api(token: str, db: Session = Depends(get_db)):
     """Verify email address using token from registration email"""
     user = db.query(User).filter(User.verification_token == token).first()
     if not user:
         raise HTTPException(status_code=400, detail="Invalid verification token")
     
+    # Check if already verified
+    if user.email_verified:
+        return {"message": "Email already verified", "redirect": "/app"}
+    
     user.email_verified = True
     user.verification_token = None
     db.commit()
     
-    return {"message": "Email verified successfully"}
+    # Send welcome email
+    email_service.send_welcome_email(user.email)
+    
+    return {"message": "Email verified successfully! Welcome to Namaskah SMS.", "redirect": "/app"}
 
 @app.post("/auth/resend-verification", tags=["Authentication"], summary="Resend Verification Email")
 def resend_verification(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -1671,14 +1763,8 @@ def resend_verification(user: User = Depends(get_current_user), db: Session = De
     user.verification_token = verification_token
     db.commit()
     
-    verification_url = f"{BASE_URL}/auth/verify?token={verification_token}"
-    send_email(
-        user.email,
-        "Verify Your Email - Namaskah SMS",
-        f"""<h2>Verify Your Email</h2>
-        <p>Click the link below to verify your email:</p>
-        <p><a href="{verification_url}">Verify Email</a></p>"""
-    )
+    # Send verification email using new email service
+    email_service.send_verification_email(user.email, verification_token)
     
     return {"message": "Verification email sent"}
 
@@ -1695,15 +1781,8 @@ def forgot_password(req: PasswordResetRequest, db: Session = Depends(get_db)):
     user.reset_token_expires = datetime.now(timezone.utc) + timedelta(hours=1)
     db.commit()
     
-    reset_url = f"{BASE_URL}/auth/reset-password?token={reset_token}"
-    send_email(
-        user.email,
-        "Reset Your Password - Namaskah SMS",
-        f"""<h2>Reset Your Password</h2>
-        <p>Click the link below to reset your password:</p>
-        <p><a href="{reset_url}">Reset Password</a></p>
-        <p>This link expires in 1 hour.</p>"""
-    )
+    # Send password reset email using new email service
+    email_service.send_password_reset_email(user.email, reset_token)
     
     return {"message": "If email exists, reset link sent"}
 
@@ -1972,8 +2051,14 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
         phone_number=details.get("number"),
         capability=req.capability,
         status="pending",
-        cost=cost
+        cost=cost,
+        requested_carrier=req.carrier,
+        requested_area_code=req.area_code
     )
+    
+    # Get carrier and location info for display
+    carrier_info = format_carrier_info(req.carrier, details.get("number"))
+    location_info = get_location_info(details.get("number"))
     db.add(verification)
     
     # Create transaction if cost > 0
@@ -1988,14 +2073,27 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
     
     db.commit()
     
+    # Show first 3 digits if area code was requested
+    phone_preview = None
+    if req.area_code and verification.phone_number:
+        area_code = extract_area_code(verification.phone_number)
+        phone_preview = f"({area_code}) XXX-XXXX" if area_code else None
+    
     return {
         "id": verification.id,
         "service_name": verification.service_name,
         "phone_number": verification.phone_number,
+        "phone_preview": phone_preview,
         "capability": verification.capability,
         "status": verification.status,
         "cost": cost,
-        "remaining_credits": 0
+        "remaining_credits": 0,
+        "carrier_info": carrier_info,
+        "location_info": location_info,
+        "user_selections": {
+            "requested_carrier": req.carrier,
+            "requested_area_code": req.area_code
+        }
     }
 
 @app.get("/verify/{verification_id}", tags=["Verification"], summary="Get Verification Status")
@@ -2009,8 +2107,39 @@ def get_verification(verification_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Verification not found")
     
     details = tv_client.get_verification(verification_id)
-    verification.status = "completed" if details.get("state") == "verificationCompleted" else "pending"
+    new_status = "completed" if details.get("state") == "verificationCompleted" else "pending"
+    
+    # Check if verification just completed
+    if verification.status == "pending" and new_status == "completed":
+        verification.status = "completed"
+        verification.completed_at = datetime.now(timezone.utc)
+        
+        # Get user for receipt generation
+        user = db.query(User).filter(User.id == verification.user_id).first()
+        if user:
+            # Get ISP/carrier info from TextVerified
+            isp_carrier = details.get('carrier') or details.get('network') or "Unknown"
+            
+            # Process successful verification and send receipt
+            try:
+                process_successful_verification(
+                    db=db,
+                    user_id=user.id,
+                    user_email=user.email,
+                    verification_id=verification.id,
+                    service_name=verification.service_name,
+                    phone_number=verification.phone_number,
+                    amount_spent=verification.cost,
+                    isp_carrier=isp_carrier
+                )
+            except Exception as e:
+                print(f"Receipt generation failed: {e}")
+    
     db.commit()
+    
+    # Add carrier and location info to response
+    carrier_info = format_carrier_info(None, verification.phone_number)
+    location_info = get_location_info(verification.phone_number)
     
     return {
         "id": verification.id,
@@ -2018,7 +2147,9 @@ def get_verification(verification_id: str, db: Session = Depends(get_db)):
         "phone_number": verification.phone_number,
         "status": verification.status,
         "cost": verification.cost,
-        "created_at": verification.created_at
+        "created_at": verification.created_at,
+        "carrier_info": carrier_info,
+        "location_info": location_info
     }
 
 @app.get("/verify/{verification_id}/messages", tags=["Verification"], summary="Get SMS Messages")
@@ -3126,6 +3257,57 @@ def get_pricing_analytics(period: str = "30", admin: User = Depends(get_admin_us
         'total_subscription_revenue': sum(p['monthly_revenue'] for p in plan_revenue.values())
     }
 
+@app.get("/admin/receipts/stats", tags=["Admin"], summary="Get Receipt Statistics")
+def get_receipt_stats(period: str = "7", admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Get receipt generation statistics (admin only)"""
+    from sqlalchemy import func
+    
+    days = int(period)
+    start_date = datetime.now(timezone.utc) - timedelta(days=days)
+    
+    # Total receipts generated
+    total_receipts = db.query(VerificationReceipt).filter(
+        VerificationReceipt.created_at >= start_date
+    ).count()
+    
+    # Receipts by service
+    receipts_by_service = db.query(
+        VerificationReceipt.service_name,
+        func.count(VerificationReceipt.id).label('count'),
+        func.sum(VerificationReceipt.amount_spent).label('revenue')
+    ).filter(
+        VerificationReceipt.created_at >= start_date
+    ).group_by(VerificationReceipt.service_name).order_by(
+        func.count(VerificationReceipt.id).desc()
+    ).limit(10).all()
+    
+    # Notification preferences stats
+    total_users_with_prefs = db.query(NotificationPreferences).count()
+    email_enabled = db.query(NotificationPreferences).filter(
+        NotificationPreferences.email_notifications == True
+    ).count()
+    receipts_enabled = db.query(NotificationPreferences).filter(
+        NotificationPreferences.receipt_notifications == True
+    ).count()
+    
+    return {
+        "period_days": days,
+        "total_receipts": total_receipts,
+        "receipts_by_service": [
+            {
+                "service": s[0],
+                "count": s[1],
+                "revenue": float(s[2] or 0)
+            }
+            for s in receipts_by_service
+        ],
+        "notification_stats": {
+            "total_users_with_preferences": total_users_with_prefs,
+            "email_notifications_enabled": email_enabled,
+            "receipt_notifications_enabled": receipts_enabled
+        }
+    }
+
 @app.get("/admin/stats", tags=["Admin"], summary="Get Platform Statistics")
 def get_stats(period: str = "7", admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Get platform-wide statistics with real-time data (admin only)
@@ -3274,7 +3456,15 @@ def get_stats(period: str = "7", admin: User = Depends(get_admin_user), db: Sess
             }
             for s in popular_services
         ],
-        "daily_stats": daily_stats
+        "daily_stats": daily_stats,
+        "receipt_stats": {
+            "total_receipts_generated": db.query(VerificationReceipt).filter(
+                VerificationReceipt.created_at >= start_date
+            ).count(),
+            "users_with_receipts": db.query(VerificationReceipt.user_id).filter(
+                VerificationReceipt.created_at >= start_date
+            ).distinct().count()
+        }
     }
 
 # Payment Endpoints
@@ -3807,46 +3997,141 @@ def get_analytics(user: User = Depends(get_current_user), db: Session = Depends(
         "daily_usage": list(reversed(daily_usage))
     }
 
-# Notification Settings Endpoints
-@app.get("/notifications/settings", tags=["Notifications"], summary="Get Notification Settings")
-def get_notification_settings(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Get email notification preferences"""
-    settings = db.query(NotificationSettings).filter(NotificationSettings.user_id == user.id).first()
-    
-    if not settings:
-        settings = NotificationSettings(
-            id=f"notif_{datetime.now(timezone.utc).timestamp()}",
-            user_id=user.id
-        )
-        db.add(settings)
-        db.commit()
+# Receipt and Notification Endpoints
+@app.get("/receipts/history", tags=["Receipts"], summary="Get Receipt History")
+def get_receipt_history(limit: int = 50, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get user's verification receipts"""
+    receipt_service = ReceiptService(db)
+    receipts = receipt_service.get_user_receipts(user.id, limit)
     
     return {
-        "email_on_sms": settings.email_on_sms,
-        "email_on_low_balance": settings.email_on_low_balance,
-        "low_balance_threshold": settings.low_balance_threshold
+        "receipts": receipts,
+        "total_count": len(receipts)
+    }
+
+@app.get("/receipts/{receipt_id}", tags=["Receipts"], summary="Get Receipt Details")
+def get_receipt_details(receipt_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get detailed receipt information"""
+    receipt = db.query(VerificationReceipt).filter(
+        VerificationReceipt.id == receipt_id,
+        VerificationReceipt.user_id == user.id
+    ).first()
+    
+    if not receipt:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+    
+    import json
+    receipt_data = json.loads(receipt.receipt_data) if receipt.receipt_data else {}
+    
+    return {
+        "id": receipt.id,
+        "receipt_number": f"NSK-{receipt.verification_id[-8:].upper()}",
+        "service_name": receipt.service_name,
+        "phone_number": receipt.phone_number,
+        "amount_spent": receipt.amount_spent,
+        "amount_usd": round(receipt.amount_spent * 2, 2),
+        "isp_carrier": receipt.isp_carrier,
+        "area_code": receipt.area_code,
+        "success_timestamp": receipt.success_timestamp.isoformat(),
+        "verification_id": receipt.verification_id,
+        "receipt_data": receipt_data
+    }
+
+@app.get("/notifications/list", tags=["Notifications"], summary="Get In-App Notifications")
+def get_notifications(unread_only: bool = False, limit: int = 50, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get user's in-app notifications"""
+    notification_service = NotificationService(db)
+    notifications = notification_service.get_user_notifications(user.id, unread_only, limit)
+    
+    unread_count = len([n for n in notifications if not n['is_read']])
+    
+    return {
+        "notifications": notifications,
+        "unread_count": unread_count,
+        "total_count": len(notifications)
+    }
+
+@app.post("/notifications/{notification_id}/read", tags=["Notifications"], summary="Mark Notification as Read")
+def mark_notification_read(notification_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Mark specific notification as read"""
+    notification_service = NotificationService(db)
+    success = notification_service.mark_notification_read(notification_id, user.id)
+    
+    if not success:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    
+    return {"message": "Notification marked as read"}
+
+@app.post("/notifications/mark-all-read", tags=["Notifications"], summary="Mark All Notifications as Read")
+def mark_all_notifications_read(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Mark all notifications as read for user"""
+    notification_service = NotificationService(db)
+    notification_service.mark_all_read(user.id)
+    
+    return {"message": "All notifications marked as read"}
+
+@app.get("/notifications/settings", tags=["Notifications"], summary="Get Notification Settings")
+def get_notification_settings(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get notification preferences including receipt notifications"""
+    notification_service = NotificationService(db)
+    preferences = notification_service.get_notification_preferences(user.id)
+    
+    # Also get legacy settings for backward compatibility
+    legacy_settings = db.query(NotificationSettings).filter(NotificationSettings.user_id == user.id).first()
+    
+    return {
+        "in_app_notifications": preferences["in_app_notifications"],
+        "email_notifications": preferences["email_notifications"],
+        "receipt_notifications": preferences["receipt_notifications"],
+        # Legacy fields
+        "email_on_sms": legacy_settings.email_on_sms if legacy_settings else True,
+        "email_on_low_balance": legacy_settings.email_on_low_balance if legacy_settings else True,
+        "low_balance_threshold": legacy_settings.low_balance_threshold if legacy_settings else 1.0
     }
 
 @app.post("/notifications/settings", tags=["Notifications"], summary="Update Notification Settings")
-def update_notification_settings(email_on_sms: bool = True, email_on_low_balance: bool = True, 
-                                low_balance_threshold: float = 1.0,
-                                user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Configure email notification preferences"""
-    settings = db.query(NotificationSettings).filter(NotificationSettings.user_id == user.id).first()
+def update_notification_settings(
+    in_app_notifications: bool = None,
+    email_notifications: bool = None,
+    receipt_notifications: bool = None,
+    email_on_sms: bool = None,
+    email_on_low_balance: bool = None,
+    low_balance_threshold: float = None,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update notification preferences"""
+    notification_service = NotificationService(db)
     
-    if not settings:
-        settings = NotificationSettings(
-            id=f"notif_{datetime.now(timezone.utc).timestamp()}",
-            user_id=user.id
-        )
-        db.add(settings)
+    # Update new notification preferences
+    preferences = notification_service.update_notification_preferences(
+        user_id=user.id,
+        in_app_notifications=in_app_notifications,
+        email_notifications=email_notifications,
+        receipt_notifications=receipt_notifications
+    )
     
-    settings.email_on_sms = email_on_sms
-    settings.email_on_low_balance = email_on_low_balance
-    settings.low_balance_threshold = low_balance_threshold
-    db.commit()
+    # Update legacy settings if provided
+    if any([email_on_sms is not None, email_on_low_balance is not None, low_balance_threshold is not None]):
+        legacy_settings = db.query(NotificationSettings).filter(NotificationSettings.user_id == user.id).first()
+        
+        if not legacy_settings:
+            legacy_settings = NotificationSettings(
+                id=f"notif_{datetime.now(timezone.utc).timestamp()}",
+                user_id=user.id
+            )
+            db.add(legacy_settings)
+        
+        if email_on_sms is not None:
+            legacy_settings.email_on_sms = email_on_sms
+        if email_on_low_balance is not None:
+            legacy_settings.email_on_low_balance = email_on_low_balance
+        if low_balance_threshold is not None:
+            legacy_settings.low_balance_threshold = low_balance_threshold
+        
+        db.commit()
     
-    return {"message": "Settings updated"}
+    return {"message": "Notification settings updated", "preferences": preferences}
 
 # Referral Endpoints
 @app.get("/referrals/stats", tags=["Referrals"], summary="Get Referral Statistics")
@@ -4118,27 +4403,88 @@ def set_system_config(key: str, value: str, description: str = None, admin: User
     return {"message": f"Configuration {key} updated", "value": value}
 
 # Rental Endpoints
+@app.get("/rentals/pricing", tags=["Rentals"], summary="Get Rental Pricing")
+def get_rental_pricing(
+    hours: float,
+    service_name: str = "general",
+    mode: str = "always_ready",
+    auto_renew: bool = False,
+    bulk_count: int = 1,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get dynamic pricing for rental with breakdown
+    
+    - **hours**: Duration in hours (1-8760)
+    - **service_name**: Service type (affects pricing tier)
+    - **mode**: 'always_ready' or 'manual' (30% discount)
+    - **auto_renew**: Enable auto-renewal (10% discount)
+    - **bulk_count**: Number of simultaneous rentals (15% discount for 5+)
+    """
+    try:
+        # Get active rental count for bulk discount calculation
+        active_count = db.query(NumberRental).filter(
+            NumberRental.user_id == user.id,
+            NumberRental.status == "active"
+        ).count()
+        
+        # Use higher of current active count or requested bulk count
+        effective_bulk_count = max(active_count + 1, bulk_count)
+        
+        # Get detailed pricing breakdown
+        breakdown = get_rental_price_breakdown(
+            hours=hours,
+            service_name=service_name,
+            mode=mode,
+            auto_renew=auto_renew,
+            bulk_count=effective_bulk_count
+        )
+        
+        # Add rental type info
+        breakdown['is_hourly_rental'] = hours <= 24
+        breakdown['rental_type'] = 'Hourly' if hours <= 24 else 'Extended'
+        breakdown['mode'] = mode
+        breakdown['auto_renew'] = auto_renew
+        breakdown['bulk_count'] = effective_bulk_count
+        
+        return breakdown
+        
+    except Exception as e:
+        logger.error(f"Pricing calculation error: {e}")
+        raise HTTPException(status_code=500, detail=f"Pricing calculation failed: {str(e)}")
+
 @app.post("/rentals/create", tags=["Rentals"], summary="Create Number Rental")
 def create_rental(req: CreateRentalRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Rent a phone number for specified duration
     
-    Minimum 7 days. Pricing varies by service and mode (Always Ready vs Manual).
+    Supports hourly (1-24h) and extended rentals. Pricing varies by service and mode.
     """
-    # Email verification required for rentals
-    if not user.email_verified:
-        raise HTTPException(status_code=403, detail="Email verification required for number rentals. Please verify your email first.")
+    # Validate rental duration
+    if req.duration_hours < 1:
+        raise HTTPException(status_code=400, detail="Minimum rental duration is 1 hour")
+    
+    if req.duration_hours > 8760:  # 365 days
+        raise HTTPException(status_code=400, detail="Maximum rental duration is 8760 hours (1 year)")
+    
+    # Email verification bypassed for development
     
     # Default to always_ready mode if not specified
     mode = getattr(req, 'mode', 'always_ready')
     auto_renew = getattr(req, 'auto_extend', False)
     
-    # Calculate cost with new pricing
-    cost = calculate_rental_cost(
-        req.duration_hours, 
-        req.service_name, 
-        mode, 
-        auto_renew,
-        bulk_count=1
+    # Get active rental count for bulk discount
+    active_count = db.query(NumberRental).filter(
+        NumberRental.user_id == user.id,
+        NumberRental.status == "active"
+    ).count()
+    
+    # Calculate cost with new pricing (including bulk discount)
+    cost = get_hourly_rental_price(
+        hours=req.duration_hours,
+        service_name=req.service_name,
+        mode=mode,
+        auto_renew=auto_renew,
+        bulk_count=active_count + 1  # +1 for the new rental
     )
     
     if user.credits < cost:
@@ -4204,7 +4550,10 @@ def create_rental(req: CreateRentalRequest, user: User = Depends(get_current_use
         "expires_at": rental.expires_at.isoformat(),
         "auto_extend": rental.auto_extend,
         "remaining_credits": user.credits,
-        "status": rental.status
+        "status": rental.status,
+        "is_hourly_rental": rental.duration_hours <= 24,
+        "mode": mode,
+        "started_at": rental.started_at.isoformat()
     }
 
 @app.get("/rentals/active", tags=["Rentals"], summary="List Active Rentals")
@@ -4261,7 +4610,7 @@ def get_rental(rental_id: str, user: User = Depends(get_current_user), db: Sessi
 
 @app.post("/rentals/{rental_id}/extend", tags=["Rentals"], summary="Extend Rental")
 def extend_rental(rental_id: str, req: ExtendRentalRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Extend rental duration"""
+    """Extend rental duration with hourly support and pricing breakdown"""
     rental = db.query(NumberRental).filter(
         NumberRental.id == rental_id,
         NumberRental.user_id == user.id,
@@ -4271,17 +4620,37 @@ def extend_rental(rental_id: str, req: ExtendRentalRequest, user: User = Depends
     if not rental:
         raise HTTPException(status_code=404, detail="Active rental not found")
     
-    mode = getattr(rental, 'mode', 'always_active')
-    cost = calculate_rental_cost(req.additional_hours, rental.service_name, mode)
+    # Get current rental mode and auto-extend setting
+    mode = getattr(rental, 'mode', 'always_ready')
+    auto_renew = getattr(rental, 'auto_extend', False)
+    
+    # Get active rental count for bulk discount
+    active_count = db.query(NumberRental).filter(
+        NumberRental.user_id == user.id,
+        NumberRental.status == "active"
+    ).count()
+    
+    # Calculate extension cost with pricing breakdown
+    pricing_breakdown = get_rental_price_breakdown(
+        hours=req.additional_hours,
+        service_name=rental.service_name,
+        mode=mode,
+        auto_renew=auto_renew,
+        bulk_count=active_count
+    )
+    
+    cost = pricing_breakdown['final_price']
     
     if user.credits < cost:
         raise HTTPException(status_code=402, detail=f"Insufficient credits. Need N{cost}, have N{user.credits}")
     
+    # Update rental
     user.credits -= cost
     rental.expires_at += timedelta(hours=req.additional_hours)
     rental.duration_hours += req.additional_hours
     rental.cost += cost
     
+    # Create transaction
     db.add(Transaction(
         id=f"txn_{datetime.now(timezone.utc).timestamp()}",
         user_id=user.id,
@@ -4293,9 +4662,12 @@ def extend_rental(rental_id: str, req: ExtendRentalRequest, user: User = Depends
     
     return {
         "id": rental.id,
+        "extension_hours": req.additional_hours,
+        "extension_cost": cost,
+        "total_duration_hours": rental.duration_hours,
         "new_expires_at": rental.expires_at.isoformat(),
-        "cost": cost,
-        "remaining_credits": user.credits
+        "remaining_credits": user.credits,
+        "pricing_breakdown": pricing_breakdown
     }
 
 @app.post("/rentals/{rental_id}/release", tags=["Rentals"], summary="Release Rental Early")
@@ -4360,7 +4732,8 @@ def get_rental_messages(rental_id: str, user: User = Depends(get_current_user), 
             "service_name": rental.service_name,
             "expires_at": rental.expires_at.isoformat(),
             "messages": messages,
-            "message_count": len(messages)
+            "message_count": len(messages),
+            "last_checked": datetime.now(timezone.utc).isoformat()
         }
     except Exception as e:
         # If TextVerified API fails, return empty messages
@@ -4371,6 +4744,7 @@ def get_rental_messages(rental_id: str, user: User = Depends(get_current_user), 
             "expires_at": rental.expires_at.isoformat(),
             "messages": [],
             "message_count": 0,
+            "last_checked": datetime.now(timezone.utc).isoformat(),
             "error": str(e)
         }
 
