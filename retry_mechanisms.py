@@ -2,6 +2,7 @@
 import time
 import functools
 import requests
+import asyncio
 from datetime import datetime, timedelta
 
 # Circuit breaker state
