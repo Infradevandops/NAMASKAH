@@ -1,18 +1,11 @@
 # ISP/Carrier utilities for Namaskah SMS
 AREA_CODE_MAP = {
     "212": {"city": "New York", "state": "NY", "region": "Manhattan"},
-    "646": {"city": "New York", "state": "NY", "region": "Manhattan"},
-    "917": {"city": "New York", "state": "NY", "region": "Mobile"},
-    "718": {"city": "New York", "state": "NY", "region": "Brooklyn/Queens"},
     "310": {"city": "Los Angeles", "state": "CA", "region": "West LA"},
-    "323": {"city": "Los Angeles", "state": "CA", "region": "Central LA"},
     "415": {"city": "San Francisco", "state": "CA", "region": "SF"},
-    "510": {"city": "Oakland", "state": "CA", "region": "East Bay"},
-    "214": {"city": "Dallas", "state": "TX", "region": "Dallas"},
-    "713": {"city": "Houston", "state": "TX", "region": "Houston"},
-    "305": {"city": "Miami", "state": "FL", "region": "Miami-Dade"},
     "312": {"city": "Chicago", "state": "IL", "region": "Downtown"},
-    "773": {"city": "Chicago", "state": "IL", "region": "Chicago"},
+    "214": {"city": "Dallas", "state": "TX", "region": "Dallas"},
+    "305": {"city": "Miami", "state": "FL", "region": "Miami-Dade"},
 }
 
 SUPPORTED_CARRIERS = {
