@@ -38,25 +38,43 @@
             </div>
         </div>
         
-        <!-- Verification Type Selection -->
-        <div id="verification-type-selection" class="hidden">
-            <h3 style="margin: 20px 0 16px 0; font-size: 18px; color: var(--text-primary);">Select Verification Method</h3>
-            <div class="verification-type-classic">
-                <div id="type-sms-classic" class="type-button-classic selected" onclick="selectVerificationTypeClassic('sms')">
-                    <span class="type-icon">📱</span>
-                    <div class="type-name">SMS</div>
-                    <div class="type-price" id="sms-price-classic">N1.00</div>
+        <!-- Service Selected Info -->
+        <div id="service-selected-info" class="hidden" style="margin: 20px 0; padding: 16px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div>
+                    <div style="font-weight: 600; color: var(--text-primary);">✅ Selected: <span id="selected-service-name">-</span></div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">SMS Verification</div>
                 </div>
-                <div id="type-voice-classic" class="type-button-classic" onclick="selectVerificationTypeClassic('voice')">
-                    <span class="type-icon">📞</span>
-                    <div class="type-name">Voice Call</div>
-                    <div class="type-price" id="voice-price-classic">N1.30</div>
-                </div>
+                <div style="font-size: 18px; font-weight: 700; color: var(--accent);" id="selected-service-price">N1.00</div>
             </div>
-            
             <button id="create-verification-classic" class="create-btn-classic" onclick="createVerificationClassic()" disabled>
-                Create Verification
+                📱 Create SMS Verification
             </button>
+            <button onclick="showVerificationOptions()" style="width: 100%; margin-top: 8px; padding: 10px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-secondary); font-size: 12px; cursor: pointer;">
+                📞 Need Voice Call? Click here
+            </button>
+        </div>
+        
+        <!-- Verification Options Modal -->
+        <div id="verification-options-modal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+            <div style="background: var(--bg); border-radius: 12px; padding: 24px; max-width: 400px; width: 90%;">
+                <h3 style="margin: 0 0 16px 0;">Choose Verification Method</h3>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="type-button-classic selected" onclick="selectVerificationTypeAndClose('sms')" style="cursor: pointer;">
+                        <span class="type-icon">📱</span>
+                        <div class="type-name">SMS</div>
+                        <div class="type-price" id="sms-price-modal">N1.00</div>
+                    </div>
+                    <div class="type-button-classic" onclick="selectVerificationTypeAndClose('voice')" style="cursor: pointer;">
+                        <span class="type-icon">📞</span>
+                        <div class="type-name">Voice Call</div>
+                        <div class="type-price" id="voice-price-modal">N1.30</div>
+                    </div>
+                </div>
+                <button onclick="closeVerificationOptions()" style="width: 100%; margin-top: 16px; padding: 10px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer;">
+                    Cancel
+                </button>
+            </div>
         </div>
     </div>
     

@@ -119,6 +119,7 @@ function renderServicesClassic(servicesData) {
 
 function selectServiceClassic(serviceName) {
     selectedService = serviceName;
+    selectedType = 'sms'; // Default to SMS
     
     // Update UI selection
     document.querySelectorAll('.service-item-classic').forEach(item => {
@@ -129,13 +130,19 @@ function selectServiceClassic(serviceName) {
         serviceElement.classList.add('selected');
     }
     
-    // Update verification type prices
-    updateVerificationTypePrices();
-    
-    // Show verification type selection
-    const typeSelection = document.getElementById('verification-type-selection');
-    if (typeSelection) {
-        typeSelection.classList.remove('hidden');
+    // Show service selected info
+    const serviceInfo = document.getElementById('service-selected-info');
+    if (serviceInfo) {
+        serviceInfo.classList.remove('hidden');
+        
+        // Update service name and price
+        const tier = getServiceTier(serviceName);
+        document.getElementById('selected-service-name').textContent = formatServiceName(serviceName);
+        document.getElementById('selected-service-price').textContent = `N${tier.price.toFixed(2)}`;
+        
+        // Update modal prices
+        document.getElementById('sms-price-modal').textContent = `N${tier.price.toFixed(2)}`;
+        document.getElementById('voice-price-modal').textContent = `N${(tier.price + 0.30).toFixed(2)}`;
     }
     
     // Enable create button
@@ -145,31 +152,36 @@ function selectServiceClassic(serviceName) {
     }
 }
 
-function updateVerificationTypePrices() {
-    if (!selectedService) return;
-    
-    const tier = getServiceTier(selectedService);
-    const smsPrice = tier.price;
-    const voicePrice = tier.price + 0.30; // Voice premium
-    
-    const smsElement = document.getElementById('sms-price-classic');
-    const voiceElement = document.getElementById('voice-price-classic');
-    
-    if (smsElement) smsElement.textContent = `N${smsPrice.toFixed(2)}`;
-    if (voiceElement) voiceElement.textContent = `N${voicePrice.toFixed(2)}`;
+function showVerificationOptions() {
+    const modal = document.getElementById('verification-options-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
 }
 
-function selectVerificationTypeClassic(type) {
+function closeVerificationOptions() {
+    const modal = document.getElementById('verification-options-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+function selectVerificationTypeAndClose(type) {
     selectedType = type;
     
-    // Update UI selection
-    document.querySelectorAll('.type-button-classic').forEach(btn => {
-        btn.classList.remove('selected');
-    });
-    const typeElement = document.getElementById(`type-${type}-classic`);
-    if (typeElement) {
-        typeElement.classList.add('selected');
+    // Update the main button text and price
+    const createBtn = document.getElementById('create-verification-classic');
+    const priceElement = document.getElementById('selected-service-price');
+    
+    if (selectedService && createBtn && priceElement) {
+        const tier = getServiceTier(selectedService);
+        const price = type === 'voice' ? tier.price + 0.30 : tier.price;
+        
+        createBtn.innerHTML = type === 'voice' ? '📞 Create Voice Verification' : '📱 Create SMS Verification';
+        priceElement.textContent = `N${price.toFixed(2)}`;
     }
+    
+    closeVerificationOptions();
 }
 
 // Create verification with classic flow
@@ -430,23 +442,23 @@ function resetVerificationFlowClassic() {
     const serviceSelection = document.getElementById('service-selection-classic');
     const statusContainer = document.getElementById('verification-status-classic');
     const messagesContainer = document.getElementById('messages-display-classic');
-    const typeSelection = document.getElementById('verification-type-selection');
+    const serviceInfo = document.getElementById('service-selected-info');
     
     if (serviceSelection) serviceSelection.classList.remove('hidden');
     if (statusContainer) statusContainer.classList.add('hidden');
     if (messagesContainer) messagesContainer.classList.add('hidden');
-    if (typeSelection) typeSelection.classList.add('hidden');
+    if (serviceInfo) serviceInfo.classList.add('hidden');
     
     // Reset selections
     document.querySelectorAll('.service-item-classic').forEach(item => {
         item.classList.remove('selected');
     });
-    document.querySelectorAll('.type-button-classic').forEach(btn => {
-        btn.classList.remove('selected');
-    });
     
-    const smsType = document.getElementById('type-sms-classic');
-    if (smsType) smsType.classList.add('selected');
+    // Reset create button
+    const createBtn = document.getElementById('create-verification-classic');
+    if (createBtn) {
+        createBtn.innerHTML = '📱 Create SMS Verification';
+    }
     
     // Disable create button
     const createBtn = document.getElementById('create-verification-classic');
