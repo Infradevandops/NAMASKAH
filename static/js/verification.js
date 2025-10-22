@@ -6,13 +6,16 @@ let countdownSeconds = 45;
 let currentServiceName = null;
 let firstVerificationCompleted = false;
 
-// Dynamic pricing function
+// Dynamic pricing function with fallback
 async function getServicePrice(serviceName, capability = 'sms') {
-    if (!window.token) return null;
-    
     try {
+        const headers = {};
+        if (window.token) {
+            headers['Authorization'] = `Bearer ${window.token}`;
+        }
+        
         const res = await fetch(`${API_BASE}/services/price/${serviceName}`, {
-            headers: {'Authorization': `Bearer ${window.token}`}
+            headers: headers
         });
         if (res.ok) {
             const data = await res.json();
@@ -23,7 +26,20 @@ async function getServicePrice(serviceName, capability = 'sms') {
     } catch (err) {
         console.error('Price fetch error:', err);
     }
-    return null;
+    
+    // Fallback pricing if API fails
+    const fallbackPrices = {
+        'whatsapp': 0.75, 'telegram': 0.75, 'discord': 0.75, 'google': 0.75,
+        'instagram': 1.00, 'facebook': 1.00, 'twitter': 1.00, 'tiktok': 1.00,
+        'paypal': 1.50, 'venmo': 1.50, 'cashapp': 1.50
+    };
+    
+    const basePrice = fallbackPrices[serviceName.toLowerCase()] || 2.00;
+    const voicePremium = 0.30;
+    
+    return capability === 'voice' 
+        ? (basePrice + voicePremium).toFixed(2)
+        : basePrice.toFixed(2);
 }
 
 // Get tier name for display
@@ -69,12 +85,9 @@ async function createVerification() {
         return;
     }
     
-    // Get dynamic price before creating
+    // Get dynamic price before creating (now always returns a price)
     const price = await getServicePrice(service, capability);
-    if (price === null) {
-        showNotification('⚠️ Unable to get pricing. Try again.', 'error');
-        return;
-    }
+    console.log(`Service: ${service}, Capability: ${capability}, Price: N${price}`);
     
     // Get carrier and area code selections
     const carrierSelect = document.getElementById('carrier-select');

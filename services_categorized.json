@@ -1834,5 +1834,39 @@
   "pricing": {
     "categorized": 0.5,
     "uncategorized": 0.75
+  },
+  "tiers": {
+    "tier1": {
+      "name": "High-Demand",
+      "price": 0.75,
+      "services": [
+        "whatsapp",
+        "telegram",
+        "discord",
+        "google"
+      ]
+    },
+    "tier2": {
+      "name": "Standard",
+      "price": 1.0,
+      "services": [
+        "instagram",
+        "facebook",
+        "twitter",
+        "tiktok"
+      ]
+    },
+    "tier3": {
+      "name": "Premium",
+      "price": 1.5,
+      "services": [
+        "paypal"
+      ]
+    },
+    "tier4": {
+      "name": "Specialty",
+      "price": 2.0,
+      "services": []
+    }
   }
 }

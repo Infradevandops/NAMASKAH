@@ -1,0 +1,269 @@
+// Services Module
+let servicesData = null;
+let searchDebounceTimer = null;
+
+async function loadServices() {
+    if (servicesData) {
+        renderServices();
+        return;
+    }
+    
+    try {
+        const res = await fetch(`${API_BASE}/services/list`);
+        if (res.ok) {
+            servicesData = await res.json();
+            renderServices();
+            const total = Object.values(servicesData.categories).reduce((sum, arr) => sum + arr.length, 0) + (servicesData.uncategorized?.length || 0);
+            showNotification(`✅ ${total} services loaded with dynamic pricing!`, 'success');
+        }
+    } catch (err) {
+        console.error('Failed to load services:', err);
+        showNotification('⚠️ Failed to load services', 'error');
+    }
+}
+
+function formatServiceName(service) {
+    const special = {
+        'twitter': 'X (Twitter)',
+        'x': 'X (Twitter)'
+    };
+    
+    if (special[service.toLowerCase()]) {
+        return special[service.toLowerCase()];
+    }
+    
+    return service.charAt(0).toUpperCase() + service.slice(1);
+}
+
+function renderServices() {
+    if (!servicesData) {
+        document.getElementById('categories-container').innerHTML = 'Loading services...';
+        return;
+    }
+    
+    const container = document.getElementById('categories-container');
+    const search = document.getElementById('service-search').value.toLowerCase();
+    const categoryFilter = document.getElementById('category-filter').value;
+    let html = '';
+    
+    // Tier colors and badges with N coin pricing
+    const tierInfo = {
+        'tier1': { color: '#10b981', badge: 'HIGH-DEMAND', price: 'N0.75' },
+        'tier2': { color: '#3b82f6', badge: 'STANDARD', price: 'N1.00' },
+        'tier3': { color: '#f59e0b', badge: 'PREMIUM', price: 'N1.50' },
+        'tier4': { color: '#ef4444', badge: 'SPECIALTY', price: 'N2.00' }
+    };
+    
+    function getServiceTier(service) {
+        if (!servicesData.tiers) return 'tier4';
+        for (const [tierId, tierData] of Object.entries(servicesData.tiers)) {
+            if (tierData.services.includes(service.toLowerCase())) {
+                return tierId;
+            }
+        }
+        return 'tier4';
+    }
+    
+    const categoryOrder = ['Social', 'Messaging', 'Dating', 'Finance', 'Shopping', 'Food', 'Gaming', 'Crypto'];
+    
+    categoryOrder.forEach(category => {
+        // Skip if category filter is active and doesn't match
+        if (categoryFilter && categoryFilter !== category) return;
+        
+        if (servicesData.categories && servicesData.categories[category]) {
+            let services = servicesData.categories[category];
+            if (search) {
+                services = services.filter(s => s.toLowerCase().includes(search));
+            }
+            if (services.length > 0) {
+                html += `<div style="min-width: 85px;">`;
+                html += `<div style="font-weight: bold; font-size: 0.7rem; color: var(--accent); margin-bottom: 6px; border-bottom: 1px solid var(--accent); padding-bottom: 2px;">${category}</div>`;
+                services.slice(0, 8).forEach(service => {
+                    const tier = getServiceTier(service);
+                    const tierData = tierInfo[tier];
+                    html += `<div onclick="selectService('${service}')" style="font-size: 0.65rem; padding: 3px; cursor: pointer; border-radius: 3px; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;" onmouseover="this.style.background='var(--accent)'; this.style.color='white'" onmouseout="this.style.background=''; this.style.color=''">
+                        <span>${formatServiceName(service)}</span>
+                        <span style="font-size: 0.55rem; background: ${tierData.color}; color: white; padding: 1px 3px; border-radius: 2px; font-weight: bold;">${tierData.price}</span>
+                    </div>`;
+                });
+                if (services.length > 8) {
+                    html += `<div style="font-size: 0.6rem; color: var(--text-secondary); padding: 2px;">+${services.length - 8} more</div>`;
+                }
+                html += `</div>`;
+            }
+        }
+    });
+    
+    container.innerHTML = html || 'No services found';
+}
+
+async function selectService(service) {
+    document.getElementById('service-select').value = service;
+    
+    // Get dynamic price for selected service
+    const capability = document.querySelector('input[name="capability"]:checked')?.value || 'sms';
+    const price = await getServicePrice(service, capability);
+    const fallbackPrice = capability === 'voice' ? '1.30' : '1.00';
+    const priceText = price ? `N${price}` : `N${fallbackPrice}`;
+    
+    document.getElementById('service-info').innerHTML = `✅ Selected: <strong>${formatServiceName(service)}</strong> • ${capability === 'voice' ? '📞' : '📱'} ${capability.toUpperCase()} (${priceText})`;
+    document.getElementById('service-info').style.color = '#10b981';
+    
+    document.getElementById('capability-selection').classList.remove('hidden');
+    document.getElementById('create-verification-btn').classList.remove('hidden');
+    
+    document.querySelectorAll('#categories-container > div > div[onclick]').forEach(el => {
+        el.style.fontWeight = 'normal';
+    });
+    if (event && event.target) {
+        event.target.style.fontWeight = 'bold';
+    }
+}
+
+// Add dynamic pricing function to services.js too
+async function getServicePrice(serviceName, capability = 'sms') {
+    try {
+        const headers = {};
+        if (window.token) {
+            headers['Authorization'] = `Bearer ${window.token}`;
+        }
+        
+        const res = await fetch(`${API_BASE}/services/price/${serviceName}`, {
+            headers: headers
+        });
+        if (res.ok) {
+            const data = await res.json();
+            return capability === 'voice' 
+                ? (data.base_price + data.voice_premium).toFixed(2)
+                : data.base_price.toFixed(2);
+        }
+    } catch (err) {
+        console.error('Price fetch error:', err);
+    }
+    return null;
+}
+
+function showUnlistedModal() {
+    document.getElementById('unlisted-modal').classList.remove('hidden');
+}
+
+function closeUnlistedModal() {
+    document.getElementById('unlisted-modal').classList.add('hidden');
+    document.getElementById('unlisted-service-name').value = '';
+}
+
+function selectUnlistedService() {
+    const serviceName = document.getElementById('unlisted-service-name').value.trim().toLowerCase();
+    if (!serviceName) {
+        showNotification('⚠️ Please enter a service name', 'error');
+        return;
+    }
+    closeUnlistedModal();
+    selectService(serviceName);
+}
+
+function filterServices() {
+    const searchTerm = document.getElementById('service-search').value.toLowerCase();
+    
+    // Hide suggestions when searching
+    if (searchTerm) {
+        document.getElementById('service-suggestions').classList.add('hidden');
+    } else {
+        // Show suggestions if category is selected but no search
+        const category = document.getElementById('category-filter').value;
+        if (category && category !== '') {
+            showCategoryServices(category);
+        }
+    }
+    
+    if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => renderServices(), 200);
+}
+
+function filterByCategory() {
+    const category = document.getElementById('category-filter').value;
+    
+    // Show service suggestions for selected category
+    if (category && category !== '') {
+        showCategoryServices(category);
+    } else {
+        // Hide suggestions when showing all categories
+        document.getElementById('service-suggestions').classList.add('hidden');
+    }
+    
+    renderServices();
+}
+
+// Show service suggestions when category is selected
+function showCategoryServices(category) {
+    if (!servicesData || !servicesData.categories) return;
+    
+    const services = servicesData.categories[category] || [];
+    const suggestionsContainer = document.getElementById('service-suggestions');
+    const suggestionGrid = suggestionsContainer.querySelector('.suggestion-grid');
+    
+    if (services.length > 0) {
+        // Show top 8 popular services in this category
+        const popularServices = services.slice(0, 8);
+        suggestionGrid.innerHTML = popularServices.map(service => 
+            `<button onclick="selectServiceFromSuggestion('${service}')" 
+                     style="padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 16px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;" 
+                     onmouseover="this.style.background='#5a67d8'" 
+                     onmouseout="this.style.background='#667eea'">
+                ${formatServiceName(service)}
+            </button>`
+        ).join('');
+        suggestionsContainer.classList.remove('hidden');
+    } else {
+        suggestionsContainer.classList.add('hidden');
+    }
+}
+
+// Select service from suggestion
+function selectServiceFromSuggestion(serviceName) {
+    document.getElementById('service-select').value = serviceName;
+    selectService(serviceName);
+    document.getElementById('service-suggestions').classList.add('hidden');
+}
+
+function selectGeneralPurpose() {
+    const serviceName = document.getElementById('unlisted-service-name').value.trim() || 'general';
+    closeUnlistedModal();
+    selectService(serviceName);
+}
+
+async function updateCapability() {
+    const capability = document.querySelector('input[name="capability"]:checked').value;
+    const info = document.getElementById('service-info');
+    const service = document.getElementById('service-select').value;
+    
+    if (service) {
+        const smsPrice = await getServicePrice(service, 'sms');
+        const voicePrice = await getServicePrice(service, 'voice');
+        
+        // Update capability labels with fallback pricing
+        document.getElementById('sms-price').textContent = smsPrice ? `N${smsPrice}` : 'N1.00';
+        document.getElementById('voice-price').textContent = voicePrice ? `N${voicePrice}` : 'N1.30';
+        
+        const currentPrice = capability === 'voice' ? (voicePrice || '1.30') : (smsPrice || '1.00');
+        const priceText = `N${currentPrice}`;
+        info.innerHTML = `✅ Selected: <strong>${formatServiceName(service)}</strong> • ${capability === 'voice' ? '📞' : '📱'} ${capability.toUpperCase()} (${priceText})`;
+        info.style.color = '#10b981';
+    } else {
+        // Reset to default prices
+        document.getElementById('sms-price').textContent = 'N1.00';
+        document.getElementById('voice-price').textContent = 'N1.30';
+        info.innerHTML = `⚡ Click a service to select • ${capability === 'voice' ? '📞' : '📱'} ${capability.toUpperCase()}`;
+        info.style.color = '';
+    }
+}
+
+function selectCapability(type) {
+    document.querySelector('input[name="capability"][value="sms"]').checked = (type === 'sms');
+    document.querySelector('input[name="capability"][value="voice"]').checked = (type === 'voice');
+    
+    document.getElementById('capability-sms-label').style.borderColor = (type === 'sms') ? '#fbbf24' : 'transparent';
+    document.getElementById('capability-voice-label').style.borderColor = (type === 'voice') ? '#fbbf24' : 'transparent';
+    
+    updateCapability();
+}

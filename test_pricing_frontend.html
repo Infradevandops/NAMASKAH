@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Pricing API Test</h1>
+    <p>Testing the pricing endpoint without authentication...</p>
+    
+    <button onclick="testPricing()">Test Pricing</button>
+    <button onclick="testWithAuth()">Test with Auth (if logged in)</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_BASE = '';
+        
+        // Include the updated getServicePrice function
+        async function getServicePrice(serviceName, capability = 'sms') {
+            try {
+                const headers = {};
+                if (window.token) {
+                    headers['Authorization'] = `Bearer ${window.token}`;
+                }
+                
+                const res = await fetch(`${API_BASE}/services/price/${serviceName}`, {
+                    headers: headers
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    return capability === 'voice' 
+                        ? (data.base_price + data.voice_premium).toFixed(2)
+                        : data.base_price.toFixed(2);
+                }
+            } catch (err) {
+                console.error('Price fetch error:', err);
+            }
+            
+            // Fallback pricing if API fails
+            const fallbackPrices = {
+                'whatsapp': 0.75, 'telegram': 0.75, 'discord': 0.75, 'google': 0.75,
+                'instagram': 1.00, 'facebook': 1.00, 'twitter': 1.00, 'tiktok': 1.00,
+                'paypal': 1.50, 'venmo': 1.50, 'cashapp': 1.50
+            };
+            
+            const basePrice = fallbackPrices[serviceName.toLowerCase()] || 2.00;
+            const voicePremium = 0.30;
+            
+            return capability === 'voice' 
+                ? (basePrice + voicePremium).toFixed(2)
+                : basePrice.toFixed(2);
+        }
+        
+        async function testPricing() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Testing pricing...</p>';
+            
+            const testServices = ['whatsapp', 'telegram', 'instagram', 'paypal', 'unknown_service'];
+            let html = '';
+            
+            for (const service of testServices) {
+                try {
+                    const smsPrice = await getServicePrice(service, 'sms');
+                    const voicePrice = await getServicePrice(service, 'voice');
+                    
+                    html += `<div class="test-result success">
+                        ✅ ${service}: SMS N${smsPrice}, Voice N${voicePrice}
+                    </div>`;
+                } catch (err) {
+                    html += `<div class="test-result error">
+                        ❌ ${service}: Error - ${err.message}
+                    </div>`;
+                }
+            }
+            
+            results.innerHTML = html;
+        }
+        
+        function testWithAuth() {
+            // Simulate having a token
+            window.token = 'fake_token_for_testing';
+            testPricing();
+        }
+    </script>
+</body>
+</html>

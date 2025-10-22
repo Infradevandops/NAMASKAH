@@ -1361,21 +1361,36 @@ def get_services_list():
         return {"categories": {}, "uncategorized": [], "tiers": {}}
 
 @app.get("/services/price/{service_name}", tags=["System"], summary="Get Service Price")
-def get_service_price_endpoint(service_name: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Get dynamic price for a service based on user's plan and volume"""
-    # Get user's subscription
-    subscription = db.query(Subscription).filter(
-        Subscription.user_id == user.id,
-        Subscription.status == "active"
-    ).first()
-    user_plan = subscription.plan if subscription else 'starter'
+def get_service_price_endpoint(service_name: str, request: Request, db: Session = Depends(get_db)):
+    """Get dynamic price for a service (public endpoint)"""
+    # Default to starter plan for unauthenticated users
+    user_plan = 'starter'
+    monthly_count = 0
     
-    # Get monthly count
-    month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0)
-    monthly_count = db.query(Verification).filter(
-        Verification.user_id == user.id,
-        Verification.created_at >= month_start
-    ).count()
+    # Try to get user info if authenticated
+    try:
+        auth_header = request.headers.get("authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
+            payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+            user_id = payload.get("user_id")
+            
+            if user_id:
+                # Get user's subscription
+                subscription = db.query(Subscription).filter(
+                    Subscription.user_id == user_id,
+                    Subscription.status == "active"
+                ).first()
+                user_plan = subscription.plan if subscription else 'starter'
+                
+                # Get monthly count
+                month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0)
+                monthly_count = db.query(Verification).filter(
+                    Verification.user_id == user_id,
+                    Verification.created_at >= month_start
+                ).count()
+    except:
+        pass  # Use defaults for unauthenticated users
     
     # Calculate price
     tier = get_service_tier(service_name)

@@ -1,0 +1,78 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Namaskah Monitoring</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .card { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .status-healthy { color: #10b981; font-weight: bold; }
+        .status-unhealthy { color: #ef4444; font-weight: bold; }
+        .metric { display: inline-block; margin: 10px; padding: 10px; background: #f9f9f9; border-radius: 4px; }
+        .refresh-btn { background: #667eea; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Namaskah SMS Platform Monitoring</h1>
+        
+        <div class="card">
+            <h2>System Health</h2>
+            <button class="refresh-btn" onclick="loadHealth()">🔄 Refresh</button>
+            <div id="health-status">Loading...</div>
+        </div>
+        
+        <div class="card">
+            <h2>📊 System Metrics</h2>
+            <div id="metrics">Loading...</div>
+        </div>
+        
+        <div class="card">
+            <h2>🔧 Services Status</h2>
+            <div id="services-status">Loading...</div>
+        </div>
+    </div>
+    
+    <script>
+        async function loadHealth() {
+            try {
+                const response = await fetch('/health/detailed');
+                const data = await response.json();
+                
+                document.getElementById('health-status').innerHTML = `
+                    <div class="status-${data.status === 'healthy' ? 'healthy' : 'unhealthy'}">
+                        Status: ${data.status.toUpperCase()}
+                    </div>
+                    <p>Last Updated: ${new Date(data.timestamp).toLocaleString()}</p>
+                    <p>Version: ${data.version}</p>
+                `;
+                
+                document.getElementById('metrics').innerHTML = `
+                    <div class="metric">CPU: ${data.metrics.cpu_percent.toFixed(1)}%</div>
+                    <div class="metric">Memory: ${data.metrics.memory_percent.toFixed(1)}%</div>
+                    <div class="metric">Disk: ${data.metrics.disk_percent.toFixed(1)}%</div>
+                    <div class="metric">Memory Available: ${data.metrics.memory_available_gb} GB</div>
+                    <div class="metric">Disk Free: ${data.metrics.disk_free_gb} GB</div>
+                `;
+                
+                let servicesHtml = '';
+                for (const [service, status] of Object.entries(data.components)) {
+                    const statusClass = status.includes('healthy') || status.status === 'closed' ? 'healthy' : 'unhealthy';
+                    servicesHtml += `<div class="status-${statusClass}">${service}: ${JSON.stringify(status)}</div>`;
+                }
+                document.getElementById('services-status').innerHTML = servicesHtml;
+                
+            } catch (error) {
+                document.getElementById('health-status').innerHTML = `<div class="status-unhealthy">Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Auto-refresh every 30 seconds
+        setInterval(loadHealth, 30000);
+        loadHealth();
+    </script>
+</body>
+</html>
