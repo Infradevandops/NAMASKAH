@@ -461,16 +461,13 @@ function selectCapability(type) {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 Services module initialized');
     
-    // Load services immediately
-    loadServices();
+    // Load fallback services immediately, then try API
+    loadFallbackServices();
     
-    // Also load fallback as backup after 3 seconds if main loading fails
+    // Try to load from API after fallback is loaded
     setTimeout(() => {
-        if (!servicesData) {
-            console.log('📦 Loading fallback services as backup...');
-            loadFallbackServices();
-        }
-    }, 3000);
+        loadServices();
+    }, 100);
 });
 
 // Export functions for global access
