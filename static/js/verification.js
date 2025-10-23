@@ -1,10 +1,14 @@
-// Verification Module
+// Enhanced Verification Module
 let currentVerificationId = null;
 let autoRefreshInterval = null;
 let countdownInterval = null;
 let countdownSeconds = 45;
 let currentServiceName = null;
+let currentCapability = 'sms';
 let firstVerificationCompleted = false;
+let verificationStartTime = null;
+let maxRetries = 3;
+let currentRetryCount = 0;
 
 // Dynamic pricing function with fallback
 async function getServicePrice(serviceName, capability = 'sms') {
@@ -85,6 +89,12 @@ async function createVerification() {
         return;
     }
     
+    // Store current verification details
+    currentServiceName = service;
+    currentCapability = capability;
+    verificationStartTime = Date.now();
+    currentRetryCount = 0;
+    
     // Get dynamic price before creating (now always returns a price)
     const price = await getServicePrice(service, capability);
     console.log(`Service: ${service}, Capability: ${capability}, Price: N${price}`);
@@ -123,8 +133,13 @@ async function createVerification() {
             currentVerificationId = data.id;
             displayVerification(data);
             document.getElementById('user-credits').textContent = data.remaining_credits.toFixed(2);
-            showNotification(`✅ Verification created! Cost: N${data.cost} (${getTierName(service)})`, 'success');
+            
+            const capabilityText = capability === 'voice' ? '📞 Voice' : '📱 SMS';
+            showNotification(`✅ ${capabilityText} verification created! Cost: N${data.cost} (${getTierName(service)})`, 'success');
+            
             startAutoRefresh();
+            startSmartCountdown(service, capability);
+            
             if (typeof loadHistory === 'function') loadHistory();
             if (typeof loadTransactions === 'function') loadTransactions(true);
             
@@ -154,20 +169,28 @@ function displayVerification(data) {
     document.getElementById('phone-number').textContent = formattedPhone || 'Loading...';
     document.getElementById('service-name').textContent = formatServiceName(data.service_name);
     currentServiceName = data.service_name;
+    currentCapability = data.capability || 'sms';
     
     const statusBadge = document.getElementById('status');
     statusBadge.textContent = data.status;
     statusBadge.className = `badge status-badge-compact ${data.status}`;
     
-    // Display carrier and area code info in compact grid
+    // Enhanced info display with capability indicator
     const infoContainer = document.getElementById('verification-info');
-    if (infoContainer && (data.carrier_info || data.user_selections)) {
+    if (infoContainer) {
         let infoHTML = '';
         
+        // Capability indicator
+        const capabilityIcon = data.capability === 'voice' ? '📞' : '📱';
+        const capabilityText = data.capability === 'voice' ? 'Voice Call' : 'SMS Text';
+        infoHTML += `<div class="detail-compact" style="background: var(--bg-secondary); padding: 8px; border-radius: 6px; font-size: 12px;"><strong>Type:</strong><br><span>${capabilityIcon} ${capabilityText}</span></div>`;
+        
+        // Carrier info
         if (data.carrier_info && data.carrier_info.name) {
             infoHTML += `<div class="detail-compact" style="background: var(--bg-secondary); padding: 8px; border-radius: 6px; font-size: 12px;"><strong>Carrier:</strong><br><span>${data.carrier_info.full_display || data.carrier_info.name}</span></div>`;
         }
         
+        // User selections
         if (data.user_selections) {
             if (data.user_selections.requested_carrier) {
                 infoHTML += `<div class="detail-compact" style="background: var(--bg-secondary); padding: 8px; border-radius: 6px; font-size: 12px;"><strong>Requested:</strong><br><span class="requested-badge">${data.user_selections.requested_carrier}</span></div>`;
@@ -177,7 +200,7 @@ function displayVerification(data) {
             }
         }
         
-        // Add cost and tier info in compact format
+        // Cost and tier info
         const tierName = getTierName(data.service_name);
         infoHTML += `<div class="detail-compact" style="background: var(--bg-secondary); padding: 8px; border-radius: 6px; font-size: 12px;"><strong>Cost:</strong><br><span>N${data.cost} (${tierName})</span></div>`;
         
@@ -188,13 +211,18 @@ function displayVerification(data) {
     document.getElementById('messages-section').classList.add('hidden');
     document.getElementById('retry-btn').classList.add('hidden');
     
+    // Enhanced button visibility logic
     const isVoice = data.capability === 'voice';
-    document.getElementById('check-messages-btn').classList.toggle('hidden', isVoice);
-    document.getElementById('check-voice-btn').classList.toggle('hidden', !isVoice);
+    const checkMessagesBtn = document.getElementById('check-messages-btn');
+    const checkVoiceBtn = document.getElementById('check-voice-btn');
     
-    if (data.status === 'pending') {
-        const timerDuration = getServiceTimer(data.service_name);
-        startCountdown(timerDuration);
+    if (checkMessagesBtn) {
+        checkMessagesBtn.classList.toggle('hidden', isVoice);
+        checkMessagesBtn.textContent = isVoice ? '📞 Check Call' : '📱 Check SMS';
+    }
+    
+    if (checkVoiceBtn) {
+        checkVoiceBtn.classList.toggle('hidden', !isVoice);
     }
     
     // Scroll to verification details for better UX
@@ -204,40 +232,85 @@ function displayVerification(data) {
 function startAutoRefresh() {
     if (autoRefreshInterval) clearInterval(autoRefreshInterval);
     
-    autoRefreshInterval = setInterval(async () => {
+    // Smart refresh intervals based on capability and time elapsed
+    const getRefreshInterval = () => {
+        if (!verificationStartTime) return 10000;
+        
+        const elapsed = Date.now() - verificationStartTime;
+        const isVoice = currentCapability === 'voice';
+        
+        // More frequent checks for voice and in first 30 seconds
+        if (elapsed < 30000) return isVoice ? 3000 : 5000;
+        if (elapsed < 60000) return isVoice ? 5000 : 8000;
+        return 10000;
+    };
+    
+    const refreshCheck = async () => {
         if (currentVerificationId) {
-            await checkMessages(true);
+            if (currentCapability === 'voice') {
+                await checkVoiceCall(true);
+            } else {
+                await checkMessages(true);
+            }
             await updateVerificationStatus();
         }
-    }, 10000);
+        
+        // Schedule next check with dynamic interval
+        if (autoRefreshInterval) {
+            clearTimeout(autoRefreshInterval);
+            autoRefreshInterval = setTimeout(refreshCheck, getRefreshInterval());
+        }
+    };
+    
+    // Start first check
+    autoRefreshInterval = setTimeout(refreshCheck, getRefreshInterval());
 }
 
 function stopAutoRefresh() {
     if (autoRefreshInterval) {
+        clearTimeout(autoRefreshInterval);
         clearInterval(autoRefreshInterval);
         autoRefreshInterval = null;
     }
 }
 
+function startSmartCountdown(serviceName, capability) {
+    const baseTimer = getServiceTimer(serviceName);
+    const isVoice = capability === 'voice';
+    
+    // Voice calls typically take longer to receive
+    const duration = isVoice ? Math.max(baseTimer + 30, 90) : baseTimer;
+    
+    startCountdown(duration);
+}
+
 function startCountdown(duration = 60) {
     countdownSeconds = duration;
-    document.getElementById('timer-row').style.display = 'block';
-    document.getElementById('countdown').textContent = `${countdownSeconds}s`;
+    const timerRow = document.getElementById('timer-row');
+    const countdownEl = document.getElementById('countdown');
+    
+    if (timerRow) timerRow.style.display = 'block';
+    if (countdownEl) countdownEl.textContent = `${countdownSeconds}s`;
     
     if (countdownInterval) clearInterval(countdownInterval);
     
     countdownInterval = setInterval(() => {
         countdownSeconds--;
-        document.getElementById('countdown').textContent = `${countdownSeconds}s`;
+        if (countdownEl) countdownEl.textContent = `${countdownSeconds}s`;
         
-        // Change color as time runs out
-        const countdown = document.getElementById('countdown');
-        if (countdownSeconds <= 10) {
-            countdown.style.color = '#ef4444';
-        } else if (countdownSeconds <= 30) {
-            countdown.style.color = '#f59e0b';
-        } else {
-            countdown.style.color = '#10b981';
+        // Enhanced color coding with capability awareness
+        if (countdownEl) {
+            const isVoice = currentCapability === 'voice';
+            const warningThreshold = isVoice ? 20 : 10;
+            const cautionThreshold = isVoice ? 45 : 30;
+            
+            if (countdownSeconds <= warningThreshold) {
+                countdownEl.style.color = '#ef4444';
+            } else if (countdownSeconds <= cautionThreshold) {
+                countdownEl.style.color = '#f59e0b';
+            } else {
+                countdownEl.style.color = '#10b981';
+            }
         }
         
         if (countdownSeconds <= 0) {
@@ -256,32 +329,55 @@ function stopCountdown() {
 }
 
 function showRetryModal() {
+    const isVoice = currentCapability === 'voice';
+    const elapsedTime = verificationStartTime ? Math.floor((Date.now() - verificationStartTime) / 1000) : 0;
+    
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.style.display = 'block';
+    
+    const title = isVoice ? 'No Voice Call Received' : 'No SMS Received';
+    const description = isVoice 
+        ? 'The voice verification call was not received or processed. Choose an option:'
+        : 'The SMS verification code was not received. Choose an option:';
+    
     modal.innerHTML = `
         <div class="modal-content" style="max-width: 500px;">
-            <h2>No SMS Received</h2>
-            <p style="color: #6b7280; margin-bottom: 20px;">The verification code was not received. Choose an option:</p>
+            <h2>${title}</h2>
+            <p style="color: #6b7280; margin-bottom: 15px;">${description}</p>
+            
+            <div style="background: #f3f4f6; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; color: #374151;">
+                <strong>Verification Details:</strong><br>
+                Service: ${formatServiceName(currentServiceName)}<br>
+                Type: ${isVoice ? '📞 Voice Call' : '📱 SMS Text'}<br>
+                Elapsed: ${elapsedTime}s
+            </div>
             
             <div style="display: flex; flex-direction: column; gap: 12px;">
-                <button onclick="retryWithVoice()" style="background: #10b981; padding: 15px; font-size: 16px; font-weight: 600;">
-                    📞 Try Voice Verification
-                    <div style="font-size: 13px; opacity: 0.9; margin-top: 5px;">SMS refunded, voice charged after code arrives</div>
-                </button>
+                ${!isVoice ? `
+                    <button onclick="retryWithVoice()" style="background: #10b981; padding: 15px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; color: white;">
+                        📞 Try Voice Verification
+                        <div style="font-size: 13px; opacity: 0.9; margin-top: 5px;">Switch to voice call verification</div>
+                    </button>
+                ` : `
+                    <button onclick="retryWithSMS()" style="background: #10b981; padding: 15px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; color: white;">
+                        📱 Try SMS Verification
+                        <div style="font-size: 13px; opacity: 0.9; margin-top: 5px;">Switch to SMS text verification</div>
+                    </button>
+                `}
                 
-                <button onclick="retryWithSame()" style="background: #667eea; padding: 15px; font-size: 16px; font-weight: 600;">
+                <button onclick="retryWithSame()" style="background: #667eea; padding: 15px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; color: white;">
                     🔄 Retry Same Number
                     <div style="font-size: 13px; opacity: 0.9; margin-top: 5px;">Try again with current number</div>
                 </button>
                 
-                <button onclick="retryWithNew()" style="background: #f59e0b; padding: 15px; font-size: 16px; font-weight: 600;">
+                <button onclick="retryWithNew()" style="background: #f59e0b; padding: 15px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; color: white;">
                     🆕 Get New Number
-                    <div style="font-size: 13px; opacity: 0.9; margin-top: 5px;">Request different number</div>
+                    <div style="font-size: 13px; opacity: 0.9; margin-top: 5px;">Request different number (free)</div>
                 </button>
                 
-                <button onclick="closeRetryModal()" style="background: #ef4444; padding: 12px;">
-                    Cancel
+                <button onclick="closeRetryModal()" style="background: #ef4444; padding: 12px; border: none; border-radius: 8px; cursor: pointer; color: white; font-weight: 600;">
+                    Cancel & Refund
                 </button>
             </div>
         </div>
@@ -296,6 +392,13 @@ function closeRetryModal() {
 
 async function retryWithVoice() {
     closeRetryModal();
+    currentRetryCount++;
+    
+    if (currentRetryCount > maxRetries) {
+        showNotification('⚠️ Maximum retry attempts reached', 'error');
+        return;
+    }
+    
     showLoading(true);
     
     try {
@@ -312,11 +415,52 @@ async function retryWithVoice() {
         showLoading(false);
         
         if (res.ok) {
+            currentCapability = 'voice';
             displayVerification(data);
             showNotification('✅ Switched to voice verification', 'success');
             startAutoRefresh();
+            startSmartCountdown(currentServiceName, 'voice');
         } else {
             showNotification(`❌ ${data.detail || 'Failed to switch to voice'}`, 'error');
+        }
+    } catch (err) {
+        showLoading(false);
+        showNotification('🌐 Network error', 'error');
+    }
+}
+
+async function retryWithSMS() {
+    closeRetryModal();
+    currentRetryCount++;
+    
+    if (currentRetryCount > maxRetries) {
+        showNotification('⚠️ Maximum retry attempts reached', 'error');
+        return;
+    }
+    
+    showLoading(true);
+    
+    try {
+        const res = await fetch(`${API_BASE}/verify/${currentVerificationId}/retry`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${window.token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({retry_type: 'sms'})
+        });
+        
+        const data = await res.json();
+        showLoading(false);
+        
+        if (res.ok) {
+            currentCapability = 'sms';
+            displayVerification(data);
+            showNotification('✅ Switched to SMS verification', 'success');
+            startAutoRefresh();
+            startSmartCountdown(currentServiceName, 'sms');
+        } else {
+            showNotification(`❌ ${data.detail || 'Failed to switch to SMS'}`, 'error');
         }
     } catch (err) {
         showLoading(false);
@@ -615,69 +759,124 @@ async function cancelVerification() {
     }
 }
 
-async function checkVoiceCall() {
+async function checkVoiceCall(silent = false) {
     if (!currentVerificationId) return;
     
-    showLoading(true);
+    if (!silent) showLoading(true);
     
     try {
-        const res = await fetch(`${API_BASE}/verify/${currentVerificationId}/voice`, {
+        // First check verification status
+        const statusRes = await fetch(`${API_BASE}/verify/${currentVerificationId}`, {
             headers: { 'Authorization': `Bearer ${window.token}` }
         });
         
-        showLoading(false);
-        
-        if (res.ok) {
-            const data = await res.json();
-            const messagesList = document.getElementById('messages-list');
+        if (statusRes.ok) {
+            const statusData = await statusRes.json();
             
-            const transcriptionCode = data.transcription ? data.transcription.match(/\b\d{4,8}\b/)?.[0] : null;
-            
-            messagesList.innerHTML = `
-                <div style="background: #10b981; color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
-                    <h2 style="margin: 0 0 8px 0; font-size: 20px;">Voice Call Details</h2>
-                    <p style="margin: 0; opacity: 0.9;">Your voice verification has been received</p>
-                </div>
-                <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; border: 2px solid #10b981; margin-bottom: 15px;">
-                    <div style="margin-bottom: 10px;"><strong>Phone:</strong> ${formatPhoneNumber(data.phone_number)}</div>
-                    <div style="margin-bottom: 10px;"><strong>Duration:</strong> ${data.call_duration || 'N/A'}</div>
-                    ${data.transcription ? `
-                        <div style="background: white; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #d1fae5;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <strong style="color: #166534;">Code:</strong>
-                                <button onclick="copyCode('${transcriptionCode || data.transcription}')" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">Copy Code</button>
-                            </div>
-                            <code style="font-family: monospace; font-size: 18px; color: #166534; display: block; background: #f0fdf4; padding: 10px; border-radius: 4px; text-align: center; font-weight: bold;">${transcriptionCode || data.transcription}</code>
-                            <details style="margin-top: 8px;">
-                                <summary style="cursor: pointer; color: #6b7280; font-size: 13px;">Full transcription</summary>
-                                <div style="margin-top: 8px; font-size: 13px; color: #6b7280;">${data.transcription}</div>
-                            </details>
-                        </div>
-                    ` : ''}
-                    ${data.audio_url ? `<div style="margin-top: 10px;"><audio controls src="${data.audio_url}" style="width: 100%;"></audio></div>` : ''}
-                </div>
-            `;
-            
-            document.getElementById('messages-section').classList.remove('hidden');
-            stopAutoRefresh();
-            stopCountdown();
-            showNotification('📞 Voice call retrieved!', 'success');
-        } else {
-            const data = await res.json();
-            showNotification(data.detail || 'Failed to get voice call', 'error');
+            // If completed, try to get voice details
+            if (statusData.status === 'completed') {
+                const voiceRes = await fetch(`${API_BASE}/verify/${currentVerificationId}/voice`, {
+                    headers: { 'Authorization': `Bearer ${window.token}` }
+                });
+                
+                if (!silent) showLoading(false);
+                
+                if (voiceRes.ok) {
+                    const data = await voiceRes.json();
+                    displayVoiceResults(data);
+                    stopAutoRefresh();
+                    stopCountdown();
+                    if (!silent) showNotification('📞 Voice verification completed!', 'success');
+                    return true;
+                } else {
+                    // Voice endpoint might not be ready yet, check messages endpoint
+                    return await checkMessages(silent);
+                }
+            } else if (!silent) {
+                showLoading(false);
+                showNotification(`🔄 Voice call status: ${statusData.status}`, 'info');
+            }
+        } else if (!silent) {
+            showLoading(false);
+            showNotification('Failed to check voice call status', 'error');
         }
     } catch (error) {
-        showLoading(false);
-        showNotification('Network error', 'error');
+        if (!silent) {
+            showLoading(false);
+            showNotification('Network error checking voice call', 'error');
+        }
     }
+    
+    return false;
+}
+
+function displayVoiceResults(data) {
+    const messagesList = document.getElementById('messages-list');
+    if (!messagesList) return;
+    
+    const transcriptionCode = data.transcription ? data.transcription.match(/\b\d{4,8}\b/)?.[0] : null;
+    const hasTranscription = data.transcription && data.transcription.trim();
+    
+    messagesList.innerHTML = `
+        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+            <h2 style="margin: 0 0 8px 0; font-size: 20px;">📞 Voice Verification Complete</h2>
+            <p style="margin: 0; opacity: 0.9;">Your voice verification call has been processed</p>
+        </div>
+        <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; border: 2px solid #10b981; margin-bottom: 15px;">
+            <div style="margin-bottom: 10px;"><strong>Phone:</strong> ${formatPhoneNumber(data.phone_number)}</div>
+            <div style="margin-bottom: 10px;"><strong>Call Duration:</strong> ${data.call_duration ? `${data.call_duration}s` : 'N/A'}</div>
+            <div style="margin-bottom: 10px;"><strong>Status:</strong> ${data.call_status || 'Completed'}</div>
+            
+            ${hasTranscription ? `
+                <div style="background: white; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #d1fae5;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <strong style="color: #166534;">Verification Code:</strong>
+                        <button onclick="copyCode('${transcriptionCode || data.transcription}')" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">Copy Code</button>
+                    </div>
+                    <code style="font-family: monospace; font-size: 18px; color: #166534; display: block; background: #f0fdf4; padding: 10px; border-radius: 4px; text-align: center; font-weight: bold;">${transcriptionCode || data.transcription}</code>
+                    <details style="margin-top: 8px;">
+                        <summary style="cursor: pointer; color: #6b7280; font-size: 13px;">Full transcription</summary>
+                        <div style="margin-top: 8px; font-size: 13px; color: #6b7280; font-style: italic;">${data.transcription}</div>
+                    </details>
+                </div>
+            ` : `
+                <div style="background: #fef3c7; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #f59e0b;">
+                    <div style="color: #92400e; font-weight: 600; margin-bottom: 5px;">⚠️ Transcription Pending</div>
+                    <div style="color: #92400e; font-size: 13px;">Voice transcription is being processed. Please check again in a moment.</div>
+                </div>
+            `}
+            
+            ${data.audio_url ? `
+                <div style="margin-top: 15px;">
+                    <strong style="color: #166534;">Audio Recording:</strong>
+                    <audio controls src="${data.audio_url}" style="width: 100%; margin-top: 8px;"></audio>
+                </div>
+            ` : ''}
+        </div>
+        <button onclick="tryAnotherService()" style="margin-top: 15px; width: 100%; background: #667eea; color: white; padding: 14px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer;">Try Another Service</button>
+    `;
+    
+    document.getElementById('messages-section').classList.remove('hidden');
 }
 
 function clearSession() {
     currentVerificationId = null;
     currentServiceName = null;
+    currentCapability = 'sms';
+    verificationStartTime = null;
+    currentRetryCount = 0;
+    
     stopAutoRefresh();
     stopCountdown();
     
     document.getElementById('verification-details').classList.add('hidden');
     document.getElementById('messages-section').classList.add('hidden');
+    
+    // Reset capability selection to SMS
+    const smsRadio = document.querySelector('input[name="capability"][value="sms"]');
+    if (smsRadio) smsRadio.checked = true;
+    
+    // Clear any existing retry modals
+    const existingModal = document.querySelector('.modal');
+    if (existingModal) existingModal.remove();
 }
