@@ -17,7 +17,7 @@ async function loadServices() {
         console.log(`🔄 Loading services (attempt ${loadingAttempts}/${MAX_LOADING_ATTEMPTS})...`);
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // Reduced timeout
         
         const res = await fetch(`${API_BASE}/services/list`, {
             signal: controller.signal,
@@ -47,7 +47,7 @@ async function loadServices() {
         console.log(`✅ ${total} services loaded successfully!`);
         
         if (typeof showNotification === 'function') {
-            showNotification(`✅ ${total} services loaded with dynamic pricing!`, 'success');
+            showNotification(`✅ ${total} services loaded!`, 'success');
         }
         
         // Reset attempts on success
@@ -57,17 +57,17 @@ async function loadServices() {
         console.error('Failed to load services:', err);
         
         if (loadingAttempts < MAX_LOADING_ATTEMPTS) {
-            console.log(`⏳ Retrying in 2 seconds... (${loadingAttempts}/${MAX_LOADING_ATTEMPTS})`);
-            setTimeout(loadServices, 2000);
+            console.log(`⏳ Retrying in 1 second... (${loadingAttempts}/${MAX_LOADING_ATTEMPTS})`);
+            setTimeout(loadServices, 1000);
             return;
         }
         
         // Show error notification
         if (typeof showNotification === 'function') {
-            showNotification('⚠️ Failed to load services. Using fallback data.', 'error');
+            showNotification('⚠️ Loading fallback services...', 'warning');
         }
         
-        // Use fallback data
+        // Use fallback data immediately
         loadFallbackServices();
     }
 }
@@ -461,10 +461,16 @@ function selectCapability(type) {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 Services module initialized');
     
-    // Auto-load services after a short delay
+    // Load services immediately
+    loadServices();
+    
+    // Also load fallback as backup after 3 seconds if main loading fails
     setTimeout(() => {
-        loadServices();
-    }, 500);
+        if (!servicesData) {
+            console.log('📦 Loading fallback services as backup...');
+            loadFallbackServices();
+        }
+    }, 3000);
 });
 
 // Export functions for global access
