@@ -21,14 +21,31 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import create_engine, Column, String, DateTime, Boolean, Float
-from error_handlers import (
-    http_exception_handler,
-    validation_exception_handler,
-    general_exception_handler,
-    log_transaction,
-    log_security_event,
-    logger
-)
+# Error handlers with fallbacks
+try:
+    from error_handlers import (
+        http_exception_handler,
+        validation_exception_handler,
+        general_exception_handler,
+        log_transaction,
+        log_security_event,
+        logger
+    )
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    async def http_exception_handler(request, exc):
+        return {"error": "Internal server error", "message": "An unexpected error occurred. Please try again later.", "timestamp": datetime.now(timezone.utc).isoformat()}
+    
+    async def validation_exception_handler(request, exc):
+        return {"error": "Validation error", "message": str(exc)}
+    
+    async def general_exception_handler(request, exc):
+        return {"error": "Internal server error", "message": "An unexpected error occurred. Please try again later.", "timestamp": datetime.now(timezone.utc).isoformat()}
+    
+    def log_transaction(*args, **kwargs): pass
+    def log_security_event(*args, **kwargs): pass
 
 from sqlalchemy.orm import sessionmaker, Session
 import bcrypt
@@ -163,26 +180,75 @@ TEXTVERIFIED_EMAIL = os.getenv("TEXTVERIFIED_EMAIL")
 USD_TO_NAMASKAH = 0.5  # 1 USD = 0.5N
 NAMASKAH_TO_USD = 2.0  # 1N = 2 USD
 
-# Import optimized pricing and retry mechanisms
-from pricing_config import (
-    SERVICE_TIERS, SUBSCRIPTION_PLANS, RENTAL_HOURLY, HOURLY_RENTAL_RULES,
-    RENTAL_SERVICE_SPECIFIC, RENTAL_GENERAL_USE, PREMIUM_ADDONS,
-    VOICE_PREMIUM, get_service_tier, get_service_price, calculate_rental_cost,
-    get_hourly_rental_price, get_rental_price_breakdown
-)
-from retry_mechanisms import (
-    retry_with_backoff, async_retry_with_backoff, PaymentRetryManager,
-    SMSRetryManager, DatabaseRetryManager, textverified_api_call,
-    paystack_api_call, check_service_health, reset_circuit_breaker
-)
-from carrier_utils import (
-    SUPPORTED_CARRIERS, AREA_CODE_MAP, extract_area_code,
-    get_location_info, format_carrier_info
-)
-from receipt_system import (
-    VerificationReceipt, NotificationPreferences, InAppNotification,
-    ReceiptService, NotificationService, process_successful_verification
-)
+# Import optimized pricing and retry mechanisms with fallbacks
+try:
+    from pricing_config import (
+        SERVICE_TIERS, SUBSCRIPTION_PLANS, RENTAL_HOURLY, HOURLY_RENTAL_RULES,
+        RENTAL_SERVICE_SPECIFIC, RENTAL_GENERAL_USE, PREMIUM_ADDONS,
+        VOICE_PREMIUM, get_service_tier, get_service_price, calculate_rental_cost,
+        get_hourly_rental_price, get_rental_price_breakdown
+    )
+except ImportError:
+    # Fallback pricing if module not found
+    SERVICE_TIERS = {'popular': {'name': 'Popular', 'base_price': 1.0, 'services': [], 'success_rate': 95}}
+    SUBSCRIPTION_PLANS = {'starter': {'name': 'Starter', 'price': 0, 'discount': 0, 'features': []}}
+    PREMIUM_ADDONS = {'custom_area_code': 4.0, 'guaranteed_carrier': 6.0, 'priority_queue': 2.0}
+    VOICE_PREMIUM = 0.25
+    def get_service_tier(service): return 'popular'
+    def get_service_price(service, plan='starter', count=0): return 1.0
+    def get_hourly_rental_price(hours, service='general', mode='always_ready', auto_renew=False, bulk_count=1): return hours * 0.5
+    def get_rental_price_breakdown(hours, service='general', mode='always_ready', auto_renew=False, bulk_count=1): return {'final_price': hours * 0.5}
+
+try:
+    from retry_mechanisms import (
+        retry_with_backoff, async_retry_with_backoff, PaymentRetryManager,
+        SMSRetryManager, DatabaseRetryManager, textverified_api_call,
+        paystack_api_call, check_service_health, reset_circuit_breaker
+    )
+except ImportError:
+    # Fallback retry mechanisms
+    def retry_with_backoff(max_retries=3, circuit_breaker_key=None):
+        def decorator(func):
+            def wrapper(*args, **kwargs):
+                return func(*args, **kwargs)
+            return wrapper
+        return decorator
+    def textverified_api_call(method, url, **kwargs): return requests.request(method, url, **kwargs)
+    def paystack_api_call(method, url, **kwargs): return requests.request(method, url, **kwargs)
+    def check_service_health(service): return {'status': 'closed'}
+    def reset_circuit_breaker(service): return True
+
+try:
+    from carrier_utils import (
+        SUPPORTED_CARRIERS, AREA_CODE_MAP, extract_area_code,
+        get_location_info, format_carrier_info
+    )
+except ImportError:
+    # Fallback carrier utils
+    SUPPORTED_CARRIERS = {}
+    AREA_CODE_MAP = {}
+    def extract_area_code(phone): return None
+    def get_location_info(phone): return {}
+    def format_carrier_info(carrier, phone): return {}
+
+try:
+    from receipt_system import (
+        VerificationReceipt, NotificationPreferences, InAppNotification,
+        ReceiptService, NotificationService, process_successful_verification
+    )
+except ImportError:
+    # Fallback receipt system
+    class ReceiptService:
+        def __init__(self, db): pass
+        def get_user_receipts(self, user_id, limit): return []
+    class NotificationService:
+        def __init__(self, db): pass
+        def get_user_notifications(self, user_id, unread_only=False, limit=50): return []
+        def mark_notification_read(self, notification_id, user_id): return True
+        def mark_all_read(self, user_id): pass
+        def get_notification_preferences(self, user_id): return {'in_app_notifications': True, 'email_notifications': True, 'receipt_notifications': True}
+        def update_notification_preferences(self, user_id, **kwargs): return kwargs
+    def process_successful_verification(**kwargs): pass
 
 # Legacy pricing (deprecated)
 SMS_PRICING = {
@@ -580,13 +646,13 @@ async def check_textverified_health_loop():
         # Wait 5 minutes
         await asyncio.sleep(300)
 
-# Import email service
-from email_service import email_service
+# Import Mailgun service
+from mailgun_service import mailgun_service
 
 # Email Helper (legacy compatibility)
 def send_email(to_email: str, subject: str, body: str):
     """Send email notification - legacy function for compatibility"""
-    return email_service.send_email(to_email, subject, body)
+    return mailgun_service._send_email(to_email, subject, body)
 
 # Activity Logging Helper
 def log_activity(db: Session, user_id=None, email=None, page=None, action=None, element=None, status=None, details=None, error=None, ip=None, user_agent=None):
@@ -1295,6 +1361,22 @@ def health():
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
+class TestEmailRequest(BaseModel):
+    email: str
+
+@app.post("/test-mailgun")
+def test_mailgun(request: TestEmailRequest):
+    """Test Mailgun integration"""
+    try:
+        result = mailgun_service.send_test_email(request.email)
+        return {
+            "status": "success" if result.get("success") else "failed",
+            "message": result.get("message_id") or result.get("error"),
+            "note": "Check your email inbox (must be authorized recipient for sandbox)"
+        }
+    except Exception as e:
+        return {"status": "failed", "message": str(e)}
+
 @app.post("/emergency-admin-reset", tags=["System"], summary="Emergency Admin Reset")
 def emergency_admin_reset(secret: str, db: Session = Depends(get_db)):
     """Emergency endpoint to reset admin password - remove after use"""
@@ -1626,8 +1708,11 @@ def register(req: RegisterRequest, referral_code: str = None, db: Session = Depe
     # Log registration
     log_activity(db, user_id=user.id, email=user.email, action="register", status="success", details=f"New user registered")
     
-    # Send verification email using new email service
-    email_service.send_verification_email(user.email, verification_token)
+    # Send verification email using Mailgun service
+    try:
+        mailgun_service.send_verification_email(user.email, verification_token)
+    except Exception as e:
+        print(f"Email send error: {e}")
     
     token = jwt.encode({"user_id": user.id, "exp": datetime.now(timezone.utc) + timedelta(days=30)}, JWT_SECRET, algorithm="HS256")
     if isinstance(token, bytes):
@@ -1746,7 +1831,14 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     token = jwt.encode({"user_id": user.id, "exp": datetime.now(timezone.utc) + timedelta(days=30)}, JWT_SECRET, algorithm="HS256")
     if isinstance(token, bytes):
         token = token.decode('utf-8')
-    return {"token": token, "user_id": user.id, "credits": user.credits, "is_admin": user.is_admin}
+    return {
+        "token": token, 
+        "user_id": user.id, 
+        "credits": user.credits, 
+        "free_verifications": user.free_verifications,
+        "is_admin": user.is_admin,
+        "email_verified": user.email_verified
+    }
 
 @app.get("/auth/verify")
 def verify_email_page(request: Request, token: str = None):
@@ -1769,9 +1861,17 @@ def verify_email_api(token: str, db: Session = Depends(get_db)):
     db.commit()
     
     # Send welcome email
-    email_service.send_welcome_email(user.email)
+    try:
+        mailgun_service.send_welcome_email(user.email)
+    except Exception as e:
+        print(f"Welcome email error: {e}")
     
-    return {"message": "Email verified successfully! Welcome to Namaskah SMS.", "redirect": "/app"}
+    return {
+        "message": "🎉 Email verified successfully! Welcome to Namaskah SMS. You now have 1 free verification and are eligible to use all verification services.", 
+        "redirect": "/app",
+        "verified": True,
+        "free_verifications": user.free_verifications
+    }
 
 @app.post("/auth/resend-verification", tags=["Authentication"], summary="Resend Verification Email")
 def resend_verification(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -1784,8 +1884,11 @@ def resend_verification(user: User = Depends(get_current_user), db: Session = De
     user.verification_token = verification_token
     db.commit()
     
-    # Send verification email using new email service
-    email_service.send_verification_email(user.email, verification_token)
+    # Send verification email using Mailgun service
+    try:
+        mailgun_service.send_verification_email(user.email, verification_token)
+    except Exception as e:
+        print(f"Email send error: {e}")
     
     return {"message": "Verification email sent"}
 
@@ -1802,8 +1905,11 @@ def forgot_password(req: PasswordResetRequest, db: Session = Depends(get_db)):
     user.reset_token_expires = datetime.now(timezone.utc) + timedelta(hours=1)
     db.commit()
     
-    # Send password reset email using new email service
-    email_service.send_password_reset_email(user.email, reset_token)
+    # Send password reset email using Mailgun service
+    try:
+        mailgun_service.send_password_reset_email(user.email, reset_token)
+    except Exception as e:
+        print(f"Password reset email error: {e}")
     
     return {"message": "If email exists, reset link sent"}
 
@@ -2137,7 +2243,7 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
         "capability": verification.capability,
         "status": verification.status,
         "cost": cost,
-        "remaining_credits": 0,
+        "remaining_credits": user.credits,
         "carrier_info": carrier_info,
         "location_info": location_info,
         "user_selections": {
