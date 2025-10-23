@@ -6,6 +6,28 @@ import uuid
 
 import jwt
 from dotenv import load_dotenv
+
+# Import security modules
+try:
+    from security_utils import (
+        hash_password, verify_password, validate_password, 
+        sanitize_input, validate_email, generate_secure_token, rate_limiter
+    )
+    from middleware import SecurityHeadersMiddleware, RequestLoggingMiddleware, RateLimitMiddleware
+    from cache_service import cache, cached, get_cache_stats
+    SECURITY_MODULES_AVAILABLE = True
+except ImportError:
+    SECURITY_MODULES_AVAILABLE = False
+    # Fallback functions
+    def hash_password(password): return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    def verify_password(plain, hashed): return bcrypt.checkpw(plain.encode(), hashed.encode())
+    def validate_password(password): return (True, "Valid")
+    def sanitize_input(text): return text
+    def validate_email(email): return True
+    def generate_secure_token(): return os.urandom(32).hex()
+    class rate_limiter:
+        @staticmethod
+        def is_allowed(key, max_attempts=5, window_minutes=15): return True
 try:
     import sentry_sdk
     from sentry_sdk.integrations.fastapi import FastApiIntegration
@@ -52,6 +74,23 @@ import bcrypt
 import requests
 
 load_dotenv()
+
+# Security configuration
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY or len(SECRET_KEY) < 32:
+    if os.getenv("ENVIRONMENT") == "production":
+        raise ValueError("SECRET_KEY must be set and at least 32 characters in production")
+    SECRET_KEY = os.urandom(32).hex()
+
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+
+# Validate required environment variables for production
+if ENVIRONMENT == "production":
+    required_vars = ["SECRET_KEY", "DATABASE_URL", "TEXTVERIFIED_API_KEY", "PAYSTACK_SECRET_KEY", "ADMIN_PASSWORD"]
+    missing_vars = [var for var in required_vars if not os.getenv(var)]
+    if missing_vars:
+        raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}")
 
 # SEO Configuration
 SEO_CONFIG = {
@@ -585,10 +624,16 @@ def create_admin_if_not_exists():
         admin = db.query(User).filter(User.email == "admin@namaskah.app").first()
         if not admin:
             import secrets
+            # Use secure password from environment or generate one
+            admin_password = ADMIN_PASSWORD or generate_secure_token()[:16] + "!A1"
+            if not ADMIN_PASSWORD:
+                print(f"Generated admin password: {admin_password}")
+                print("Please set ADMIN_PASSWORD environment variable for production")
+            
             admin = User(
                 id=f"user_{datetime.now(timezone.utc).timestamp()}",
                 email="admin@namaskah.app",
-                password_hash=bcrypt.hashpw(b"Namaskah@Admin2024", bcrypt.gensalt()).decode(),
+                password_hash=hash_password(admin_password),
                 credits=100.0,
                 free_verifications=0.0,
                 is_admin=True,
@@ -937,7 +982,7 @@ tv_client = TextVerifiedClient()
 # FastAPI App
 app = FastAPI(
     title="Namaskah SMS API",
-    version="2.2.0",
+    version="2.3.0",
     description="""🚀 **Simple SMS Verification Service**
 
 Namaskah SMS provides temporary phone numbers for SMS verification across 1,807+ services.
@@ -1031,6 +1076,12 @@ async def server_error_handler(request: Request, exc):
     }
     context = {"request": request, **seo_meta}
     return templates.TemplateResponse("500.html", context, status_code=500)
+
+# Add security middleware (order matters)
+if SECURITY_MODULES_AVAILABLE:
+    app.add_middleware(SecurityHeadersMiddleware)
+    app.add_middleware(RequestLoggingMiddleware)
+    app.add_middleware(RateLimitMiddleware, calls_per_minute=100)
 
 # Register error handlers
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
@@ -1674,7 +1725,7 @@ def register(req: RegisterRequest, referral_code: str = None, db: Session = Depe
     user = User(
         id=f"user_{datetime.now(timezone.utc).timestamp()}",
         email=req.email,
-        password_hash=bcrypt.hashpw(req.password.encode('utf-8'), bcrypt.gensalt()).decode(),
+        password_hash=hash_password(req.password),
         credits=0.0,
         free_verifications=1.0,
         referral_code=user_referral_code,
@@ -1817,9 +1868,9 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    # Verify password
+    # Verify password using secure function
     try:
-        password_valid = bcrypt.checkpw(req.password.encode('utf-8'), user.password_hash.encode('utf-8'))
+        password_valid = verify_password(req.password, user.password_hash)
     except Exception as e:
         print(f"Password verify error: {e}")
         password_valid = False
@@ -1920,7 +1971,7 @@ def reset_password(req: PasswordResetConfirm, db: Session = Depends(get_db)):
     if not user or not user.reset_token_expires or user.reset_token_expires < datetime.now(timezone.utc):
         raise HTTPException(status_code=400, detail="Invalid or expired reset token")
     
-    user.password_hash = bcrypt.hashpw(req.new_password.encode('utf-8'), bcrypt.gensalt()).decode()
+    user.password_hash = hash_password(req.new_password)
     user.reset_token = None
     user.reset_token_expires = None
     db.commit()
