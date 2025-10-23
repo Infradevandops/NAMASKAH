@@ -227,15 +227,38 @@ function logout() {
 }
 
 function showTab(tab) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    event.target.classList.add('active');
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(t => {
+        t.classList.remove('active');
+        t.style.background = 'var(--bg-secondary)';
+        t.style.color = 'var(--text-secondary)';
+    });
+    
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const loginHint = document.getElementById('login-hint');
+    const registerHint = document.getElementById('register-hint');
     
     if (tab === 'login') {
-        document.getElementById('login-form').classList.remove('hidden');
-        document.getElementById('register-form').classList.add('hidden');
+        if (loginForm) loginForm.classList.remove('hidden');
+        if (registerForm) registerForm.classList.add('hidden');
+        if (loginHint) loginHint.classList.remove('hidden');
+        if (registerHint) registerHint.classList.add('hidden');
+        if (tabs[0]) {
+            tabs[0].classList.add('active');
+            tabs[0].style.background = '#667eea';
+            tabs[0].style.color = 'white';
+        }
     } else {
-        document.getElementById('login-form').classList.add('hidden');
-        document.getElementById('register-form').classList.remove('hidden');
+        if (loginForm) loginForm.classList.add('hidden');
+        if (registerForm) registerForm.classList.remove('hidden');
+        if (loginHint) loginHint.classList.add('hidden');
+        if (registerHint) registerHint.classList.remove('hidden');
+        if (tabs[1]) {
+            tabs[1].classList.add('active');
+            tabs[1].style.background = '#667eea';
+            tabs[1].style.color = 'white';
+        }
     }
 }
 

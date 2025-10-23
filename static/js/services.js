@@ -457,18 +457,25 @@ function selectCapability(type) {
     updateCapability();
 }
 
-// Auto-load services when DOM is ready
+// Only load services after authentication
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 Services module initialized');
     
-    // Load fallback services immediately, then try API
-    loadFallbackServices();
-    
-    // Try to load from API after fallback is loaded
-    setTimeout(() => {
-        loadServices();
-    }, 100);
+    // Check if user is authenticated before loading services
+    const token = localStorage.getItem('token');
+    if (token) {
+        loadFallbackServices();
+        setTimeout(() => loadServices(), 100);
+    } else {
+        console.log('🔒 Services require authentication');
+    }
 });
+
+// Function to load services after login
+window.loadServicesAfterAuth = function() {
+    loadFallbackServices();
+    setTimeout(() => loadServices(), 100);
+};
 
 // Export functions for global access
 window.loadServices = loadServices;

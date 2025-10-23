@@ -1128,6 +1128,12 @@ async def status_page(request: Request):
 async def admin_panel(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request})
 
+@app.get("/test-buttons")
+async def test_buttons_page(request: Request):
+    """Serve button test page for debugging"""
+    from fastapi.responses import FileResponse
+    return FileResponse("test_buttons.html")
+
 @app.get("/privacy")
 async def privacy_page(request: Request):
     seo_meta = get_seo_meta('/privacy', str(request.url))
