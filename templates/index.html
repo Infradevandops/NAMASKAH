@@ -275,61 +275,40 @@
                 </div>
             </div>
 
-            <!-- Core Verification Interface -->
+            <!-- Simplified Verification Interface -->
             <div class="card">
                 <h2>📱 SMS Verification</h2>
-                <p style="color: #6b7280; margin-bottom: 20px;">Select a service and get instant SMS verification</p>
+                <p style="color: #6b7280; margin-bottom: 20px;">Click any service below to start verification</p>
                 
-                <!-- Service Selection -->
+                <!-- Direct Service Grid -->
                 <div style="margin-bottom: 20px;">
-                    <label style="font-weight: bold; display: block; margin-bottom: 10px;">Select Service</label>
-                    <select id="service-select" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; margin-bottom: 10px;">
-                        <option value="">Choose a service...</option>
-                        <option value="whatsapp">WhatsApp</option>
-                        <option value="telegram">Telegram</option>
-                        <option value="discord">Discord</option>
-                        <option value="google">Google</option>
-                        <option value="instagram">Instagram</option>
-                        <option value="facebook">Facebook</option>
-                        <option value="twitter">Twitter/X</option>
-                        <option value="tiktok">TikTok</option>
-                    </select>
-                    <div id="service-info" style="font-size: 14px; color: #6b7280; margin-top: 5px;">⚡ Click a service to select • 📱 SMS</div>
+                    <div id="services-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;"></div>
                 </div>
                 
-                <!-- Capability Selection -->
-                <div id="capability-selection" class="hidden" style="margin-bottom: 20px;">
-                    <label style="font-weight: bold; display: block; margin-bottom: 10px;">Verification Type</label>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <label style="display: flex; align-items: center; padding: 12px; background: var(--bg-secondary); border: 2px solid #10b981; border-radius: 8px; cursor: pointer;">
-                            <input type="radio" name="capability" value="sms" checked onchange="updateCapability()" style="margin-right: 8px;">
-                            <div>
-                                <div style="font-weight: 600;">📱 SMS</div>
-                                <div style="font-size: 12px; color: var(--text-secondary);">Price: <span id="sms-price">N1.00</span></div>
-                            </div>
-                        </label>
-                        <label style="display: flex; align-items: center; padding: 12px; background: var(--bg-secondary); border: 2px solid transparent; border-radius: 8px; cursor: pointer;">
-                            <input type="radio" name="capability" value="voice" onchange="updateCapability()" style="margin-right: 8px;">
-                            <div>
-                                <div style="font-weight: 600;">📞 Voice</div>
-                                <div style="font-size: 12px; color: var(--text-secondary);">Price: <span id="voice-price">N1.30</span></div>
-                            </div>
-                        </label>
+                <!-- Capability Selection (Hidden by default) -->
+                <div id="capability-modal" class="modal hidden">
+                    <div class="modal-content" style="max-width: 400px;">
+                        <h3 id="selected-service-name">WhatsApp Verification</h3>
+                        <p style="color: #6b7280; margin-bottom: 20px;">Choose verification method</p>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                            <label onclick="selectCapability('sms')" style="display: flex; flex-direction: column; align-items: center; padding: 20px; background: var(--bg-secondary); border: 2px solid #10b981; border-radius: 8px; cursor: pointer; text-align: center;" id="sms-option">
+                                <span style="font-size: 2rem; margin-bottom: 8px;">📱</span>
+                                <div style="font-weight: 600; margin-bottom: 4px;">SMS</div>
+                                <div style="font-size: 12px; color: #10b981; font-weight: 600;" id="sms-price-display">N1.00</div>
+                            </label>
+                            <label onclick="selectCapability('voice')" style="display: flex; flex-direction: column; align-items: center; padding: 20px; background: var(--bg-secondary); border: 2px solid transparent; border-radius: 8px; cursor: pointer; text-align: center;" id="voice-option">
+                                <span style="font-size: 2rem; margin-bottom: 8px;">📞</span>
+                                <div style="font-weight: 600; margin-bottom: 4px;">Voice</div>
+                                <div style="font-size: 12px; color: #667eea; font-weight: 600;" id="voice-price-display">N1.30</div>
+                            </label>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="createDirectVerification()" style="flex: 1; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Create Verification</button>
+                            <button onclick="closeCapabilityModal()" style="flex: 1; padding: 12px; background: #ef4444; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
+                        </div>
                     </div>
-                </div>
-                
-                <!-- Create Button -->
-                <button id="create-verification-btn" onclick="createVerification()" class="hidden" style="width: 100%; padding: 15px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">Create Verification</button>
-                
-                <!-- Service Categories -->
-                <div style="margin-top: 20px;">
-                    <h3 style="margin-bottom: 15px;">Popular Services</h3>
-                    <div id="categories-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; font-size: 12px;"></div>
-                </div>
-                
-                <!-- Unlisted Service Button -->
-                <div style="margin-top: 20px; text-align: center;">
-                    <button onclick="showUnlistedModal()" style="background: #667eea; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">🌐 General Purpose Number</button>
                 </div>
             </div>
 
@@ -789,6 +768,7 @@
     <script src="/static/js/utils.js"></script>
     <script src="/static/js/auth.js"></script>
     <script src="/static/js/services.js"></script>
+    <script src="/static/js/simple-verification.js"></script>
     <script src="/static/js/verification.js"></script>
     <script src="/static/js/history.js"></script>
     <script src="/static/js/wallet.js"></script>
