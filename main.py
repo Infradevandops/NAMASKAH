@@ -76,21 +76,26 @@ import requests
 load_dotenv()
 
 # Security configuration
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 SECRET_KEY = os.getenv("SECRET_KEY")
-if not SECRET_KEY or len(SECRET_KEY) < 32:
-    if os.getenv("ENVIRONMENT") == "production":
-        raise ValueError("SECRET_KEY must be set and at least 32 characters in production")
+
+# Generate secure SECRET_KEY if not provided
+if not SECRET_KEY:
     SECRET_KEY = os.urandom(32).hex()
+    if ENVIRONMENT == "production":
+        print("⚠️ WARNING: SECRET_KEY not set, using generated key. Set SECRET_KEY environment variable for production.")
+elif len(SECRET_KEY) < 32 and ENVIRONMENT == "production":
+    print("⚠️ WARNING: SECRET_KEY should be at least 32 characters for production security.")
 
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
-ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
-# Validate required environment variables for production
+# Warn about missing production variables but don't fail startup
 if ENVIRONMENT == "production":
-    required_vars = ["SECRET_KEY", "DATABASE_URL", "TEXTVERIFIED_API_KEY", "PAYSTACK_SECRET_KEY", "ADMIN_PASSWORD"]
+    required_vars = ["DATABASE_URL", "TEXTVERIFIED_API_KEY", "PAYSTACK_SECRET_KEY"]
     missing_vars = [var for var in required_vars if not os.getenv(var)]
     if missing_vars:
-        raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}")
+        print(f"⚠️ WARNING: Missing production environment variables: {', '.join(missing_vars)}")
+        print("⚠️ Some features may not work correctly. Please set these variables in Render dashboard.")
 
 # SEO Configuration
 SEO_CONFIG = {
@@ -625,10 +630,10 @@ def create_admin_if_not_exists():
         if not admin:
             import secrets
             # Use secure password from environment or generate one
-            admin_password = ADMIN_PASSWORD or generate_secure_token()[:16] + "!A1"
+            admin_password = ADMIN_PASSWORD or "Namaskah@Admin2024"
             if not ADMIN_PASSWORD:
-                print(f"Generated admin password: {admin_password}")
-                print("Please set ADMIN_PASSWORD environment variable for production")
+                print(f"⚠️ Using default admin password. Set ADMIN_PASSWORD environment variable for production security.")
+                admin_password = "Namaskah@Admin2024"
             
             admin = User(
                 id=f"user_{datetime.now(timezone.utc).timestamp()}",
@@ -691,13 +696,33 @@ async def check_textverified_health_loop():
         # Wait 5 minutes
         await asyncio.sleep(300)
 
-# Import Mailgun service
-from mailgun_service import mailgun_service
-
 # Email Helper (legacy compatibility)
 def send_email(to_email: str, subject: str, body: str):
     """Send email notification - legacy function for compatibility"""
-    return mailgun_service._send_email(to_email, subject, body)
+    try:
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+        
+        if not SMTP_HOST or not SMTP_USER or not SMTP_PASSWORD:
+            print(f"⚠️ Email not configured, skipping: {subject}")
+            return False
+        
+        msg = MIMEMultipart()
+        msg['From'] = FROM_EMAIL
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'html'))
+        
+        server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+        server.starttls()
+        server.login(SMTP_USER, SMTP_PASSWORD)
+        server.send_message(msg)
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"Email error: {e}")
+        return False
 
 # Activity Logging Helper
 def log_activity(db: Session, user_id=None, email=None, page=None, action=None, element=None, status=None, details=None, error=None, ip=None, user_agent=None):
@@ -1104,7 +1129,7 @@ async def startup_event():
                 bcrypt.checkpw(b"Namaskah@Admin2024", admin.password_hash.encode('utf-8'))
                 print("✅ Admin password OK")
             except:
-                admin.password_hash = bcrypt.hashpw(b"Namaskah@Admin2024", bcrypt.gensalt()).decode()
+                admin.password_hash = bcrypt.hashpw("Namaskah@Admin2024".encode(), bcrypt.gensalt()).decode()
                 admin.is_admin = True
                 db.commit()
                 print("✅ Admin password auto-fixed")
@@ -1415,15 +1440,18 @@ def health():
 class TestEmailRequest(BaseModel):
     email: str
 
-@app.post("/test-mailgun")
-def test_mailgun(request: TestEmailRequest):
-    """Test Mailgun integration"""
+@app.post("/test-email")
+def test_email(request: TestEmailRequest):
+    """Test email integration"""
     try:
-        result = mailgun_service.send_test_email(request.email)
+        result = send_email(
+            request.email,
+            "Test Email - Namaskah SMS",
+            "<h2>Test Email</h2><p>This is a test email from Namaskah SMS.</p>"
+        )
         return {
-            "status": "success" if result.get("success") else "failed",
-            "message": result.get("message_id") or result.get("error"),
-            "note": "Check your email inbox (must be authorized recipient for sandbox)"
+            "status": "success" if result else "failed",
+            "message": "Test email sent" if result else "Email configuration not available"
         }
     except Exception as e:
         return {"status": "failed", "message": str(e)}
@@ -1437,7 +1465,7 @@ def emergency_admin_reset(secret: str, db: Session = Depends(get_db)):
     try:
         admin = db.query(User).filter(User.email == "admin@namaskah.app").first()
         if admin:
-            admin.password_hash = bcrypt.hashpw(b"Namaskah@Admin2024", bcrypt.gensalt()).decode()
+            admin.password_hash = bcrypt.hashpw("Namaskah@Admin2024".encode(), bcrypt.gensalt()).decode()
             admin.is_admin = True
             admin.email_verified = True
             db.commit()
@@ -1759,9 +1787,16 @@ def register(req: RegisterRequest, referral_code: str = None, db: Session = Depe
     # Log registration
     log_activity(db, user_id=user.id, email=user.email, action="register", status="success", details=f"New user registered")
     
-    # Send verification email using Mailgun service
+    # Send verification email
     try:
-        mailgun_service.send_verification_email(user.email, verification_token)
+        send_email(
+            user.email,
+            "Verify Your Email - Namaskah SMS",
+            f"""<h2>Welcome to Namaskah SMS!</h2>
+            <p>Please verify your email address by clicking the link below:</p>
+            <p><a href="{BASE_URL}/auth/verify?token={verification_token}">Verify Email</a></p>
+            <p>Or copy this link: {BASE_URL}/auth/verify?token={verification_token}</p>"""
+        )
     except Exception as e:
         print(f"Email send error: {e}")
     
@@ -1913,7 +1948,14 @@ def verify_email_api(token: str, db: Session = Depends(get_db)):
     
     # Send welcome email
     try:
-        mailgun_service.send_welcome_email(user.email)
+        send_email(
+            user.email,
+            "Welcome to Namaskah SMS!",
+            f"""<h2>Email Verified Successfully!</h2>
+            <p>Welcome to Namaskah SMS! Your email has been verified.</p>
+            <p>You now have 1 free verification to get started.</p>
+            <p><a href="{BASE_URL}/app">Start Using Namaskah SMS</a></p>"""
+        )
     except Exception as e:
         print(f"Welcome email error: {e}")
     
@@ -1935,9 +1977,15 @@ def resend_verification(user: User = Depends(get_current_user), db: Session = De
     user.verification_token = verification_token
     db.commit()
     
-    # Send verification email using Mailgun service
+    # Send verification email
     try:
-        mailgun_service.send_verification_email(user.email, verification_token)
+        send_email(
+            user.email,
+            "Verify Your Email - Namaskah SMS",
+            f"""<h2>Email Verification</h2>
+            <p>Please verify your email address by clicking the link below:</p>
+            <p><a href="{BASE_URL}/auth/verify?token={verification_token}">Verify Email</a></p>"""
+        )
     except Exception as e:
         print(f"Email send error: {e}")
     
@@ -1956,9 +2004,16 @@ def forgot_password(req: PasswordResetRequest, db: Session = Depends(get_db)):
     user.reset_token_expires = datetime.now(timezone.utc) + timedelta(hours=1)
     db.commit()
     
-    # Send password reset email using Mailgun service
+    # Send password reset email
     try:
-        mailgun_service.send_password_reset_email(user.email, reset_token)
+        send_email(
+            user.email,
+            "Password Reset - Namaskah SMS",
+            f"""<h2>Password Reset Request</h2>
+            <p>Click the link below to reset your password:</p>
+            <p><a href="{BASE_URL}/auth/reset-password?token={reset_token}">Reset Password</a></p>
+            <p>This link expires in 1 hour.</p>"""
+        )
     except Exception as e:
         print(f"Password reset email error: {e}")
     
