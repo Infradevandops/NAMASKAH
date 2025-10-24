@@ -123,7 +123,7 @@
                         <input type="checkbox" id="remember-me" style="width: auto;">
                         <label for="remember-me" style="font-size: 14px; color: var(--text-secondary);">Remember me</label>
                     </div>
-                    <button onclick="login()" id="login-btn" style="margin-top: 15px;">Login</button>
+                    <button type="button" onclick="login()" id="login-btn" style="margin-top: 15px;">Login</button>
                 </div>
 
                 <div id="register-form" class="form-container hidden">
@@ -133,12 +133,12 @@
                         <input type="password" id="register-password" placeholder="Password (min 6 chars)" required onkeypress="if(event.key==='Enter')register()">
                         <button type="button" onclick="togglePassword('register-password')" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 14px;">👁️</button>
                     </div>
-                    <button onclick="register()" id="register-btn" style="margin-top: 15px;">Register</button>
+                    <button type="button" onclick="register()" id="register-btn" style="margin-top: 15px;">Register</button>
                 </div>
                 
-                <!-- Google OAuth (hidden by default) -->
-                <div id="google-separator" style="display: none !important;">or</div>
-                <div id="google-auth-btn" style="display: none !important;"></div>
+                <!-- Google OAuth -->
+                <div id="google-separator" style="display: none;">or</div>
+                <div id="google-auth-btn" style="display: none;"></div>
                 
                 <p id="login-hint" style="font-size: 13px; color: var(--text-primary); margin-top: 10px; text-align: center; font-weight: 600;">💡 Press Enter to login</p>
                 <p id="register-hint" class="hidden" style="font-size: 14px; color: #10b981; margin-top: 10px; text-align: center; font-weight: 700;">🎁 Get <span style="font-size: 16px;">1 FREE</span> verification on signup!</p>
@@ -847,7 +847,9 @@
                 return;
             }
             
-            setLoading('login-btn', true);
+            const btn = document.getElementById('login-btn');
+            btn.disabled = true;
+            btn.textContent = 'Login ⏳';
             
             try {
                 const response = await fetch('/auth/login', {
@@ -871,7 +873,9 @@
             } catch (error) {
                 alert('❌ Network error. Please try again.');
             } finally {
-                setLoading('login-btn', false);
+                const btn = document.getElementById('login-btn');
+                btn.disabled = false;
+                btn.textContent = 'Login';
             }
         }
         
@@ -889,7 +893,9 @@
                 return;
             }
             
-            setLoading('register-btn', true);
+            const btn = document.getElementById('register-btn');
+            btn.disabled = true;
+            btn.textContent = 'Register ⏳';
             
             try {
                 const response = await fetch('/auth/register', {
@@ -910,7 +916,9 @@
             } catch (error) {
                 alert('❌ Network error. Please try again.');
             } finally {
-                setLoading('register-btn', false);
+                const btn = document.getElementById('register-btn');
+                btn.disabled = false;
+                btn.textContent = 'Register';
             }
         }
         
