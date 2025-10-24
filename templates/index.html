@@ -136,9 +136,9 @@
                     <button onclick="register()" id="register-btn" style="margin-top: 15px;">Register</button>
                 </div>
                 
-                <!-- Single persistent Google button container -->
-                <div id="google-separator">or</div>
-                <div id="google-auth-btn"></div>
+                <!-- Google OAuth (hidden by default) -->
+                <div id="google-separator" style="display: none !important;">or</div>
+                <div id="google-auth-btn" style="display: none !important;"></div>
                 
                 <p id="login-hint" style="font-size: 13px; color: var(--text-primary); margin-top: 10px; text-align: center; font-weight: 600;">💡 Press Enter to login</p>
                 <p id="register-hint" class="hidden" style="font-size: 14px; color: #10b981; margin-top: 10px; text-align: center; font-weight: 700;">🎁 Get <span style="font-size: 16px;">1 FREE</span> verification on signup!</p>
@@ -1146,26 +1146,15 @@
                                 logo_alignment: 'left'
                             });
                             
-                            // Check if rendering was successful after a brief delay
+                            // Only show if proper iframe exists
                             setTimeout(() => {
-                                // Clean up any raw HTML first
-                                if (cleanupGoogleButton()) {
-                                    return; // Exit if we found and cleaned raw HTML
-                                }
-                                
-                                // Check for proper Google button
-                                const hasValidButton = container.children.length > 0 && 
-                                                     !container.innerHTML.includes('tabindex=') && 
-                                                     !container.innerHTML.includes('<div class="nsm7Bb-HzV7m-LgbsSe');
-                                
-                                if (hasValidButton) {
+                                if (container.querySelector('iframe')) {
                                     container.style.display = 'flex';
                                     container.style.justifyContent = 'center';
                                     if (separator) separator.style.display = 'block';
                                     googleInitialized = true;
                                     console.log('Google Sign-In initialized successfully');
                                 } else {
-                                    console.log('Google button rendering failed or contains raw HTML');
                                     hideGoogleButton();
                                 }
                             }, 100);
