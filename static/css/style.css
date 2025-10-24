@@ -1486,31 +1486,14 @@ input:checked + .slider:before {
     display: block !important;
 }
 
-/* Hide raw HTML/code content */
-*:not(pre):not(code) {
-    /* Hide elements containing raw HTML patterns */
+/* Only hide obvious raw HTML text content */
+#google-auth-btn.configured {
+    display: flex !important;
 }
 
-*[class*="nsm7Bb"]:not(iframe) {
-    display: none !important;
-}
-
-/* Hide text nodes containing raw HTML */
-.service-card:has-text("<div"),
-.service-card:has-text("onclick="),
-*:contains("<div class="),
-*:contains("onclick="),
-*:contains("style=") {
-    display: none !important;
-}
-
-/* Fallback for malformed content */
-#services-grid > *:not(.service-item):not(.service-card) {
-    display: none !important;
-}
-
-#google-auth-btn > *:not(iframe):not(.g_id_signin) {
-    display: none !important;
+#google-auth-btn.configured iframe,
+#google-auth-btn.configured .g_id_signin {
+    display: block !important;
 }
 
 /* Mobile Responsive Improvements */

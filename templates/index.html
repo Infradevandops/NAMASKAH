@@ -1099,11 +1099,11 @@
                             // Only show if proper iframe exists and no raw HTML
                             setTimeout(() => {
                                 const iframe = container.querySelector('iframe');
-                                const hasRawHTML = container.innerHTML.includes('<div') || 
-                                                 container.innerHTML.includes('tabindex=') ||
-                                                 container.textContent.includes('<');
+                                const button = container.querySelector('.g_id_signin');
+                                const hasRawTextHTML = container.textContent.includes('<div class="') && 
+                                                      container.textContent.includes('onclick="');
                                 
-                                if (iframe && !hasRawHTML) {
+                                if ((iframe || button) && !hasRawTextHTML) {
                                     container.classList.add('configured');
                                     container.style.display = 'flex';
                                     if (separator) {
@@ -1147,17 +1147,12 @@
         function cleanupGoogleButton() {
             const container = document.getElementById('google-auth-btn');
             if (container && container.innerHTML) {
-                // Check for raw HTML/SVG content or malformed elements
-                const hasRawContent = container.innerHTML.includes('tabindex=') || 
-                                    container.innerHTML.includes('<div') ||
-                                    container.innerHTML.includes('<svg') ||
-                                    container.innerHTML.includes('class="nsm') ||
-                                    container.innerHTML.includes('aria-labelledby') ||
-                                    container.textContent.includes('<') ||
-                                    container.textContent.includes('>');
+                // Only clean if showing raw HTML as TEXT (not functional elements)
+                const text = container.textContent || '';
+                const hasRawTextHTML = text.includes('<div class="') && text.includes('onclick="');
                 
-                if (hasRawContent) {
-                    console.log('Cleaning up raw Google content');
+                if (hasRawTextHTML) {
+                    console.log('Cleaning up raw Google HTML text');
                     container.innerHTML = '';
                     hideGoogleButton();
                     return true;
@@ -1297,44 +1292,25 @@
             waitForConfig();
         }
         
-        // Comprehensive cleanup check for raw HTML/code rendering
+        // Targeted cleanup for raw HTML text only
         function cleanupRawContent() {
-            // Clean Google button
+            // Only clean Google button if not initialized
             if (!googleInitialized) {
                 cleanupGoogleButton();
             }
             
-            // Clean service grid from raw HTML
-            const servicesGrid = document.getElementById('services-grid');
-            if (servicesGrid && servicesGrid.innerHTML) {
-                const hasRawHTML = servicesGrid.innerHTML.includes('<div class="service-card"') ||
-                                 servicesGrid.textContent.includes('onclick=') ||
-                                 servicesGrid.textContent.includes('style=') ||
-                                 servicesGrid.textContent.includes('<div') ||
-                                 servicesGrid.textContent.includes('</div>');
-                
-                if (hasRawHTML) {
-                    console.log('Cleaning up raw service HTML content');
-                    servicesGrid.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Loading services...</p>';
-                    // Reload services properly
-                    setTimeout(() => {
-                        if (typeof loadServices === 'function') {
-                            loadServices();
-                        }
-                    }, 500);
-                }
-            }
-            
-            // Clean any other elements showing raw code
+            // Only clean elements that show raw HTML as TEXT (not functional HTML)
             document.querySelectorAll('*').forEach(element => {
-                if (element.textContent && element.textContent.includes('<div') && element.textContent.includes('onclick=')) {
-                    console.log('Found raw HTML in element:', element);
-                    element.innerHTML = '<p style="color: var(--text-secondary);">Content loading...</p>';
+                const text = element.textContent || '';
+                // Only target elements showing raw HTML as visible text
+                if (text.includes('<div class="') && text.includes('onclick="') && text.length > 200) {
+                    console.log('Found raw HTML text, cleaning:', element.tagName);
+                    element.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">Loading...</p>';
                 }
             });
         }
         
-        setInterval(cleanupRawContent, 1000);
+        setInterval(cleanupRawContent, 2000);
         
         // Timeout fallback - hide Google button after 8 seconds if not loaded
         setTimeout(() => {
