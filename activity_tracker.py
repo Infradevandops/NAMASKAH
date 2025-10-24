@@ -4,13 +4,16 @@ from sqlalchemy import Column, String, DateTime, Text, Integer
 from datetime import datetime, timezone
 from main import Base, engine, SessionLocal
 
+
 class ActivityLog(Base):
     __tablename__ = "activity_logs"
-    
+
     id = Column(String, primary_key=True)
     user_id = Column(String)  # nullable for anonymous users
     email = Column(String)
-    action = Column(String, nullable=False)  # register, login, fund_wallet, create_verification
+    action = Column(
+        String, nullable=False
+    )  # register, login, fund_wallet, create_verification
     status = Column(String, nullable=False)  # success, failed, pending
     details = Column(Text)  # JSON string with additional info
     ip_address = Column(String)
@@ -18,9 +21,10 @@ class ActivityLog(Base):
     error_message = Column(String)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
+
 class PaymentLog(Base):
     __tablename__ = "payment_logs"
-    
+
     id = Column(String, primary_key=True)
     user_id = Column(String)
     email = Column(String)
@@ -36,10 +40,14 @@ class PaymentLog(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime)
 
+
 # Create tables
 Base.metadata.create_all(bind=engine)
 
-def log_activity(user_id=None, email=None, action=None, status=None, details=None, error=None):
+
+def log_activity(
+    user_id=None, email=None, action=None, status=None, details=None, error=None
+):
     """Log user activity"""
     db = SessionLocal()
     try:
@@ -59,7 +67,15 @@ def log_activity(user_id=None, email=None, action=None, status=None, details=Non
     finally:
         db.close()
 
-def log_payment(user_id=None, email=None, reference=None, amount_ngn=0, status="initialized", **kwargs):
+
+def log_payment(
+    user_id=None,
+    email=None,
+    reference=None,
+    amount_ngn=0,
+    status="initialized",
+    **kwargs,
+):
     """Log payment attempt"""
     db = SessionLocal()
     try:
@@ -72,7 +88,7 @@ def log_payment(user_id=None, email=None, reference=None, amount_ngn=0, status="
             status=status,
             webhook_received="pending",
             credited="no",
-            **kwargs
+            **kwargs,
         )
         db.add(log)
         db.commit()
@@ -80,6 +96,7 @@ def log_payment(user_id=None, email=None, reference=None, amount_ngn=0, status="
         print(f"Payment log error: {e}")
     finally:
         db.close()
+
 
 def check_payment_logs(email=None, reference=None):
     """Check payment logs for user"""
@@ -90,17 +107,17 @@ def check_payment_logs(email=None, reference=None):
             query = query.filter(PaymentLog.email == email)
         if reference:
             query = query.filter(PaymentLog.reference == reference)
-        
+
         logs = query.order_by(PaymentLog.created_at.desc()).all()
-        
+
         print(f"\n{'='*80}")
         print(f"💳 PAYMENT LOGS")
         print(f"{'='*80}")
-        
+
         if not logs:
             print("No payment logs found")
             return
-        
+
         for log in logs:
             print(f"\nReference: {log.reference}")
             print(f"Email: {log.email}")
@@ -114,6 +131,7 @@ def check_payment_logs(email=None, reference=None):
     finally:
         db.close()
 
+
 def check_activity_logs(email=None, action=None):
     """Check activity logs"""
     db = SessionLocal()
@@ -123,38 +141,47 @@ def check_activity_logs(email=None, action=None):
             query = query.filter(ActivityLog.email == email)
         if action:
             query = query.filter(ActivityLog.action == action)
-        
+
         logs = query.order_by(ActivityLog.created_at.desc()).limit(50).all()
-        
+
         print(f"\n{'='*80}")
         print(f"📊 ACTIVITY LOGS")
         print(f"{'='*80}")
-        
+
         if not logs:
             print("No activity logs found")
             return
-        
+
         for log in logs:
-            status_icon = "✅" if log.status == "success" else "❌" if log.status == "failed" else "⏳"
-            print(f"{status_icon} {log.created_at} | {log.action} | {log.status} | {log.email or 'anonymous'}")
+            status_icon = (
+                "✅"
+                if log.status == "success"
+                else "❌" if log.status == "failed" else "⏳"
+            )
+            print(
+                f"{status_icon} {log.created_at} | {log.action} | {log.status} | {log.email or 'anonymous'}"
+            )
             if log.error_message:
                 print(f"   Error: {log.error_message}")
     finally:
         db.close()
 
+
 if __name__ == "__main__":
     import sys
-    
+
     if len(sys.argv) < 2:
         print("\n📊 Activity Tracker\n")
         print("Usage:")
         print("  python activity_tracker.py activity <email>     - Check user activity")
         print("  python activity_tracker.py payments <email>     - Check payment logs")
-        print("  python activity_tracker.py reference <ref>      - Check by payment reference")
+        print(
+            "  python activity_tracker.py reference <ref>      - Check by payment reference"
+        )
         sys.exit(1)
-    
+
     command = sys.argv[1]
-    
+
     if command == "activity":
         email = sys.argv[2] if len(sys.argv) > 2 else None
         check_activity_logs(email=email)

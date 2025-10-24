@@ -1,5 +1,7 @@
 """System endpoint tests"""
+
 import pytest
+
 
 def test_health_check(client):
     """Test health check endpoint"""
@@ -10,6 +12,7 @@ def test_health_check(client):
     assert data["version"] == "2.0.0"
     assert "timestamp" in data
 
+
 def test_services_list(client):
     """Test services list endpoint"""
     response = client.get("/services/list")
@@ -17,15 +20,18 @@ def test_services_list(client):
     data = response.json()
     assert "categories" in data or "uncategorized" in data
 
+
 def test_root_endpoint(client):
     """Test root endpoint returns HTML"""
     response = client.get("/")
     assert response.status_code == 200
 
+
 def test_app_endpoint(client):
     """Test app endpoint returns HTML"""
     response = client.get("/app")
     assert response.status_code == 200
+
 
 def test_analytics_dashboard(client, auth_headers):
     """Test analytics endpoint"""

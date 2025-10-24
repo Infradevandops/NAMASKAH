@@ -1,5 +1,7 @@
 """Reset database with new schema"""
+
 import os
+
 os.remove("sms.db") if os.path.exists("sms.db") else None
 
 from main import Base, engine, User, Verification, Transaction, SessionLocal
@@ -14,9 +16,24 @@ print("✅ Database created with new schema")
 db = SessionLocal()
 
 users = [
-    {"email": "admin@namaskah.app", "password": "admin123", "credits": 100.0, "is_admin": True},
-    {"email": "user@namaskah.app", "password": "user123", "credits": 5.0, "is_admin": False},
-    {"email": "test@example.com", "password": "test123", "credits": 5.0, "is_admin": False}
+    {
+        "email": "admin@namaskah.app",
+        "password": "admin123",
+        "credits": 100.0,
+        "is_admin": True,
+    },
+    {
+        "email": "user@namaskah.app",
+        "password": "user123",
+        "credits": 5.0,
+        "is_admin": False,
+    },
+    {
+        "email": "test@example.com",
+        "password": "test123",
+        "credits": 5.0,
+        "is_admin": False,
+    },
 ]
 
 for u in users:
@@ -25,10 +42,12 @@ for u in users:
         email=u["email"],
         password_hash=bcrypt.hash(u["password"]),
         credits=u["credits"],
-        is_admin=u["is_admin"]
+        is_admin=u["is_admin"],
     )
     db.add(user)
-    print(f"✅ Created: {u['email']} | Credits: ${u['credits']} | Admin: {u['is_admin']}")
+    print(
+        f"✅ Created: {u['email']} | Credits: ${u['credits']} | Admin: {u['is_admin']}"
+    )
 
 db.commit()
 db.close()

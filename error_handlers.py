@@ -1,4 +1,5 @@
 """Centralized error handling and logging"""
+
 from fastapi import Request, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -9,14 +10,12 @@ from datetime import datetime
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('app.log'),
-        logging.StreamHandler()
-    ]
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler("app.log"), logging.StreamHandler()],
 )
 
 logger = logging.getLogger(__name__)
+
 
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     """Handle HTTP exceptions"""
@@ -26,9 +25,10 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         content={
             "error": exc.detail,
             "status_code": exc.status_code,
-            "timestamp": datetime.utcnow().isoformat()
-        }
+            "timestamp": datetime.utcnow().isoformat(),
+        },
     )
+
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """Handle validation errors"""
@@ -38,9 +38,10 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         content={
             "error": "Validation error",
             "details": exc.errors(),
-            "timestamp": datetime.utcnow().isoformat()
-        }
+            "timestamp": datetime.utcnow().isoformat(),
+        },
     )
+
 
 async def general_exception_handler(request: Request, exc: Exception):
     """Handle unexpected errors"""
@@ -50,13 +51,17 @@ async def general_exception_handler(request: Request, exc: Exception):
         content={
             "error": "Internal server error",
             "message": "An unexpected error occurred. Please try again later.",
-            "timestamp": datetime.utcnow().isoformat()
-        }
+            "timestamp": datetime.utcnow().isoformat(),
+        },
     )
+
 
 def log_transaction(user_id: str, action: str, details: dict):
     """Log important transactions"""
-    logger.info(f"TRANSACTION - User: {user_id} | Action: {action} | Details: {details}")
+    logger.info(
+        f"TRANSACTION - User: {user_id} | Action: {action} | Details: {details}"
+    )
+
 
 def log_security_event(event_type: str, details: dict):
     """Log security-related events"""

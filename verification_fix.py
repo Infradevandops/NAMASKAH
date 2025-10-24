@@ -11,44 +11,52 @@ import sys
 import json
 from datetime import datetime
 
+
 def analyze_verification_issue():
     """Analyze the verification creation issue and provide fixes"""
-    
+
     print("🔍 Analyzing 'Failed to create verification' issue...")
-    
+
     issues_found = []
     fixes_applied = []
-    
+
     # Issue 1: Missing TEXTVERIFIED_API_KEY validation
     print("\n1. Checking TextVerified API configuration...")
-    
+
     # Check if .env file exists
     env_file = "/Users/machine/Project/GitHub/Namaskah. app/.env"
     if os.path.exists(env_file):
-        with open(env_file, 'r') as f:
+        with open(env_file, "r") as f:
             env_content = f.read()
-            
-        if 'TEXTVERIFIED_API_KEY=' not in env_content or 'TEXTVERIFIED_EMAIL=' not in env_content:
+
+        if (
+            "TEXTVERIFIED_API_KEY=" not in env_content
+            or "TEXTVERIFIED_EMAIL=" not in env_content
+        ):
             issues_found.append("Missing TextVerified API credentials in .env file")
-            
+
             # Add missing credentials template
             missing_vars = []
-            if 'TEXTVERIFIED_API_KEY=' not in env_content:
-                missing_vars.append('TEXTVERIFIED_API_KEY=your_textverified_api_key_here')
-            if 'TEXTVERIFIED_EMAIL=' not in env_content:
-                missing_vars.append('TEXTVERIFIED_EMAIL=your_textverified_email_here')
-                
-            with open(env_file, 'a') as f:
-                f.write('\n# TextVerified API Configuration\n')
+            if "TEXTVERIFIED_API_KEY=" not in env_content:
+                missing_vars.append(
+                    "TEXTVERIFIED_API_KEY=your_textverified_api_key_here"
+                )
+            if "TEXTVERIFIED_EMAIL=" not in env_content:
+                missing_vars.append("TEXTVERIFIED_EMAIL=your_textverified_email_here")
+
+            with open(env_file, "a") as f:
+                f.write("\n# TextVerified API Configuration\n")
                 for var in missing_vars:
-                    f.write(f'{var}\n')
-            
-            fixes_applied.append("Added missing TextVerified API credential templates to .env")
+                    f.write(f"{var}\n")
+
+            fixes_applied.append(
+                "Added missing TextVerified API credential templates to .env"
+            )
         else:
             print("✅ TextVerified API credentials found in .env")
     else:
         issues_found.append(".env file not found")
-        
+
         # Create .env file with template
         env_template = """# Namaskah SMS Environment Configuration
 
@@ -81,39 +89,51 @@ ENVIRONMENT=development
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 """
-        
-        with open(env_file, 'w') as f:
+
+        with open(env_file, "w") as f:
             f.write(env_template)
-        
+
         fixes_applied.append("Created .env file with configuration template")
-    
+
     # Issue 2: Error handling in verification creation
     print("\n2. Checking verification creation error handling...")
-    
+
     main_py_path = "/Users/machine/Project/GitHub/Namaskah. app/main.py"
     if os.path.exists(main_py_path):
-        with open(main_py_path, 'r') as f:
+        with open(main_py_path, "r") as f:
             main_content = f.read()
-        
+
         # Check if proper error handling exists
-        if 'except Exception as e:' in main_content and 'TextVerified API error' in main_content:
+        if (
+            "except Exception as e:" in main_content
+            and "TextVerified API error" in main_content
+        ):
             print("✅ Error handling found in verification creation")
         else:
             issues_found.append("Inadequate error handling in verification creation")
-    
+
     # Issue 3: Check if services.json exists
     print("\n3. Checking services configuration...")
-    
-    services_file = "/Users/machine/Project/GitHub/Namaskah. app/services_categorized.json"
+
+    services_file = (
+        "/Users/machine/Project/GitHub/Namaskah. app/services_categorized.json"
+    )
     if not os.path.exists(services_file):
         issues_found.append("Missing services_categorized.json file")
-        
+
         # Create basic services file
         basic_services = {
             "categories": {
-                "Social": ["whatsapp", "telegram", "discord", "instagram", "facebook", "twitter"],
+                "Social": [
+                    "whatsapp",
+                    "telegram",
+                    "discord",
+                    "instagram",
+                    "facebook",
+                    "twitter",
+                ],
                 "Finance": ["paypal", "cashapp", "venmo"],
-                "Other": ["google", "microsoft", "apple"]
+                "Other": ["google", "microsoft", "apple"],
             },
             "uncategorized": [],
             "tiers": {
@@ -121,29 +141,30 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
                     "name": "Popular",
                     "base_price": 0.75,
                     "services": ["whatsapp", "telegram", "discord", "google"],
-                    "success_rate": 95
+                    "success_rate": 95,
                 },
                 "standard": {
-                    "name": "Standard", 
+                    "name": "Standard",
                     "base_price": 1.0,
                     "services": ["instagram", "facebook", "twitter"],
-                    "success_rate": 90
-                }
-            }
+                    "success_rate": 90,
+                },
+            },
         }
-        
-        with open(services_file, 'w') as f:
+
+        with open(services_file, "w") as f:
             json.dump(basic_services, f, indent=2)
-        
+
         fixes_applied.append("Created basic services_categorized.json file")
     else:
         print("✅ Services configuration file found")
-    
+
     return issues_found, fixes_applied
+
 
 def create_verification_test_script():
     """Create a test script to verify the fix works"""
-    
+
     test_script = '''#!/usr/bin/env python3
 """
 Test script to verify verification creation works
@@ -247,19 +268,20 @@ if __name__ == "__main__":
         print("3. Invalid TextVerified API key or email")
         print("4. Network connectivity issues")
 '''
-    
+
     test_file_path = "/Users/machine/Project/GitHub/Namaskah. app/test_verification.py"
-    with open(test_file_path, 'w') as f:
+    with open(test_file_path, "w") as f:
         f.write(test_script)
-    
+
     # Make it executable
     os.chmod(test_file_path, 0o755)
-    
+
     return test_file_path
+
 
 def create_debug_verification_endpoint():
     """Create a debug version of the verification endpoint with better error handling"""
-    
+
     debug_code = '''
 # Enhanced verification creation with better error handling
 @app.post("/verify/create/debug", tags=["Verification"], summary="Debug SMS/Voice Verification Creation")
@@ -468,47 +490,50 @@ def create_verification_debug(req: CreateVerificationRequest, user: User = Depen
             headers={"X-Debug-Info": json.dumps(debug_info)}
         )
 '''
-    
+
     return debug_code
+
 
 def main():
     """Main function to run the verification fix"""
-    
+
     print("🔧 Namaskah SMS - Verification Creation Fix")
     print("=" * 50)
-    
+
     # Analyze issues
     issues, fixes = analyze_verification_issue()
-    
+
     # Report findings
     print(f"\n📊 Analysis Results:")
     print(f"   Issues found: {len(issues)}")
     print(f"   Fixes applied: {len(fixes)}")
-    
+
     if issues:
         print(f"\n❌ Issues Found:")
         for i, issue in enumerate(issues, 1):
             print(f"   {i}. {issue}")
-    
+
     if fixes:
         print(f"\n✅ Fixes Applied:")
         for i, fix in enumerate(fixes, 1):
             print(f"   {i}. {fix}")
-    
+
     # Create test script
     print(f"\n🧪 Creating test script...")
     test_file = create_verification_test_script()
     print(f"   Created: {test_file}")
-    
+
     # Create debug endpoint code
     print(f"\n🐛 Creating debug endpoint...")
     debug_code = create_debug_verification_endpoint()
-    
-    debug_file = "/Users/machine/Project/GitHub/Namaskah. app/debug_verification_endpoint.py"
-    with open(debug_file, 'w') as f:
+
+    debug_file = (
+        "/Users/machine/Project/GitHub/Namaskah. app/debug_verification_endpoint.py"
+    )
+    with open(debug_file, "w") as f:
         f.write(debug_code)
     print(f"   Created: {debug_file}")
-    
+
     # Provide next steps
     print(f"\n🚀 Next Steps:")
     print(f"   1. Update your .env file with valid TextVerified API credentials")
@@ -516,13 +541,14 @@ def main():
     print(f"   3. Run the test: python test_verification.py")
     print(f"   4. If issues persist, add the debug endpoint to main.py")
     print(f"   5. Test with: POST /verify/create/debug")
-    
+
     print(f"\n📝 Configuration Required:")
     print(f"   - TEXTVERIFIED_API_KEY: Get from https://textverified.com")
     print(f"   - TEXTVERIFIED_EMAIL: Your TextVerified account email")
     print(f"   - Ensure you have credits in your TextVerified account")
-    
+
     return len(issues) == 0
+
 
 if __name__ == "__main__":
     success = main()
