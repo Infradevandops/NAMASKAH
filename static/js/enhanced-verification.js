@@ -34,9 +34,9 @@ class EnhancedVerification {
             clearInterval(this.refreshInterval);
         }
 
-        if (this.autoRefreshEnabled) {
+        if (this.autoRefreshEnabled && localStorage.getItem('token')) {
             this.refreshInterval = setInterval(() => {
-                if (!window.wsManager?.isConnected) {
+                if (!window.wsManager?.isConnected && localStorage.getItem('token')) {
                     this.refreshActiveVerifications();
                 }
             }, 10000); // 10 seconds
@@ -51,17 +51,27 @@ class EnhancedVerification {
     }
 
     async loadActiveVerifications() {
+        // Don't make requests if no token
+        const token = localStorage.getItem('token');
+        if (!token) {
+            return;
+        }
+        
         try {
             const response = await window.securityManager.secureRequest('/verifications/active', {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${token}`
                 }
             });
 
             if (response.ok) {
                 const data = await response.json();
                 this.displayActiveVerifications(data.verifications || []);
+            } else if (response.status === 401) {
+                // Stop retrying on auth errors
+                console.log('Auth error - stopping verification requests');
+                this.stopAutoRefresh();
             }
         } catch (error) {
             console.error('Failed to load active verifications:', error);
