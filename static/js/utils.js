@@ -1,129 +1,366 @@
-// Utility Functions
-let isOnline = navigator.onLine;
-
-window.addEventListener('online', () => {
-    isOnline = true;
-    showNotification('✅ Connection restored', 'success');
-    if (window.token) checkAuth();
-});
-
-window.addEventListener('offline', () => {
-    isOnline = false;
-    showNotification('⚠️ Connection lost. Working offline...', 'error');
-});
-
-function formatPhoneNumber(phone) {
-    if (!phone) return 'N/A';
-    
-    const cleaned = phone.replace(/\D/g, '');
-    
-    if (cleaned.length === 10) {
-        return `+1-${cleaned.slice(0,3)}-${cleaned.slice(3,6)}-${cleaned.slice(6)}`;
+// Enhanced Utility Functions with Security and Performance Optimizations
+class Utils {
+    constructor() {
+        this.debounceTimers = new Map();
+        this.cache = new Map();
     }
-    else if (cleaned.length === 11 && cleaned[0] === '1') {
-        return `+${cleaned[0]}-${cleaned.slice(1,4)}-${cleaned.slice(4,7)}-${cleaned.slice(7)}`;
-    }
-    else if (cleaned.length > 10) {
-        const countryCode = cleaned.slice(0, cleaned.length - 10);
-        const rest = cleaned.slice(-10);
-        return `+${countryCode}-${rest.slice(0,3)}-${rest.slice(3,6)}-${rest.slice(6)}`;
-    }
-    
-    return phone;
-}
 
-function showLoading(show = true) {
-    document.getElementById('loading').classList.toggle('hidden', !show);
-}
-
-function showNotification(message, type) {
-    const notification = document.getElementById('notification');
-    notification.textContent = message;
-    notification.className = `notification ${type}`;
-    notification.classList.remove('hidden');
-    
-    setTimeout(() => {
-        notification.classList.add('hidden');
-    }, 3000);
-}
-
-window.showApp = function() {
-    console.log('showApp called');
-    const authSection = document.getElementById('auth-section');
-    const appSection = document.getElementById('app-section');
-    
-    if (!authSection || !appSection) {
-        console.error('Auth or app section not found!');
-        return;
+    // Security utilities
+    sanitizeInput(input) {
+        if (typeof input !== 'string') return input;
+        
+        return input
+            .replace(/[<>]/g, '') // Remove < and >
+            .replace(/javascript:/gi, '') // Remove javascript: protocol
+            .replace(/on\w+=/gi, '') // Remove event handlers
+            .trim()
+            .substring(0, 1000); // Limit length
     }
-    
-    console.log('Hiding auth, showing app');
-    
-    // Immediately hide auth and show app
-    authSection.classList.add('hidden');
-    appSection.classList.remove('hidden');
-    document.getElementById('top-logout-btn').classList.remove('hidden');
-    
-    // Set opacity for fade in
-    appSection.style.opacity = '1';
-    
-    showLoading(false);
-    
-    // Load data with error handling
-    setTimeout(() => {
-        try {
-            if (typeof checkEmailVerification === 'function') checkEmailVerification();
-            if (typeof loadServices === 'function') loadServices();
-            if (typeof loadAPIKeys === 'function') loadAPIKeys();
-            if (typeof loadWebhooks === 'function') loadWebhooks();
-            if (typeof loadAnalytics === 'function') loadAnalytics();
-            if (typeof loadNotificationSettings === 'function') loadNotificationSettings();
-            if (typeof loadReferralStats === 'function') loadReferralStats();
-            if (typeof loadActiveRentals === 'function') loadActiveRentals();
-            if (typeof startHistoryRefresh === 'function') startHistoryRefresh();
-        } catch (err) {
-            console.error('Error loading app data:', err);
+
+    sanitizeHTML(html) {
+        const div = document.createElement('div');
+        div.textContent = html;
+        return div.innerHTML;
+    }
+
+    validateEmail(email) {
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        return emailRegex.test(email);
+    }
+
+    validatePassword(password) {
+        if (!password || password.length < 6) {
+            return { valid: false, message: 'Password must be at least 6 characters' };
         }
-    }, 100);
-}
+        if (password.length > 128) {
+            return { valid: false, message: 'Password is too long' };
+        }
+        
+        const weakPasswords = ['123456', 'password', '123456789', 'qwerty', 'abc123'];
+        if (weakPasswords.includes(password.toLowerCase())) {
+            return { valid: false, message: 'Password is too weak' };
+        }
+        
+        return { valid: true };
+    }
 
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text);
-    showNotification('✅ Address copied to clipboard!', 'success');
-}
+    // Performance utilities
+    debounce(func, delay, key = 'default') {
+        if (this.debounceTimers.has(key)) {
+            clearTimeout(this.debounceTimers.get(key));
+        }
+        
+        const timer = setTimeout(() => {
+            func();
+            this.debounceTimers.delete(key);
+        }, delay);
+        
+        this.debounceTimers.set(key, timer);
+    }
 
-// Check auth on load
-window.token = localStorage.getItem('token');
-console.log('Utils.js loaded, token:', window.token ? 'exists' : 'none');
-
-if (window.token) {
-    console.log('Token found, will check auth when ready');
-    // Wait for DOM and all scripts to load
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                if (typeof checkAuth === 'function') {
-                    checkAuth();
-                } else {
-                    console.error('checkAuth not found!');
-                }
-            }, 100);
-        });
-    } else {
-        setTimeout(() => {
-            if (typeof checkAuth === 'function') {
-                checkAuth();
-            } else {
-                console.error('checkAuth not found!');
+    throttle(func, limit) {
+        let inThrottle;
+        return function() {
+            const args = arguments;
+            const context = this;
+            if (!inThrottle) {
+                func.apply(context, args);
+                inThrottle = true;
+                setTimeout(() => inThrottle = false, limit);
             }
-        }, 100);
+        };
     }
-} else {
-    console.log('No token, checking for referral');
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('ref')) {
+
+    // Caching utilities
+    setCache(key, value, ttl = 300000) { // 5 minutes default
+        this.cache.set(key, {
+            value,
+            expires: Date.now() + ttl
+        });
+    }
+
+    getCache(key) {
+        const cached = this.cache.get(key);
+        if (!cached) return null;
+        
+        if (Date.now() > cached.expires) {
+            this.cache.delete(key);
+            return null;
+        }
+        
+        return cached.value;
+    }
+
+    clearCache() {
+        this.cache.clear();
+    }
+
+    // API utilities with security
+    async secureRequest(url, options = {}) {
+        // Add security headers
+        const headers = {
+            'Content-Type': 'application/json',
+            ...options.headers
+        };
+
+        // Add CSRF token if available
+        const csrfToken = localStorage.getItem('csrf_token');
+        if (csrfToken && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method?.toUpperCase())) {
+            headers['X-CSRF-Token'] = csrfToken;
+        }
+
+        // Add auth token
+        const token = localStorage.getItem('token');
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        // Sanitize request body
+        if (options.body && typeof options.body === 'string') {
+            try {
+                const data = JSON.parse(options.body);
+                const sanitized = this.sanitizeObject(data);
+                options.body = JSON.stringify(sanitized);
+            } catch (e) {
+                // Not JSON, sanitize as string
+                options.body = this.sanitizeInput(options.body);
+            }
+        }
+
+        const response = await fetch(url, {
+            ...options,
+            headers
+        });
+
+        // Handle rate limiting
+        if (response.status === 429) {
+            throw new Error('Rate limit exceeded. Please try again later.');
+        }
+
+        return response;
+    }
+
+    sanitizeObject(obj) {
+        if (typeof obj !== 'object' || obj === null) {
+            return this.sanitizeInput(obj);
+        }
+
+        const sanitized = {};
+        for (const [key, value] of Object.entries(obj)) {
+            if (typeof value === 'string') {
+                sanitized[key] = this.sanitizeInput(value);
+            } else if (typeof value === 'object') {
+                sanitized[key] = this.sanitizeObject(value);
+            } else {
+                sanitized[key] = value;
+            }
+        }
+        return sanitized;
+    }
+
+    // UI utilities
+    showNotification(message, type = 'info', duration = 5000) {
+        const notification = document.getElementById('notification');
+        if (!notification) return;
+
+        // Sanitize message
+        message = this.sanitizeHTML(message);
+
+        notification.textContent = message;
+        notification.className = `notification ${type}`;
+        notification.classList.remove('hidden');
+
         setTimeout(() => {
-            if (typeof showTab === 'function') showTab('register');
-        }, 100);
+            notification.classList.add('hidden');
+        }, duration);
+    }
+
+    showLoading(show = true) {
+        const loading = document.getElementById('loading');
+        if (loading) {
+            if (show) {
+                loading.classList.remove('hidden');
+            } else {
+                loading.classList.add('hidden');
+            }
+        }
+    }
+
+    // Form utilities
+    getFormData(formElement) {
+        const formData = new FormData(formElement);
+        const data = {};
+        
+        for (const [key, value] of formData.entries()) {
+            data[key] = this.sanitizeInput(value);
+        }
+        
+        return data;
+    }
+
+    validateForm(formElement, rules = {}) {
+        const data = this.getFormData(formElement);
+        const errors = {};
+
+        for (const [field, value] of Object.entries(data)) {
+            const rule = rules[field];
+            if (!rule) continue;
+
+            if (rule.required && (!value || value.trim() === '')) {
+                errors[field] = `${field} is required`;
+                continue;
+            }
+
+            if (rule.email && !this.validateEmail(value)) {
+                errors[field] = 'Invalid email format';
+                continue;
+            }
+
+            if (rule.password) {
+                const validation = this.validatePassword(value);
+                if (!validation.valid) {
+                    errors[field] = validation.message;
+                    continue;
+                }
+            }
+
+            if (rule.minLength && value.length < rule.minLength) {
+                errors[field] = `Minimum length is ${rule.minLength}`;
+                continue;
+            }
+
+            if (rule.maxLength && value.length > rule.maxLength) {
+                errors[field] = `Maximum length is ${rule.maxLength}`;
+                continue;
+            }
+        }
+
+        return { valid: Object.keys(errors).length === 0, errors, data };
+    }
+
+    // Time utilities
+    formatTimeAgo(timestamp) {
+        const now = new Date();
+        const time = new Date(timestamp);
+        const diffMs = now - time;
+        const diffMins = Math.floor(diffMs / 60000);
+
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+
+        const diffHours = Math.floor(diffMins / 60);
+        if (diffHours < 24) return `${diffHours}h ago`;
+
+        const diffDays = Math.floor(diffHours / 24);
+        return `${diffDays}d ago`;
+    }
+
+    formatDuration(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+
+        if (hours > 0) {
+            return `${hours}h ${minutes}m`;
+        } else if (minutes > 0) {
+            return `${minutes}m ${secs}s`;
+        } else {
+            return `${secs}s`;
+        }
+    }
+
+    // Storage utilities with encryption
+    setSecureItem(key, value) {
+        try {
+            const encrypted = btoa(JSON.stringify(value));
+            localStorage.setItem(key, encrypted);
+        } catch (e) {
+            console.error('Failed to store secure item:', e);
+        }
+    }
+
+    getSecureItem(key) {
+        try {
+            const encrypted = localStorage.getItem(key);
+            if (!encrypted) return null;
+            return JSON.parse(atob(encrypted));
+        } catch (e) {
+            console.error('Failed to retrieve secure item:', e);
+            return null;
+        }
+    }
+
+    // Copy to clipboard
+    async copyToClipboard(text) {
+        try {
+            if (navigator.clipboard) {
+                await navigator.clipboard.writeText(text);
+                this.showNotification('📋 Copied to clipboard!', 'success');
+            } else {
+                // Fallback
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                this.showNotification('📋 Copied to clipboard!', 'success');
+            }
+        } catch (error) {
+            console.error('Copy failed:', error);
+            this.showNotification('❌ Failed to copy', 'error');
+        }
+    }
+
+    // Generate secure random string
+    generateSecureId(length = 16) {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+        const array = new Uint8Array(length);
+        crypto.getRandomValues(array);
+        
+        for (let i = 0; i < length; i++) {
+            result += chars[array[i] % chars.length];
+        }
+        
+        return result;
+    }
+
+    // Error handling
+    handleError(error, context = '') {
+        console.error(`Error in ${context}:`, error);
+        
+        let message = 'An unexpected error occurred';
+        
+        if (error.message) {
+            message = error.message;
+        } else if (typeof error === 'string') {
+            message = error;
+        }
+        
+        this.showNotification(`❌ ${message}`, 'error');
+    }
+
+    // Retry mechanism
+    async retry(fn, maxAttempts = 3, delay = 1000) {
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                return await fn();
+            } catch (error) {
+                if (attempt === maxAttempts) {
+                    throw error;
+                }
+                
+                console.warn(`Attempt ${attempt} failed, retrying in ${delay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+                delay *= 2; // Exponential backoff
+            }
+        }
     }
 }
+
+// Create global utils instance
+window.utils = new Utils();
+
+// Export for modules
+window.Utils = Utils;

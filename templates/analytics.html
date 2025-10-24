@@ -1,53 +1,22 @@
-<!-- Google Analytics 4 - Privacy Compliant -->
+<!-- Google Analytics -->
 {% if analytics_id %}
+<!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id={{ analytics_id }}"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
-  
-  // Initialize with privacy settings
   gtag('js', new Date());
-  gtag('config', '{{ analytics_id }}', {
-    'anonymize_ip': true,
-    'allow_google_signals': false,
-    'allow_ad_personalization_signals': false,
-    'cookie_expires': 63072000, // 2 years
-    'cookie_update': true,
-    'cookie_flags': 'SameSite=None;Secure'
-  });
-  
-  // Custom events for business metrics
-  function trackVerification(service, success) {
-    gtag('event', 'verification_attempt', {
-      'event_category': 'engagement',
-      'event_label': service,
-      'value': success ? 1 : 0
-    });
-  }
-  
-  function trackPayment(amount, currency) {
-    gtag('event', 'purchase', {
-      'transaction_id': Date.now().toString(),
-      'value': amount,
-      'currency': currency,
-      'event_category': 'ecommerce'
-    });
-  }
-  
-  function trackSignup(method) {
-    gtag('event', 'sign_up', {
-      'method': method,
-      'event_category': 'engagement'
-    });
-  }
-  
-  function trackApiKeyGenerated() {
-    gtag('event', 'api_key_generated', {
-      'event_category': 'engagement'
-    });
-  }
+  gtag('config', '{{ analytics_id }}');
 </script>
-
-<!-- Google Search Console Verification -->
-<meta name="google-site-verification" content="YOUR_VERIFICATION_CODE">
 {% endif %}
+
+<!-- Performance Monitoring -->
+<script>
+  // Basic performance monitoring
+  window.addEventListener('load', function() {
+    if ('performance' in window) {
+      const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
+      console.log('Page load time:', loadTime + 'ms');
+    }
+  });
+</script>

@@ -35,42 +35,6 @@ try:
     SENTRY_AVAILABLE = True
 except ImportError:
     SENTRY_AVAILABLE = False
-
-# Security patches
-try:
-    from security_patches import (
-        rate_limit_middleware, validate_service_name, validate_email,
-        sanitize_input, create_secure_token, validate_token,
-        safe_query, log_security_event, verify_webhook_signature,
-        hash_password_secure, verify_password_secure, add_security_headers,
-        validate_verification_request, validate_user_registration
-    )
-    SECURITY_PATCHES_AVAILABLE = True
-except ImportError:
-    SECURITY_PATCHES_AVAILABLE = False
-    # Fallback functions
-    def rate_limit_middleware(request, call_next): return call_next(request)
-    def validate_service_name(name): return name
-    def validate_email(email): return True
-    def sanitize_input(text): return text
-    def log_security_event(*args, **kwargs): pass
-    def add_security_headers(response): return response
-    def validate_verification_request(data): return data
-    def validate_user_registration(data): return data
-
-# WebSocket support
-try:
-    from websocket_realtime import add_websocket_routes, manager
-    WEBSOCKET_AVAILABLE = True
-except ImportError:
-    WEBSOCKET_AVAILABLE = False
-    class MockManager:
-        def send_personal_message(self, *args): pass
-        @property
-        def active_connections(self): return {}
-    manager = MockManager()
-    def add_websocket_routes(app): pass
-
 from fastapi import FastAPI, Depends, HTTPException, status, Request, WebSocket, WebSocketDisconnect
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
@@ -1051,27 +1015,6 @@ Namaskah SMS provides temporary phone numbers for SMS verification across 1,807+
 
 ## Features
 - 📱 1,807+ supported services (WhatsApp, Telegram, Google, etc.)
-
-# Add security middleware with proper integration
-if SECURITY_PATCHES_AVAILABLE:
-    from fastapi.middleware.base import BaseHTTPMiddleware
-    
-    class SecurityMiddleware(BaseHTTPMiddleware):
-        async def dispatch(self, request, call_next):
-            # Rate limiting
-            response = rate_limit_middleware(request, call_next)
-            if hasattr(response, 'status_code') and response.status_code == 429:
-                return response
-            
-            # Process request
-            response = await call_next(request)
-            
-            # Add security headers
-            response = add_security_headers(response)
-            return response
-    
-    app.add_middleware(SecurityMiddleware)
-
 - 🔐 JWT & Google OAuth authentication
 - 💰 Tiered pricing (Pay-as-You-Go, Developer, Enterprise)
 - 🎯 Real-time SMS retrieval
@@ -1171,21 +1114,12 @@ app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, general_exception_handler)
 
-# Add WebSocket routes
-if WEBSOCKET_AVAILABLE:
-    add_websocket_routes(app)
-
 # Register startup event
 @app.on_event("startup")
 async def startup_event():
     """Run background tasks on startup"""
     import asyncio
     asyncio.create_task(check_textverified_health_loop())
-    
-    # Start WebSocket background tasks
-    if WEBSOCKET_AVAILABLE:
-        from websocket_realtime import sms_checker_task
-        asyncio.create_task(sms_checker_task())
     
     # Auto-fix admin password
     try:
@@ -1541,18 +1475,12 @@ def get_csrf_token():
 
 @app.get("/health", tags=["System"], summary="Health Check")
 def health():
-    websocket_connections = 0
-    if WEBSOCKET_AVAILABLE:
-        websocket_connections = len(manager.active_connections)
-    
     return {
         "status": "healthy",
         "service": "namaskah-sms",
-        "version": "2.3.0",
+        "version": "2.0.0",
         "database": "connected",
-        "websocket_connections": websocket_connections,
-        "security_patches": SECURITY_PATCHES_AVAILABLE,
-        "websocket_support": WEBSOCKET_AVAILABLE,
+        "websocket_connections": len(manager.active_connections),
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
@@ -1853,22 +1781,7 @@ def get_available_area_codes():
     }
 
 @app.post("/auth/register", tags=["Authentication"], summary="Register New User")
-def register(req: RegisterRequest, request: Request, referral_code: str = None, db: Session = Depends(get_db)):
-    # Enhanced input validation
-    if SECURITY_PATCHES_AVAILABLE:
-        try:
-            validated_data = validate_user_registration({
-                'email': req.email,
-                'password': req.password
-            })
-            req.email = validated_data['email']
-            req.password = validated_data['password']
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=str(e))
-        
-        # Log security event
-        client_ip = request.client.host if request.client else "unknown"
-        log_security_event("user_registration", None, client_ip, f"Email: {req.email}")
+def register(req: RegisterRequest, referral_code: str = None, db: Session = Depends(get_db)):
     """Register a new user account
     
     - **email**: Valid email address
@@ -1884,16 +1797,10 @@ def register(req: RegisterRequest, request: Request, referral_code: str = None, 
     user_referral_code = secrets.token_urlsafe(6)
     verification_token = secrets.token_urlsafe(32)
     
-    # Use secure password hashing
-    if SECURITY_PATCHES_AVAILABLE:
-        password_hash = hash_password_secure(req.password)
-    else:
-        password_hash = hash_password(req.password)
-    
     user = User(
         id=f"user_{datetime.now(timezone.utc).timestamp()}",
         email=req.email,
-        password_hash=password_hash,
+        password_hash=hash_password(req.password),
         credits=0.0,
         free_verifications=1.0,
         referral_code=user_referral_code,
@@ -2034,16 +1941,7 @@ def google_auth(req: GoogleAuthRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail=f"Google authentication failed: {str(e)}")
 
 @app.post("/auth/login", tags=["Authentication"], summary="Login User")
-def login(req: LoginRequest, request: Request, db: Session = Depends(get_db)):
-    # Enhanced input validation
-    if SECURITY_PATCHES_AVAILABLE:
-        req.email = sanitize_input(req.email.lower().strip())
-        if not validate_email(req.email):
-            raise HTTPException(status_code=400, detail="Invalid email format")
-        
-        # Log security event
-        client_ip = request.client.host if request.client else "unknown"
-        log_security_event("login_attempt", None, client_ip, f"Email: {req.email}")
+def login(req: LoginRequest, db: Session = Depends(get_db)):
     """Login with email and password
     
     Returns JWT token valid for 30 days.
@@ -2054,10 +1952,7 @@ def login(req: LoginRequest, request: Request, db: Session = Depends(get_db)):
     
     # Verify password using secure function
     try:
-        if SECURITY_PATCHES_AVAILABLE:
-            password_valid = verify_password_secure(req.password, user.password_hash)
-        else:
-            password_valid = verify_password(req.password, user.password_hash)
+        password_valid = verify_password(req.password, user.password_hash)
     except Exception as e:
         print(f"Password verify error: {e}")
         password_valid = False
@@ -2412,11 +2307,6 @@ def export_user_transactions(user: User = Depends(get_current_user), db: Session
 
 @app.post("/verify/create", tags=["Verification"], summary="Create SMS/Voice Verification")
 def create_verification(req: CreateVerificationRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    # Validate input
-    req.service_name = validate_service_name(req.service_name)
-    
-    # Log security event
-    log_security_event("verification_create", user.id, details=f"Service: {req.service_name}")
     """Create new SMS or voice verification
     
     - **service_name**: Service identifier (e.g., 'whatsapp', 'telegram')
@@ -5420,6 +5310,3 @@ if __name__ == "__main__":
     import uvicorn
     create_admin_if_not_exists()
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
-# Add WebSocket routes
-add_websocket_routes(app, tv_client, SessionLocal)

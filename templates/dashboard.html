@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Namaskah SMS - Simple Verification</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a1628;
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container { max-width: 600px; margin: 0 auto; }
+        
+        .card {
+            background: #1a2942;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+        }
+        
+        h1 { text-align: center; margin-bottom: 30px; color: #d4af37; }
+        
+        .user-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0f1f3a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .service-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .service-btn:hover { background: #5a67d8; transform: translateY(-2px); }
+        
+        .verification-card {
+            background: #10b981;
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .phone-display {
+            font-family: monospace;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+            text-align: center;
+        }
+        
+        .messages {
+            background: #f0fdf4;
+            color: #166534;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: none;
+        }
+        
+        .code {
+            font-family: monospace;
+            font-size: 20px;
+            font-weight: bold;
+            background: white;
+            color: #166534;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            margin: 10px 0;
+        }
+        
+        .btn {
+            background: #d4af37;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        
+        .btn:hover { background: #b8941f; }
+        .btn-danger { background: #ef4444; }
+        .btn-danger:hover { background: #dc2626; }
+        
+        .hidden { display: none !important; }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .notification.success { background: #10b981; }
+        .notification.error { background: #ef4444; }
+        
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2000;
+            display: none;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #10b981;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #334155;
+            background: #0f1f3a;
+            color: white;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .auth-form { max-width: 400px; margin: 0 auto; }
+        
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .services-grid { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
+            .user-info { flex-direction: column; gap: 10px; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Namaskah SMS</h1>
+        
+        <!-- Auth Section -->
+        <div id="auth-section">
+            <div class="card auth-form">
+                <h2>Login</h2>
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button class="btn" onclick="login()" style="width: 100%;">Login</button>
+                <p style="text-align: center; margin: 10px 0;">or</p>
+                <button class="btn" onclick="showRegister()" style="width: 100%; background: #667eea;">Register</button>
+            </div>
+        </div>
+        
+        <!-- App Section -->
+        <div id="app-section" class="hidden">
+            <div class="user-info">
+                <div>
+                    <div id="user-email"></div>
+                    <div>Balance: N<span id="user-credits">0.00</span></div>
+                </div>
+                <div>
+                    <button class="btn" onclick="showFundWallet()">Fund Wallet</button>
+                    <button class="btn btn-danger" onclick="logout()">Logout</button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>Select Service</h3>
+                <div class="services-grid" id="services-grid">
+                    <button class="service-btn" onclick="createVerification('telegram')">📱 Telegram</button>
+                    <button class="service-btn" onclick="createVerification('whatsapp')">💬 WhatsApp</button>
+                    <button class="service-btn" onclick="createVerification('discord')">🎮 Discord</button>
+                    <button class="service-btn" onclick="createVerification('google')">🔍 Google</button>
+                    <button class="service-btn" onclick="createVerification('instagram')">📷 Instagram</button>
+                    <button class="service-btn" onclick="createVerification('facebook')">👥 Facebook</button>
+                    <button class="service-btn" onclick="createVerification('twitter')">🐦 Twitter</button>
+                    <button class="service-btn" onclick="createVerification('tiktok')">🎵 TikTok</button>
+                </div>
+            </div>
+            
+            <div id="verification-card" class="verification-card">
+                <h3>Verification Active</h3>
+                <div>Service: <span id="service-name"></span></div>
+                <div class="phone-display" id="phone-number"></div>
+                <div>Status: <span id="status">pending</span></div>
+                <div style="text-align: center; margin: 15px 0;">
+                    <button class="btn" onclick="checkMessages()">Check Messages</button>
+                    <button class="btn btn-danger" onclick="cancelVerification()">Cancel</button>
+                </div>
+            </div>
+            
+            <div id="messages-section" class="messages">
+                <h4>SMS Received!</h4>
+                <div id="messages-list"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Fund Wallet Modal -->
+    <div id="fund-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+        <div class="card" style="max-width: 400px; margin: 20px;">
+            <h3>Fund Wallet</h3>
+            <input type="number" id="fund-amount" placeholder="Amount (USD)" min="5" step="5">
+            <button class="btn" onclick="processPayment()" style="width: 100%;">Pay with Paystack</button>
+            <button class="btn btn-danger" onclick="closeFundWallet()" style="width: 100%; margin-top: 10px;">Cancel</button>
+        </div>
+    </div>
+    
+    <div id="notification" class="notification"></div>
+    <div id="loading" class="loading"><div class="spinner"></div></div>
+    
+    <script>
+        const API_BASE = '';
+        let currentVerificationId = null;
+        let autoRefreshInterval = null;
+        
+        // Auth Functions
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                showNotification('Please enter email and password', 'error');
+                return;
+            }
+            
+            showLoading(true);
+            
+            try {
+                const res = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await res.json();
+                showLoading(false);
+                
+                if (res.ok) {
+                    localStorage.setItem('token', data.token);
+                    showApp();
+                    loadUserData();
+                    showNotification('Login successful!', 'success');
+                } else {
+                    showNotification(data.detail || 'Login failed', 'error');
+                }
+            } catch (err) {
+                showLoading(false);
+                showNotification('Network error', 'error');
+            }
+        }
+        
+        function showRegister() {
+            const authCard = document.querySelector('#auth-section .card');
+            authCard.innerHTML = `
+                <h2>Register</h2>
+                <input type="email" id="reg-email" placeholder="Email" required>
+                <input type="password" id="reg-password" placeholder="Password (min 6 chars)" required>
+                <button class="btn" onclick="register()" style="width: 100%;">Register</button>
+                <p style="text-align: center; margin: 10px 0;">or</p>
+                <button class="btn" onclick="showLogin()" style="width: 100%; background: #667eea;">Back to Login</button>
+            `;
+        }
+        
+        function showLogin() {
+            const authCard = document.querySelector('#auth-section .card');
+            authCard.innerHTML = `
+                <h2>Login</h2>
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button class="btn" onclick="login()" style="width: 100%;">Login</button>
+                <p style="text-align: center; margin: 10px 0;">or</p>
+                <button class="btn" onclick="showRegister()" style="width: 100%; background: #667eea;">Register</button>
+            `;
+        }
+        
+        async function register() {
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+            
+            if (!email || !password) {
+                showNotification('Please enter email and password', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showNotification('Password must be at least 6 characters', 'error');
+                return;
+            }
+            
+            showLoading(true);
+            
+            try {
+                const res = await fetch('/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await res.json();
+                showLoading(false);
+                
+                if (res.ok) {
+                    localStorage.setItem('token', data.token);
+                    showApp();
+                    loadUserData();
+                    showNotification('Registration successful! Welcome!', 'success');
+                } else {
+                    showNotification(data.detail || 'Registration failed', 'error');
+                }
+            } catch (err) {
+                showLoading(false);
+                showNotification('Network error', 'error');
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('token');
+            currentVerificationId = null;
+            stopAutoRefresh();
+            document.getElementById('auth-section').classList.remove('hidden');
+            document.getElementById('app-section').classList.add('hidden');
+            document.getElementById('verification-card').style.display = 'none';
+            document.getElementById('messages-section').style.display = 'none';
+            showLogin();
+        }
+        
+        function showApp() {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('app-section').classList.remove('hidden');
+        }
+        
+        async function loadUserData() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            
+            try {
+                const res = await fetch('/auth/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('user-email').textContent = data.email;
+                    document.getElementById('user-credits').textContent = data.credits.toFixed(2);
+                }
+            } catch (err) {
+                console.error('Failed to load user data:', err);
+            }
+        }
+        
+        // Verification Functions
+        async function createVerification(serviceName) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showNotification('Please login first', 'error');
+                return;
+            }
+            
+            showLoading(true);
+            
+            try {
+                const res = await fetch('/verify/create', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ service_name: serviceName })
+                });
+                
+                const data = await res.json();
+                showLoading(false);
+                
+                if (res.ok) {
+                    currentVerificationId = data.id;
+                    displayVerification(data);
+                    document.getElementById('user-credits').textContent = data.remaining_credits.toFixed(2);
+                    showNotification(`Verification created! Cost: N${data.cost}`, 'success');
+                    startAutoRefresh();
+                } else {
+                    if (res.status === 402) {
+                        showNotification('Insufficient funds. Please fund your wallet', 'error');
+                        showFundWallet();
+                    } else {
+                        showNotification(data.detail || 'Failed to create verification', 'error');
+                    }
+                }
+            } catch (err) {
+                showLoading(false);
+                showNotification('Network error', 'error');
+            }
+        }
+        
+        function displayVerification(data) {
+            document.getElementById('service-name').textContent = data.service_name;
+            document.getElementById('phone-number').textContent = data.phone_number;
+            document.getElementById('status').textContent = data.status;
+            document.getElementById('verification-card').style.display = 'block';
+            document.getElementById('messages-section').style.display = 'none';
+        }
+        
+        async function checkMessages() {
+            if (!currentVerificationId) return;
+            
+            const token = localStorage.getItem('token');
+            
+            try {
+                const res = await fetch(`/verify/${currentVerificationId}/messages`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    
+                    if (data.messages.length > 0) {
+                        stopAutoRefresh();
+                        displayMessages(data.messages);
+                        showNotification('SMS received!', 'success');
+                    } else {
+                        showNotification('No messages yet. Keep waiting...', 'error');
+                    }
+                } else {
+                    showNotification('Failed to check messages', 'error');
+                }
+            } catch (err) {
+                showNotification('Network error', 'error');
+            }
+        }
+        
+        function displayMessages(messages) {
+            const messagesList = document.getElementById('messages-list');
+            messagesList.innerHTML = messages.map(msg => {
+                const code = msg.match(/\\b\\d{4,8}\\b/)?.[0] || msg;
+                return `
+                    <div class="code" onclick="copyCode('${code}')">${code}</div>
+                    <div style="font-size: 12px; margin-bottom: 10px;">Full message: ${msg}</div>
+                `;
+            }).join('');
+            
+            document.getElementById('messages-section').style.display = 'block';
+        }
+        
+        function copyCode(code) {
+            navigator.clipboard.writeText(code).then(() => {
+                showNotification(`Code ${code} copied!`, 'success');
+            });
+        }
+        
+        async function cancelVerification() {
+            if (!currentVerificationId) return;
+            
+            if (!confirm('Cancel verification and get refund?')) return;
+            
+            const token = localStorage.getItem('token');
+            showLoading(true);
+            
+            try {
+                const res = await fetch(`/verify/${currentVerificationId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const data = await res.json();
+                showLoading(false);
+                
+                if (res.ok) {
+                    document.getElementById('user-credits').textContent = data.new_balance.toFixed(2);
+                    showNotification(`Cancelled! Refunded N${data.refunded.toFixed(2)}`, 'success');
+                    clearVerification();
+                } else {
+                    showNotification(data.detail || 'Failed to cancel', 'error');
+                }
+            } catch (err) {
+                showLoading(false);
+                showNotification('Network error', 'error');
+            }
+        }
+        
+        function clearVerification() {
+            currentVerificationId = null;
+            stopAutoRefresh();
+            document.getElementById('verification-card').style.display = 'none';
+            document.getElementById('messages-section').style.display = 'none';
+        }
+        
+        function startAutoRefresh() {
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            
+            autoRefreshInterval = setInterval(async () => {
+                if (currentVerificationId) {
+                    await checkMessages();
+                }
+            }, 10000); // Check every 10 seconds
+        }
+        
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+        
+        // Wallet Functions
+        function showFundWallet() {
+            document.getElementById('fund-modal').classList.remove('hidden');
+        }
+        
+        function closeFundWallet() {
+            document.getElementById('fund-modal').classList.add('hidden');
+        }
+        
+        async function processPayment() {
+            const amount = parseFloat(document.getElementById('fund-amount').value);
+            
+            if (!amount || amount < 5) {
+                showNotification('Minimum amount is $5', 'error');
+                return;
+            }
+            
+            const token = localStorage.getItem('token');
+            showLoading(true);
+            
+            try {
+                const res = await fetch('/wallet/fund', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ amount, method: 'paystack' })
+                });
+                
+                const data = await res.json();
+                showLoading(false);
+                
+                if (res.ok && data.authorization_url) {
+                    window.open(data.authorization_url, '_blank');
+                    closeFundWallet();
+                    showNotification('Payment window opened. Complete payment to fund wallet', 'success');
+                } else {
+                    showNotification(data.detail || 'Payment failed', 'error');
+                }
+            } catch (err) {
+                showLoading(false);
+                showNotification('Network error', 'error');
+            }
+        }
+        
+        // Utility Functions
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 4000);
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                showApp();
+                loadUserData();
+            }
+        });
+        
+        // Auto-refresh user data every 30 seconds
+        setInterval(() => {
+            if (localStorage.getItem('token')) {
+                loadUserData();
+            }
+        }, 30000);
+    </script>
+
+    <script src="/ws/client.js"></script>
+    <script>
+        // Override createVerification to use WebSocket
+        const originalCreateVerification = window.createVerification;
+        window.createVerification = async function(serviceName) {
+            const result = await originalCreateVerification(serviceName);
+            if (result && result.id) {
+                startRealtimeMonitoring(result.id);
+            }
+            return result;
+        };
+    </script>
+</body>
+</html>

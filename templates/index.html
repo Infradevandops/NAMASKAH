@@ -276,8 +276,27 @@
             </div>
 
             <!-- Simplified Verification Interface -->
+            <!-- Real-time Active Verifications -->
+            <div class="card" id="active-verifications-card" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 style="margin: 0;">⚡ Active Verifications</h2>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <div id="connection-status" class="status-dot inactive" title="WebSocket Status"></div>
+                        <label style="display: flex; align-items: center; gap: 5px; font-size: 12px;">
+                            <input type="checkbox" id="auto-refresh-toggle" checked>
+                            Auto-refresh
+                        </label>
+                        <button onclick="enhancedVerification.refreshActiveVerifications()" class="btn-small">🔄</button>
+                    </div>
+                </div>
+                <div id="active-verifications-container"></div>
+            </div>
+
             <div class="card">
-                <h2>📱 SMS Verification</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 style="margin: 0;">📱 SMS Verification</h2>
+                    <button id="bulk-verify-btn" onclick="enhancedVerification.showBulkModal()" class="btn-small" style="background: #8b5cf6;">🚀 Bulk</button>
+                </div>
                 <p style="color: #6b7280; margin-bottom: 20px;">Click any service below to start verification</p>
                 
                 <!-- Direct Service Grid -->
@@ -285,11 +304,11 @@
                     <div id="services-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;"></div>
                 </div>
                 
-                <!-- Capability Selection (Hidden by default) -->
+                <!-- Enhanced Capability Selection -->
                 <div id="capability-modal" class="modal hidden">
-                    <div class="modal-content" style="max-width: 400px;">
+                    <div class="modal-content" style="max-width: 500px;">
                         <h3 id="selected-service-name">WhatsApp Verification</h3>
-                        <p style="color: #6b7280; margin-bottom: 20px;">Choose verification method</p>
+                        <p style="color: #6b7280; margin-bottom: 20px;">Choose verification method and options</p>
                         
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                             <label onclick="selectCapability('sms')" style="display: flex; flex-direction: column; align-items: center; padding: 20px; background: var(--bg-secondary); border: 2px solid #10b981; border-radius: 8px; cursor: pointer; text-align: center;" id="sms-option">
@@ -304,25 +323,51 @@
                             </label>
                         </div>
                         
+                        <!-- Advanced Options -->
+                        <div id="advanced-options" class="hidden" style="background: var(--bg-secondary); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <h4 style="margin: 0 0 10px 0;">🎯 Advanced Options</h4>
+                            <div style="margin-bottom: 10px;">
+                                <label>Area Code (+$4):</label>
+                                <select id="area-code-select" style="width: 100%; margin-top: 5px;">
+                                    <option value="">Any Area Code</option>
+                                    <option value="212">212 - New York</option>
+                                    <option value="310">310 - Los Angeles</option>
+                                    <option value="415">415 - San Francisco</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Carrier (+$6):</label>
+                                <select id="carrier-select" style="width: 100%; margin-top: 5px;">
+                                    <option value="">Any Carrier</option>
+                                    <option value="verizon">Verizon</option>
+                                    <option value="att">AT&T</option>
+                                    <option value="tmobile">T-Mobile</option>
+                                </select>
+                            </div>
+                        </div>
+                        
                         <div style="display: flex; gap: 10px;">
-                            <button onclick="createDirectVerification()" style="flex: 1; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Create Verification</button>
+                            <button onclick="toggleAdvancedOptions()" style="flex: 1; padding: 12px; background: #667eea; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">⚙️ Advanced</button>
+                            <button onclick="createDirectVerification()" style="flex: 2; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Create Verification</button>
                             <button onclick="closeCapabilityModal()" style="flex: 1; padding: 12px; background: #ef4444; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Enhanced Real-time Verification Details -->
             <div id="verification-details" class="card hidden verification-modal-compact">
-                <!-- Compact sticky header with essential info -->
-                <div class="verification-header-sticky" style="background: var(--bg); border-bottom: 1px solid var(--border); padding: 12px; margin: -20px -20px 15px -20px; border-radius: 12px 12px 0 0;">
+                <!-- Real-time status header -->
+                <div class="verification-header-sticky" style="background: var(--bg-card); border-bottom: 1px solid var(--border); padding: 12px; margin: -20px -20px 15px -20px; border-radius: 12px 12px 0 0;">
                     <div class="phone-service-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <span id="phone-number" class="phone-compact" style="font-size: 16px; font-weight: 700; color: var(--text-primary);"></span>
-                            <button onclick="copyPhone()" class="btn-small" style="padding: 4px 8px; font-size: 11px;">Copy</button>
+                            <button onclick="enhancedVerification.copyPhone(document.getElementById('phone-number').textContent)" class="btn-small" style="padding: 4px 8px; font-size: 11px;">Copy</button>
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <span id="service-name" class="service-badge" style="background: #667eea; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;"></span>
                             <span id="status" class="badge status-badge-compact" style="padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;"></span>
+                            <div id="realtime-indicator" class="status-dot active" title="Real-time updates enabled" style="display: none;"></div>
                         </div>
                     </div>
                     <div class="timer-row-compact" id="timer-row" style="display: none; text-align: center; background: rgba(239, 68, 68, 0.1); padding: 8px; border-radius: 8px;">
@@ -331,10 +376,10 @@
                     </div>
                 </div>
                 
-                <!-- Compact details grid -->
+                <!-- Enhanced details grid -->
                 <div id="verification-info" class="verification-details-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px;"></div>
                 
-                <!-- Compact actions -->
+                <!-- Enhanced actions with real-time features -->
                 <div class="actions-compact" style="display: flex; gap: 8px;">
                     <button onclick="checkMessages()" id="check-messages-btn" class="btn-primary-compact" style="flex: 1; padding: 10px; font-size: 14px; font-weight: 600;">📨 Check</button>
                     <button onclick="checkVoiceCall()" id="check-voice-btn" class="btn-primary-compact hidden" style="flex: 1; padding: 10px; font-size: 14px; font-weight: 600;">📞 Voice</button>
@@ -343,9 +388,21 @@
                 </div>
             </div>
 
+            <!-- Enhanced Messages Section with Real-time Updates -->
             <div id="messages-section" class="card hidden messages-compact">
-                <h2 style="margin-bottom: 15px; font-size: 18px;">📨 SMS Messages</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 style="margin: 0; font-size: 18px;">📨 SMS Messages</h2>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <div id="message-indicator" class="status-dot inactive" title="Waiting for messages"></div>
+                        <button onclick="checkMessages()" class="btn-small">🔄 Refresh</button>
+                    </div>
+                </div>
                 <div id="messages-list" style="max-height: 300px; overflow-y: auto;"></div>
+                <div id="no-messages" class="empty-state" style="display: none;">
+                    <div class="empty-icon">📭</div>
+                    <h3>No messages yet</h3>
+                    <p>Messages will appear here automatically when received</p>
+                </div>
             </div>
 
             <div id="unlisted-modal" class="modal hidden">
@@ -764,6 +821,9 @@
     </div>
     
     <!-- Core JavaScript Files -->
+    <script src="/static/js/security.js"></script>
+    <script src="/static/js/websocket.js"></script>
+    <script src="/static/js/enhanced-verification.js"></script>
     <script src="/static/js/config.js"></script>
     <script src="/static/js/utils.js"></script>
     <script src="/static/js/auth.js"></script>

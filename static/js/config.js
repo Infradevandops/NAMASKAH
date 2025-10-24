@@ -1,36 +1,62 @@
-// Google OAuth Configuration
+// Configuration for Enhanced Frontend
+window.CONFIG = {
+    // API Configuration
+    API_BASE_URL: '',
+    WEBSOCKET_URL: `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`,
+    
+    // Security Configuration
+    CSRF_ENABLED: true,
+    RATE_LIMIT_ENABLED: true,
+    
+    // Feature Flags
+    FEATURES: {
+        WEBSOCKET_ENABLED: true,
+        REAL_TIME_UPDATES: true,
+        BULK_VERIFICATION: true,
+        ENHANCED_SECURITY: true,
+        AUTO_REFRESH: true,
+        NOTIFICATION_SOUND: true
+    },
+    
+    // UI Configuration
+    UI: {
+        AUTO_REFRESH_INTERVAL: 10000, // 10 seconds
+        WEBSOCKET_RECONNECT_DELAY: 5000, // 5 seconds
+        NOTIFICATION_TIMEOUT: 5000, // 5 seconds
+        MAX_RETRY_ATTEMPTS: 3
+    },
+    
+    // Validation Rules
+    VALIDATION: {
+        MIN_PASSWORD_LENGTH: 6,
+        MAX_MESSAGE_LENGTH: 1000,
+        ALLOWED_FILE_TYPES: ['csv', 'json'],
+        MAX_BULK_OPERATIONS: 50
+    },
+    
+    // Security Headers
+    SECURITY: {
+        CONTENT_TYPE: 'application/json',
+        CSRF_HEADER: 'X-CSRF-Token'
+    }
+};
+
+// Google OAuth Configuration (loaded dynamically)
 window.GOOGLE_CLIENT_ID = null;
 window.googleConfigLoaded = false;
 
-// Create a timeout promise
-const timeoutPromise = new Promise((_, reject) => 
-    setTimeout(() => reject(new Error('Timeout')), 3000)
-);
-
-// Race between fetch and timeout
-Promise.race([
-    fetch('/auth/google/config'),
-    timeoutPromise
-])
-    .then(r => r.ok ? r.json() : Promise.reject(new Error('Network error')))
+// Load Google OAuth config
+fetch('/auth/google/config')
+    .then(response => response.json())
     .then(data => {
-        console.log('Google config loaded:', data);
         window.GOOGLE_CLIENT_ID = data.client_id;
         window.googleConfigLoaded = true;
-        if (data.enabled && window.GOOGLE_CLIENT_ID) {
-            console.log('Google OAuth enabled, loading SDK...');
-            if (typeof window.loadGoogleSDK === 'function') {
-                window.loadGoogleSDK();
-            }
-        } else {
-            console.log('Google OAuth disabled, removing buttons');
-            document.getElementById('google-auth-btn')?.remove();
-            document.getElementById('google-separator')?.remove();
-        }
+        console.log('Google OAuth config loaded:', !!data.client_id);
     })
     .catch(error => {
-        console.error('Google config error:', error);
+        console.error('Failed to load Google config:', error);
         window.googleConfigLoaded = true;
-        document.getElementById('google-auth-btn')?.remove();
-        document.getElementById('google-separator')?.remove();
     });
+
+// Export config
+window.getConfig = () => window.CONFIG;
