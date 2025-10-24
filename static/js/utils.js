@@ -362,5 +362,9 @@ class Utils {
 // Create global utils instance
 window.utils = new Utils();
 
+// Make key functions globally available
+window.showNotification = (message, type, duration) => window.utils.showNotification(message, type, duration);
+window.showLoading = (show) => window.utils.showLoading(show);
+
 // Export for modules
 window.Utils = Utils;

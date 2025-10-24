@@ -123,7 +123,7 @@
                         <input type="checkbox" id="remember-me" style="width: auto;">
                         <label for="remember-me" style="font-size: 14px; color: var(--text-secondary);">Remember me</label>
                     </div>
-                    <button type="button" onclick="login()" id="login-btn" style="margin-top: 15px;">Login</button>
+                    <button type="button" onclick="window.login ? window.login() : (typeof login !== 'undefined' ? login() : console.error('Login function not found'))" id="login-btn" style="margin-top: 15px; cursor: pointer; transition: all 0.3s ease;">Login</button>
                 </div>
 
                 <div id="register-form" class="form-container hidden">
@@ -133,12 +133,12 @@
                         <input type="password" id="register-password" placeholder="Password (min 6 chars)" required onkeypress="if(event.key==='Enter')register()">
                         <button type="button" onclick="togglePassword('register-password')" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 14px;">👁️</button>
                     </div>
-                    <button type="button" onclick="register()" id="register-btn" style="margin-top: 15px;">Register</button>
+                    <button type="button" onclick="window.register ? window.register() : (typeof register !== 'undefined' ? register() : console.error('Register function not found'))" id="register-btn" style="margin-top: 15px; cursor: pointer; transition: all 0.3s ease;">Register</button>
                 </div>
                 
                 <!-- Google OAuth -->
-                <div id="google-separator" style="display: none;">or</div>
-                <div id="google-auth-btn" style="display: none;"></div>
+                <div id="google-separator" style="display: none; text-align: center; margin: 15px 0; color: var(--text-secondary); font-weight: 600;">or</div>
+                <div id="google-auth-btn" style="display: none; justify-content: center; margin: 10px 0;"></div>
                 
                 <p id="login-hint" style="font-size: 13px; color: var(--text-primary); margin-top: 10px; text-align: center; font-weight: 600;">💡 Press Enter to login</p>
                 <p id="register-hint" class="hidden" style="font-size: 14px; color: #10b981; margin-top: 10px; text-align: center; font-weight: 700;">🎁 Get <span style="font-size: 16px;">1 FREE</span> verification on signup!</p>
@@ -837,98 +837,40 @@
     <script src="/static/js/config.js"></script>
     <script src="/static/js/utils.js"></script>
     <script>
-        // Enhanced auth functions with loading states
-        async function login() {
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
+        // Password toggle function
+        window.togglePassword = function(inputId) {
+            const input = document.getElementById(inputId);
+            const button = input.nextElementSibling;
             
-            if (!email || !password) {
-                alert('⚠️ Please fill in all fields');
-                return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                button.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                button.textContent = '👁️';
             }
-            
-            const btn = document.getElementById('login-btn');
-            btn.disabled = true;
-            btn.textContent = 'Login ⏳';
-            
-            try {
-                const response = await fetch('/auth/login', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({email, password})
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    localStorage.setItem('token', data.token);
-                    if (document.getElementById('remember-me').checked) {
-                        localStorage.setItem('remember-email', email);
-                    }
-                    alert('✅ Login successful!');
-                    setTimeout(() => location.reload(), 1000);
-                } else {
-                    alert('❌ ' + (data.detail || 'Login failed'));
-                }
-            } catch (error) {
-                alert('❌ Network error. Please try again.');
-            } finally {
-                const btn = document.getElementById('login-btn');
-                btn.disabled = false;
-                btn.textContent = 'Login';
-            }
-        }
+        };
         
-        async function register() {
-            const email = document.getElementById('register-email').value;
-            const password = document.getElementById('register-password').value;
-            
-            if (!email || !password) {
-                alert('⚠️ Please fill in all fields');
-                return;
-            }
-            
-            if (password.length < 6) {
-                alert('⚠️ Password must be at least 6 characters');
-                return;
-            }
-            
-            const btn = document.getElementById('register-btn');
-            btn.disabled = true;
-            btn.textContent = 'Register ⏳';
-            
-            try {
-                const response = await fetch('/auth/register', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({email, password})
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    localStorage.setItem('token', data.token);
-                    alert('✅ Registration successful!');
-                    setTimeout(() => location.reload(), 1000);
-                } else {
-                    alert('❌ ' + (data.detail || 'Registration failed'));
-                }
-            } catch (error) {
-                alert('❌ Network error. Please try again.');
-            } finally {
-                const btn = document.getElementById('register-btn');
-                btn.disabled = false;
-                btn.textContent = 'Register';
-            }
-        }
-        
-        // Load remembered email
+        // Load remembered email and ensure auth functions are available
         document.addEventListener('DOMContentLoaded', () => {
             const rememberedEmail = localStorage.getItem('remember-email');
             if (rememberedEmail) {
                 document.getElementById('login-email').value = rememberedEmail;
                 document.getElementById('remember-me').checked = true;
             }
+            
+            // Ensure auth functions are globally available
+            setTimeout(() => {
+                if (typeof login === 'function') {
+                    window.login = login;
+                }
+                if (typeof register === 'function') {
+                    window.register = register;
+                }
+                if (typeof checkAuth === 'function') {
+                    checkAuth();
+                }
+            }, 100);
         });
     </script>
     <script src="/static/js/auth.js"></script>
@@ -1157,9 +1099,12 @@
                             // Only show if proper iframe exists
                             setTimeout(() => {
                                 if (container.querySelector('iframe')) {
+                                    container.classList.add('configured');
                                     container.style.display = 'flex';
-                                    container.style.justifyContent = 'center';
-                                    if (separator) separator.style.display = 'block';
+                                    if (separator) {
+                                        separator.classList.add('configured');
+                                        separator.style.display = 'block';
+                                    }
                                     googleInitialized = true;
                                     console.log('Google Sign-In initialized successfully');
                                 } else {
@@ -1182,14 +1127,13 @@
             const container = document.getElementById('google-auth-btn');
             const separator = document.getElementById('google-separator');
             if (container) {
+                container.classList.remove('configured');
                 container.style.display = 'none';
                 container.innerHTML = ''; // Clear any existing content
-                // Force hide with important CSS
-                container.style.setProperty('display', 'none', 'important');
             }
             if (separator) {
+                separator.classList.remove('configured');
                 separator.style.display = 'none';
-                separator.style.setProperty('display', 'none', 'important');
             }
             console.log('Google OAuth button hidden');
         }
@@ -1321,18 +1265,11 @@
             if (window.googleConfigLoaded) {
                 if (window.GOOGLE_CLIENT_ID && window.GOOGLE_CLIENT_ID.length > 20) {
                     console.log('Valid Google OAuth config found, loading SDK');
-                    // Clear any existing content first
-                    const container = document.getElementById('google-auth-btn');
-                    if (container) {
-                        container.innerHTML = '';
-                        hideGoogleButton();
-                    }
-                    // Add a small delay to ensure DOM is ready
                     setTimeout(() => {
                         window.loadGoogleSDK();
                     }, 200);
                 } else {
-                    console.log('Google OAuth not configured - client ID missing or invalid');
+                    console.log('Google OAuth not configured - hiding button');
                     hideGoogleButton();
                 }
             } else {
