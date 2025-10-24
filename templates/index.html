@@ -1036,26 +1036,37 @@
                     // Clear any existing content first
                     container.innerHTML = '';
                     
-                    // Render Google button
-                    google.accounts.id.renderButton(container, { 
-                        theme: 'outline', 
-                        size: 'large', 
-                        width: Math.min(container.offsetWidth || 300, 400),
-                        text: 'continue_with',
-                        shape: 'rectangular',
-                        logo_alignment: 'left'
-                    });
-                    
-                    // Only show if rendering was successful
-                    if (container.children.length > 0) {
-                        container.style.display = 'flex';
-                        container.style.justifyContent = 'center';
-                        if (separator) separator.style.display = 'block';
-                        googleInitialized = true;
-                        console.log('Google Sign-In initialized successfully');
-                    } else {
-                        throw new Error('Google button rendering failed');
-                    }
+                    // Add a small delay to ensure DOM is ready
+                    setTimeout(() => {
+                        try {
+                            // Render Google button
+                            google.accounts.id.renderButton(container, { 
+                                theme: 'outline', 
+                                size: 'large', 
+                                width: Math.min(container.offsetWidth || 300, 400),
+                                text: 'continue_with',
+                                shape: 'rectangular',
+                                logo_alignment: 'left'
+                            });
+                            
+                            // Check if rendering was successful after a brief delay
+                            setTimeout(() => {
+                                if (container.children.length > 0 && !container.innerHTML.includes('<div')) {
+                                    container.style.display = 'flex';
+                                    container.style.justifyContent = 'center';
+                                    if (separator) separator.style.display = 'block';
+                                    googleInitialized = true;
+                                    console.log('Google Sign-In initialized successfully');
+                                } else {
+                                    console.log('Google button rendering failed or contains raw HTML');
+                                    hideGoogleButton();
+                                }
+                            }, 100);
+                        } catch (renderError) {
+                            console.error('Google button render error:', renderError);
+                            hideGoogleButton();
+                        }
+                    }, 200);
                 }
             } catch (error) {
                 console.error('Google Sign-In init error:', error);
@@ -1147,7 +1158,7 @@
             
             // Check if script already exists
             if (document.querySelector('script[src*="accounts.google.com/gsi/client"]')) {
-                setTimeout(initGoogleSignIn, 200);
+                setTimeout(initGoogleSignIn, 500);
                 return;
             }
             
@@ -1157,9 +1168,15 @@
             script.async = true;
             script.defer = true;
             
+            let sdkLoadTimeout = setTimeout(() => {
+                console.error('Google SDK load timeout');
+                hideGoogleButton();
+            }, 10000); // 10 second timeout
+            
             script.onload = () => {
+                clearTimeout(sdkLoadTimeout);
                 console.log('Google SDK loaded successfully');
-                // Wait for SDK to fully initialize
+                // Wait longer for SDK to fully initialize in production
                 setTimeout(() => {
                     if (typeof google !== 'undefined' && google.accounts) {
                         initGoogleSignIn();
@@ -1167,10 +1184,11 @@
                         console.error('Google SDK loaded but accounts API not available');
                         hideGoogleButton();
                     }
-                }, 800);
+                }, 1500); // Increased delay for production
             };
             
             script.onerror = (error) => {
+                clearTimeout(sdkLoadTimeout);
                 console.error('Google SDK load error:', error);
                 hideGoogleButton();
             };
@@ -1201,13 +1219,13 @@
             waitForConfig();
         }
         
-        // Timeout fallback - hide Google button after 5 seconds if not loaded
+        // Timeout fallback - hide Google button after 8 seconds if not loaded
         setTimeout(() => {
-            if (!googleInitialized && !googleInitAttempted) {
+            if (!googleInitialized) {
                 console.log('Google Sign-In timeout - hiding button');
                 hideGoogleButton();
             }
-        }, 5000);
+        }, 8000);
         
         // Initialize with hidden state
         document.addEventListener('DOMContentLoaded', () => {
