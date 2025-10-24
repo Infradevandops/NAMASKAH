@@ -1096,9 +1096,14 @@
                                 logo_alignment: 'left'
                             });
                             
-                            // Only show if proper iframe exists
+                            // Only show if proper iframe exists and no raw HTML
                             setTimeout(() => {
-                                if (container.querySelector('iframe')) {
+                                const iframe = container.querySelector('iframe');
+                                const hasRawHTML = container.innerHTML.includes('<div') || 
+                                                 container.innerHTML.includes('tabindex=') ||
+                                                 container.textContent.includes('<');
+                                
+                                if (iframe && !hasRawHTML) {
                                     container.classList.add('configured');
                                     container.style.display = 'flex';
                                     if (separator) {
@@ -1108,6 +1113,7 @@
                                     googleInitialized = true;
                                     console.log('Google Sign-In initialized successfully');
                                 } else {
+                                    console.log('Google button has raw HTML or no iframe, hiding');
                                     hideGoogleButton();
                                 }
                             }, 100);
@@ -1141,9 +1147,17 @@
         function cleanupGoogleButton() {
             const container = document.getElementById('google-auth-btn');
             if (container && container.innerHTML) {
-                // Check for raw HTML content
-                if (container.innerHTML.includes('tabindex=') || container.innerHTML.includes('<div')) {
-                    console.log('Cleaning up raw Google HTML content');
+                // Check for raw HTML/SVG content or malformed elements
+                const hasRawContent = container.innerHTML.includes('tabindex=') || 
+                                    container.innerHTML.includes('<div') ||
+                                    container.innerHTML.includes('<svg') ||
+                                    container.innerHTML.includes('class="nsm') ||
+                                    container.innerHTML.includes('aria-labelledby') ||
+                                    container.textContent.includes('<') ||
+                                    container.textContent.includes('>');
+                
+                if (hasRawContent) {
+                    console.log('Cleaning up raw Google content');
                     container.innerHTML = '';
                     hideGoogleButton();
                     return true;
@@ -1283,12 +1297,44 @@
             waitForConfig();
         }
         
-        // Continuous cleanup check for raw HTML
-        setInterval(() => {
+        // Comprehensive cleanup check for raw HTML/code rendering
+        function cleanupRawContent() {
+            // Clean Google button
             if (!googleInitialized) {
                 cleanupGoogleButton();
             }
-        }, 1000);
+            
+            // Clean service grid from raw HTML
+            const servicesGrid = document.getElementById('services-grid');
+            if (servicesGrid && servicesGrid.innerHTML) {
+                const hasRawHTML = servicesGrid.innerHTML.includes('<div class="service-card"') ||
+                                 servicesGrid.textContent.includes('onclick=') ||
+                                 servicesGrid.textContent.includes('style=') ||
+                                 servicesGrid.textContent.includes('<div') ||
+                                 servicesGrid.textContent.includes('</div>');
+                
+                if (hasRawHTML) {
+                    console.log('Cleaning up raw service HTML content');
+                    servicesGrid.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Loading services...</p>';
+                    // Reload services properly
+                    setTimeout(() => {
+                        if (typeof loadServices === 'function') {
+                            loadServices();
+                        }
+                    }, 500);
+                }
+            }
+            
+            // Clean any other elements showing raw code
+            document.querySelectorAll('*').forEach(element => {
+                if (element.textContent && element.textContent.includes('<div') && element.textContent.includes('onclick=')) {
+                    console.log('Found raw HTML in element:', element);
+                    element.innerHTML = '<p style="color: var(--text-secondary);">Content loading...</p>';
+                }
+            });
+        }
+        
+        setInterval(cleanupRawContent, 1000);
         
         // Timeout fallback - hide Google button after 8 seconds if not loaded
         setTimeout(() => {

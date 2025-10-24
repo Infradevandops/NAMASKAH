@@ -326,6 +326,29 @@ class Utils {
         return result;
     }
 
+    // Safe content rendering to prevent raw HTML display
+    safeRender(element, content) {
+        if (!element) return;
+        
+        // Check if content contains raw HTML patterns
+        const hasRawHTML = typeof content === 'string' && (
+            content.includes('<div') ||
+            content.includes('onclick=') ||
+            content.includes('style=') ||
+            content.includes('class="') ||
+            content.includes('tabindex=')
+        );
+        
+        if (hasRawHTML) {
+            console.warn('Prevented raw HTML rendering:', content.substring(0, 100));
+            element.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">Content unavailable</p>';
+            return false;
+        }
+        
+        element.innerHTML = content;
+        return true;
+    }
+
     // Error handling
     handleError(error, context = '') {
         console.error(`Error in ${context}:`, error);
@@ -365,6 +388,7 @@ window.utils = new Utils();
 // Make key functions globally available
 window.showNotification = (message, type, duration) => window.utils.showNotification(message, type, duration);
 window.showLoading = (show) => window.utils.showLoading(show);
+window.safeRender = (element, content) => window.utils.safeRender(element, content);
 
 // Export for modules
 window.Utils = Utils;
