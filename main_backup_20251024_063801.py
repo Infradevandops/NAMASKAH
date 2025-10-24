@@ -1,54 +1,3 @@
-import time
-import secrets
-import hashlib
-import logging
-from typing import Dict, Any, Optional
-
-
-# Minimal Rate Limiting
-class SimpleRateLimiter:
-    def __init__(self):
-        self.requests = {}
-        self.limit = 100
-        self.window = 60
-    
-    def is_allowed(self, client_ip: str) -> bool:
-        now = time.time()
-        window_start = now - self.window
-        
-        if client_ip in self.requests:
-            self.requests[client_ip] = [
-                req_time for req_time in self.requests[client_ip] 
-                if req_time > window_start
-            ]
-        else:
-            self.requests[client_ip] = []
-        
-        if len(self.requests[client_ip]) >= self.limit:
-            return False
-        
-        self.requests[client_ip].append(now)
-        return True
-
-# Initialize rate limiter
-rate_limiter = SimpleRateLimiter()
-
-# Input sanitization
-def sanitize_input(input_str: str) -> str:
-    if not input_str:
-        return ""
-    
-    import re
-    # Remove dangerous patterns
-    dangerous = [r"<script[^>]*>.*?</script>", r"javascript:", r"on\w+\s*="]
-    cleaned = input_str
-    
-    for pattern in dangerous:
-        cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE | re.DOTALL)
-    
-    return cleaned.strip()
-
-
 """Namaskah SMS - With Pricing & Admin Panel"""
 import os
 import asyncio
@@ -1097,25 +1046,6 @@ app = FastAPI(
     title="Namaskah SMS API",
     version="2.3.0",
     description="""🚀 **Simple SMS Verification Service**
-
-# Security middleware
-@app.middleware("http")
-async def security_middleware(request: Request, call_next):
-    client_ip = request.client.host
-    
-    # Rate limiting
-    if not rate_limiter.is_allowed(client_ip):
-        return JSONResponse({"error": "Rate limit exceeded"}, 429)
-    
-    response = await call_next(request)
-    
-    # Security headers
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
-    response.headers["X-XSS-Protection"] = "1; mode=block"
-    
-    return response
-
 
 Namaskah SMS provides temporary phone numbers for SMS verification across 1,807+ services.
 

@@ -1455,6 +1455,24 @@ input:checked + .slider:before {
     color: var(--text-secondary);
 }
 
+/* Google OAuth Button Styles */
+#google-auth-btn {
+    display: none; /* Hidden by default until properly configured */
+    justify-content: center;
+    align-items: center;
+    min-height: 50px;
+    margin-bottom: 15px;
+}
+
+#google-separator {
+    display: none; /* Hidden by default until Google button is shown */
+    text-align: center;
+    color: var(--text-primary);
+    margin: 20px 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
 /* Mobile Responsive Improvements */
 @media (max-width: 768px) {
     .verification-methods {

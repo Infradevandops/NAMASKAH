@@ -52,9 +52,15 @@ fetch('/auth/google/config')
         window.GOOGLE_CLIENT_ID = data.client_id;
         window.googleConfigLoaded = true;
         console.log('Google OAuth config loaded:', !!data.client_id);
+        
+        // If no valid client ID, ensure button is hidden
+        if (!data.client_id || data.client_id.length < 20) {
+            console.log('Google OAuth not configured - client ID missing or invalid');
+        }
     })
     .catch(error => {
         console.error('Failed to load Google config:', error);
+        window.GOOGLE_CLIENT_ID = null;
         window.googleConfigLoaded = true;
     });
 
