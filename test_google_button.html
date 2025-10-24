@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Button Test</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+    <h2>Google OAuth Button Test</h2>
+    <div id="google-btn-test"></div>
+    
+    <script>
+        window.onload = function() {
+            if (typeof google !== 'undefined' && google.accounts) {
+                google.accounts.id.initialize({
+                    client_id: "11893866195-r9q595mc77j5n2c0j1neki1lmr3es3fb.apps.googleusercontent.com",
+                    callback: handleCredentialResponse
+                });
+                
+                google.accounts.id.renderButton(
+                    document.getElementById("google-btn-test"),
+                    { 
+                        theme: "outline", 
+                        size: "large",
+                        text: "signin_with",
+                        width: 320
+                    }
+                );
+                
+                console.log("Google button rendered");
+            } else {
+                console.error("Google SDK not loaded");
+            }
+        };
+        
+        function handleCredentialResponse(response) {
+            console.log("Google sign-in successful:", response);
+            alert("Google sign-in works! Token: " + response.credential.substring(0, 50) + "...");
+        }
+    </script>
+</body>
+</html>

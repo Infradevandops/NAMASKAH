@@ -1274,18 +1274,31 @@
         function waitForConfig() {
             if (window.googleConfigLoaded) {
                 if (window.GOOGLE_CLIENT_ID && window.GOOGLE_CLIENT_ID.length > 20) {
-                    console.log('Valid Google OAuth config found, loading SDK');
+                    console.log('✅ Valid Google OAuth config found:', window.GOOGLE_CLIENT_ID);
                     setTimeout(() => {
                         window.loadGoogleSDK();
                     }, 200);
                 } else {
-                    console.log('Google OAuth not configured - hiding button');
+                    console.log('❌ Google OAuth not configured');
                     hideGoogleButton();
                 }
             } else {
                 setTimeout(waitForConfig, 100);
             }
         }
+        
+        // Debug function to test Google button
+        window.testGoogleButton = function() {
+            console.log('🧪 Testing Google button...');
+            console.log('Client ID:', window.GOOGLE_CLIENT_ID);
+            console.log('Google SDK:', typeof google);
+            if (typeof google !== 'undefined' && google.accounts) {
+                console.log('✅ Google SDK available');
+                initGoogleSignIn();
+            } else {
+                console.log('❌ Google SDK not available');
+            }
+        };
 
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', waitForConfig);
