@@ -113,17 +113,27 @@
 
                 <div id="login-form" class="form-container">
                     <h2>Login</h2>
-                    <input type="email" id="login-email" placeholder="Email" required onkeypress="if(event.key==='Enter')login()">
-                    <input type="password" id="login-password" placeholder="Password" required onkeypress="if(event.key==='Enter')login()">
+                    <input type="email" id="login-email" placeholder="Email" required onkeypress="if(event.key==='Enter')login()" autofocus>
+                    <div style="position: relative;">
+                        <input type="password" id="login-password" placeholder="Password" required onkeypress="if(event.key==='Enter')login()">
+                        <button type="button" onclick="togglePassword('login-password')" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 14px;">👁️</button>
+                    </div>
                     <a href="#" onclick="showForgotPassword(); return false;" style="font-size: 12px; color: #667eea; text-decoration: none; display: block; text-align: right; margin-top: 5px;">Forgot Password?</a>
-                    <button onclick="login()" style="margin-top: 15px;">Login</button>
+                    <div style="display: flex; align-items: center; gap: 10px; margin: 10px 0;">
+                        <input type="checkbox" id="remember-me" style="width: auto;">
+                        <label for="remember-me" style="font-size: 14px; color: var(--text-secondary);">Remember me</label>
+                    </div>
+                    <button onclick="login()" id="login-btn" style="margin-top: 15px;">Login</button>
                 </div>
 
                 <div id="register-form" class="form-container hidden">
                     <h2>Register</h2>
                     <input type="email" id="register-email" placeholder="Email" required onkeypress="if(event.key==='Enter')register()">
-                    <input type="password" id="register-password" placeholder="Password (min 6 chars)" required onkeypress="if(event.key==='Enter')register()">
-                    <button onclick="register()" style="margin-top: 15px;">Register</button>
+                    <div style="position: relative;">
+                        <input type="password" id="register-password" placeholder="Password (min 6 chars)" required onkeypress="if(event.key==='Enter')register()">
+                        <button type="button" onclick="togglePassword('register-password')" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 14px;">👁️</button>
+                    </div>
+                    <button onclick="register()" id="register-btn" style="margin-top: 15px;">Register</button>
                 </div>
                 
                 <!-- Single persistent Google button container -->
@@ -826,6 +836,93 @@
     <script src="/static/js/enhanced-verification.js"></script>
     <script src="/static/js/config.js"></script>
     <script src="/static/js/utils.js"></script>
+    <script>
+        // Enhanced auth functions with loading states
+        async function login() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            if (!email || !password) {
+                alert('⚠️ Please fill in all fields');
+                return;
+            }
+            
+            setLoading('login-btn', true);
+            
+            try {
+                const response = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email, password})
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    localStorage.setItem('token', data.token);
+                    if (document.getElementById('remember-me').checked) {
+                        localStorage.setItem('remember-email', email);
+                    }
+                    alert('✅ Login successful!');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    alert('❌ ' + (data.detail || 'Login failed'));
+                }
+            } catch (error) {
+                alert('❌ Network error. Please try again.');
+            } finally {
+                setLoading('login-btn', false);
+            }
+        }
+        
+        async function register() {
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            
+            if (!email || !password) {
+                alert('⚠️ Please fill in all fields');
+                return;
+            }
+            
+            if (password.length < 6) {
+                alert('⚠️ Password must be at least 6 characters');
+                return;
+            }
+            
+            setLoading('register-btn', true);
+            
+            try {
+                const response = await fetch('/auth/register', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email, password})
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    localStorage.setItem('token', data.token);
+                    alert('✅ Registration successful!');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    alert('❌ ' + (data.detail || 'Registration failed'));
+                }
+            } catch (error) {
+                alert('❌ Network error. Please try again.');
+            } finally {
+                setLoading('register-btn', false);
+            }
+        }
+        
+        // Load remembered email
+        document.addEventListener('DOMContentLoaded', () => {
+            const rememberedEmail = localStorage.getItem('remember-email');
+            if (rememberedEmail) {
+                document.getElementById('login-email').value = rememberedEmail;
+                document.getElementById('remember-me').checked = true;
+            }
+        });
+    </script>
     <script src="/static/js/auth.js"></script>
     <script src="/static/js/services.js"></script>
     <script src="/static/js/simple-verification.js"></script>
