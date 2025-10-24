@@ -1227,6 +1227,12 @@
             if (window.googleConfigLoaded) {
                 if (window.GOOGLE_CLIENT_ID && window.GOOGLE_CLIENT_ID.length > 20) {
                     console.log('Valid Google OAuth config found, loading SDK');
+                    // Clear any existing content first
+                    const container = document.getElementById('google-auth-btn');
+                    if (container) {
+                        container.innerHTML = '';
+                        hideGoogleButton();
+                    }
                     // Add a small delay to ensure DOM is ready
                     setTimeout(() => {
                         window.loadGoogleSDK();
