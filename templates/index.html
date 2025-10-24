@@ -1053,14 +1053,12 @@
         function initGoogleSignIn() {
             if (googleInitAttempted) return;
             googleInitAttempted = true;
-            googleInitializing = true;
             
-            console.log('Starting Google Sign-In initialization...');
+            console.log('Initializing Google Sign-In with client ID:', window.GOOGLE_CLIENT_ID);
             
             // Validate Google Client ID
             if (!window.GOOGLE_CLIENT_ID || window.GOOGLE_CLIENT_ID.length < 20) {
-                console.log('Google OAuth not configured - invalid or missing client ID');
-                googleInitializing = false;
+                console.log('Invalid Google Client ID');
                 hideGoogleButton();
                 return;
             }
@@ -1068,7 +1066,6 @@
             // Check if Google SDK is available
             if (typeof google === 'undefined' || !google.accounts) {
                 console.log('Google SDK not available');
-                googleInitializing = false;
                 hideGoogleButton();
                 return;
             }
@@ -1078,7 +1075,8 @@
                     client_id: window.GOOGLE_CLIENT_ID,
                     callback: handleGoogleSignIn,
                     auto_select: false,
-                    cancel_on_tap_outside: true
+                    cancel_on_tap_outside: true,
+                    use_fedcm_for_prompt: false
                 });
                 
                 const container = document.getElementById('google-auth-btn');
@@ -1091,20 +1089,27 @@
                     // Add a small delay to ensure DOM is ready
                     setTimeout(() => {
                         try {
-                            // Render Google button
+                            // Clear container first
+                            container.innerHTML = '';
+                            
+                            // Render Google button with better config
                             google.accounts.id.renderButton(container, { 
                                 theme: 'outline', 
                                 size: 'large', 
-                                width: Math.min(container.offsetWidth || 300, 400),
-                                text: 'continue_with',
+                                width: 320,
+                                text: 'signin_with',
                                 shape: 'rectangular',
                                 logo_alignment: 'left'
                             });
                             
-                            // Show Google button after render
+                            // Check for proper Google button render
                             setTimeout(() => {
-                                // Always show if Google rendered something
-                                if (container.innerHTML.trim()) {
+                                const iframe = container.querySelector('iframe');
+                                const gButton = container.querySelector('.g_id_signin');
+                                const hasRawHTML = container.textContent.includes('tabindex=') || 
+                                                 container.textContent.includes('class="nsm');
+                                
+                                if ((iframe || gButton) && !hasRawHTML) {
                                     container.classList.add('configured');
                                     container.style.display = 'flex';
                                     if (separator) {
@@ -1112,12 +1117,12 @@
                                         separator.style.display = 'block';
                                     }
                                     googleInitialized = true;
-                                    console.log('Google Sign-In shown');
+                                    console.log('Google Sign-In button ready');
                                 } else {
-                                    console.log('Google button empty, hiding');
+                                    console.log('Google button failed to render properly');
                                     hideGoogleButton();
                                 }
-                            }, 1000);
+                            }, 2000);
                         } catch (renderError) {
                             console.error('Google button render error:', renderError);
                             hideGoogleButton();
@@ -1226,45 +1231,40 @@
         window.loadGoogleSDK = function() {
             // Validate client ID first
             if (!window.GOOGLE_CLIENT_ID || window.GOOGLE_CLIENT_ID.length < 20) {
-                console.log('Google OAuth not configured - skipping SDK load');
+                console.log('Google OAuth not configured');
                 hideGoogleButton();
                 return;
             }
             
             // Check if script already exists
             if (document.querySelector('script[src*="accounts.google.com/gsi/client"]')) {
-                setTimeout(initGoogleSignIn, 500);
+                if (typeof google !== 'undefined' && google.accounts) {
+                    initGoogleSignIn();
+                } else {
+                    setTimeout(() => initGoogleSignIn(), 1000);
+                }
                 return;
             }
             
-            console.log('Loading Google SDK...');
+            console.log('Loading Google SDK for client:', window.GOOGLE_CLIENT_ID);
             const script = document.createElement('script');
             script.src = 'https://accounts.google.com/gsi/client';
             script.async = true;
-            script.defer = true;
-            
-            let sdkLoadTimeout = setTimeout(() => {
-                console.error('Google SDK load timeout');
-                hideGoogleButton();
-            }, 10000); // 10 second timeout
             
             script.onload = () => {
-                clearTimeout(sdkLoadTimeout);
-                console.log('Google SDK loaded successfully');
-                // Wait longer for SDK to fully initialize in production
+                console.log('Google SDK loaded');
                 setTimeout(() => {
                     if (typeof google !== 'undefined' && google.accounts) {
                         initGoogleSignIn();
                     } else {
-                        console.error('Google SDK loaded but accounts API not available');
+                        console.error('Google accounts API not available');
                         hideGoogleButton();
                     }
-                }, 1500); // Increased delay for production
+                }, 1000);
             };
             
-            script.onerror = (error) => {
-                clearTimeout(sdkLoadTimeout);
-                console.error('Google SDK load error:', error);
+            script.onerror = () => {
+                console.error('Failed to load Google SDK');
                 hideGoogleButton();
             };
             
@@ -1315,8 +1315,10 @@
             }
         }
         
-        // Run cleanup more frequently to catch raw HTML quickly
-        setInterval(cleanupRawContent, 1000);
+        // Run cleanup but allow time for Google button to render
+        setTimeout(() => {
+            setInterval(cleanupRawContent, 3000);
+        }, 5000); // Wait 5 seconds before starting cleanup
         
         // Timeout fallback - hide Google button after 15 seconds if not loaded
         setTimeout(() => {
