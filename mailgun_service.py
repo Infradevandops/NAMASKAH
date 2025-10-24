@@ -2,10 +2,13 @@
 Mailgun Email Service for Namaskah SMS
 Professional email templates with error handling
 """
-import requests
+
 import os
 from datetime import datetime, timezone
 from typing import Dict, Optional
+
+import requests
+
 
 class MailgunService:
     def __init__(self):
@@ -13,7 +16,7 @@ class MailgunService:
         self.api_key = os.getenv("MAILGUN_API_KEY")
         self.base_url = f"https://api.mailgun.net/v3/{self.domain}"
         self.from_email = f"Namaskah SMS <noreply@{self.domain}>"
-    
+
     def _send_email(self, to: str, subject: str, html: str, text: str = None) -> Dict:
         """Base email sending method with error handling"""
         try:
@@ -25,30 +28,31 @@ class MailgunService:
                     "to": to,
                     "subject": subject,
                     "html": html,
-                    "text": text or self._html_to_text(html)
+                    "text": text or self._html_to_text(html),
                 },
-                timeout=10
+                timeout=10,
             )
-            
+
             if response.status_code == 200:
                 return {"success": True, "message_id": response.json().get("id")}
             else:
                 return {"success": False, "error": response.text}
-                
+
         except Exception as e:
             return {"success": False, "error": str(e)}
-    
+
     def _html_to_text(self, html: str) -> str:
         """Convert HTML to plain text fallback"""
         import re
-        text = re.sub('<[^<]+?>', '', html)
+
+        text = re.sub("<[^<]+?>", "", html)
         return text.strip()
-    
+
     def send_verification_email(self, email: str, token: str) -> Dict:
         """Send email verification with professional template"""
         base_url = os.getenv("BASE_URL", "http://localhost:8000")
         verify_url = f"{base_url}/auth/verify?token={token}"
-        
+
         html = f"""
         <!DOCTYPE html>
         <html>
@@ -87,13 +91,11 @@ class MailgunService:
         </body>
         </html>
         """
-        
+
         return self._send_email(
-            to=email,
-            subject="Verify Your Email - Namaskah SMS",
-            html=html
+            to=email, subject="Verify Your Email - Namaskah SMS", html=html
         )
-    
+
     def send_test_email(self, email: str) -> Dict:
         """Send test email to verify Mailgun setup"""
         html = """
@@ -116,18 +118,16 @@ class MailgunService:
         </body>
         </html>
         """
-        
+
         return self._send_email(
-            to=email,
-            subject="Mailgun Test - Namaskah SMS Setup Complete",
-            html=html
+            to=email, subject="Mailgun Test - Namaskah SMS Setup Complete", html=html
         )
-    
+
     def send_password_reset_email(self, email: str, token: str) -> Dict:
         """Send password reset email"""
         base_url = os.getenv("BASE_URL", "http://localhost:8000")
         reset_url = f"{base_url}/auth/reset-password?token={token}"
-        
+
         html = f"""
         <!DOCTYPE html>
         <html>
@@ -149,17 +149,15 @@ class MailgunService:
         </body>
         </html>
         """
-        
+
         return self._send_email(
-            to=email,
-            subject="Reset Your Password - Namaskah SMS",
-            html=html
+            to=email, subject="Reset Your Password - Namaskah SMS", html=html
         )
-    
+
     def send_welcome_email(self, email: str) -> Dict:
         """Send welcome email after verification"""
         base_url = os.getenv("BASE_URL", "http://localhost:8000")
-        
+
         html = f"""
         <!DOCTYPE html>
         <html>
@@ -186,12 +184,13 @@ class MailgunService:
         </body>
         </html>
         """
-        
+
         return self._send_email(
             to=email,
             subject="Welcome to Namaskah SMS! Your account is ready 🚀",
-            html=html
+            html=html,
         )
+
 
 # Initialize service
 mailgun_service = MailgunService()
