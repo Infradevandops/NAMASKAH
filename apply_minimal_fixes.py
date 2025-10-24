@@ -1,9 +1,11 @@
 """
 Minimal Security Fixes - Clean Implementation
 """
+
 import os
 import shutil
 from datetime import datetime
+
 
 def create_backup():
     """Create backup of main.py"""
@@ -13,41 +15,44 @@ def create_backup():
     print(f"✅ Backup created: {backup_path}")
     return backup_path
 
+
 def apply_minimal_fixes():
     """Apply minimal security fixes without breaking syntax"""
     print("🔒 Applying minimal security fixes...")
-    
+
     # Read current main.py
     with open("main.py", "r") as f:
         content = f.read()
-    
+
     # Add minimal security imports after existing imports
-    security_imports = '''
+    security_imports = """
 import time
 import secrets
 import hashlib
 import logging
 from typing import Dict, Any, Optional
-'''
-    
+"""
+
     # Find the last import and add security imports
     import_lines = []
     other_lines = []
     in_imports = True
-    
-    for line in content.split('\n'):
-        if in_imports and (line.startswith('import ') or line.startswith('from ') or line.strip() == ''):
+
+    for line in content.split("\n"):
+        if in_imports and (
+            line.startswith("import ") or line.startswith("from ") or line.strip() == ""
+        ):
             import_lines.append(line)
         else:
             if in_imports and line.strip():
                 in_imports = False
             other_lines.append(line)
-    
+
     # Add security imports
-    import_lines.extend(security_imports.strip().split('\n'))
-    
+    import_lines.extend(security_imports.strip().split("\n"))
+
     # Add minimal rate limiting class
-    rate_limiting_code = '''
+    rate_limiting_code = """
 # Minimal Rate Limiting
 class SimpleRateLimiter:
     def __init__(self):
@@ -90,20 +95,26 @@ def sanitize_input(input_str: str) -> str:
         cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE | re.DOTALL)
     
     return cleaned.strip()
-'''
-    
+"""
+
     # Combine all content
-    new_content = '\n'.join(import_lines) + '\n\n' + rate_limiting_code + '\n\n' + '\n'.join(other_lines)
-    
+    new_content = (
+        "\n".join(import_lines)
+        + "\n\n"
+        + rate_limiting_code
+        + "\n\n"
+        + "\n".join(other_lines)
+    )
+
     # Add security middleware before app routes
-    if 'app = FastAPI(' in new_content:
-        app_index = new_content.find('app = FastAPI(')
+    if "app = FastAPI(" in new_content:
+        app_index = new_content.find("app = FastAPI(")
         # Find the end of the FastAPI initialization
-        app_end = new_content.find('\n\n', app_index)
+        app_end = new_content.find("\n\n", app_index)
         if app_end == -1:
-            app_end = new_content.find('\n', app_index) + 1
-        
-        middleware_code = '''
+            app_end = new_content.find("\n", app_index) + 1
+
+        middleware_code = """
 # Security middleware
 @app.middleware("http")
 async def security_middleware(request: Request, call_next):
@@ -121,36 +132,40 @@ async def security_middleware(request: Request, call_next):
     response.headers["X-XSS-Protection"] = "1; mode=block"
     
     return response
-'''
-        
-        new_content = new_content[:app_end] + '\n' + middleware_code + new_content[app_end:]
-    
+"""
+
+        new_content = (
+            new_content[:app_end] + "\n" + middleware_code + new_content[app_end:]
+        )
+
     # Write the updated content
     with open("main.py", "w") as f:
         f.write(new_content)
-    
+
     print("✅ Minimal security fixes applied successfully")
+
 
 def main():
     """Main function"""
     print("🚀 Applying Minimal Security Fixes")
     print("=" * 40)
-    
+
     try:
         # Create backup
         backup_path = create_backup()
-        
+
         # Apply fixes
         apply_minimal_fixes()
-        
+
         print("\n✅ Minimal fixes applied successfully!")
         print(f"📁 Backup saved as: {backup_path}")
         print("\n🔧 Next steps:")
         print("1. Restart the application: uvicorn main:app --reload")
         print("2. Test the application")
-        
+
     except Exception as e:
         print(f"\n❌ Error applying fixes: {str(e)}")
+
 
 if __name__ == "__main__":
     main()

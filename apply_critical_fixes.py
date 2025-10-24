@@ -2,12 +2,14 @@
 Critical Security Fixes - Direct Integration
 Pro Tips: Minimal dependencies, immediate security improvements
 """
+
 import os
 import sys
 import time
 import shutil
 from datetime import datetime
 from pathlib import Path
+
 
 def create_backup():
     """Create backup of main.py"""
@@ -17,16 +19,17 @@ def create_backup():
     print(f"✅ Backup created: {backup_path}")
     return backup_path
 
+
 def apply_security_fixes():
     """Apply critical security fixes to main.py"""
     print("🔒 Applying critical security fixes...")
-    
+
     # Read current main.py
     with open("main.py", "r") as f:
         content = f.read()
-    
+
     # Security imports to add
-    security_imports = '''
+    security_imports = """
 import time
 import secrets
 import hashlib
@@ -34,10 +37,10 @@ import logging
 from typing import Dict, Any, Optional
 import jwt
 from datetime import datetime, timedelta
-'''
-    
+"""
+
     # Rate limiting implementation
-    rate_limiting_code = '''
+    rate_limiting_code = """
 # Rate Limiting Implementation
 class RateLimiter:
     def __init__(self):
@@ -114,33 +117,37 @@ def validate_jwt_token(token: str) -> dict:
         return payload
     except jwt.InvalidTokenError:
         raise HTTPException(401, "Invalid token")
-'''
-    
+"""
+
     # Find where to insert code
     if "from fastapi import" in content:
         # Add security imports after existing imports
         import_end = content.rfind("import")
         import_end = content.find("\n", import_end)
         content = content[:import_end] + "\n" + security_imports + content[import_end:]
-    
+
     # Add rate limiting after app creation
     if "app = FastAPI(" in content:
         app_end = content.find("\n\n", content.find("app = FastAPI("))
         if app_end == -1:
             app_end = content.find("\n", content.find("app = FastAPI(")) + 1
-        content = content[:app_end] + "\n" + rate_limiting_code + "\n" + content[app_end:]
-    
+        content = (
+            content[:app_end] + "\n" + rate_limiting_code + "\n" + content[app_end:]
+        )
+
     # Secure the verification endpoint
     old_verify_pattern = '@app.post("/verify/create")'
     if old_verify_pattern in content:
         # Find the function and add input sanitization
-        func_start = content.find("def create_verification", content.find(old_verify_pattern))
+        func_start = content.find(
+            "def create_verification", content.find(old_verify_pattern)
+        )
         if func_start != -1:
             # Add sanitization at the beginning of the function
             func_body_start = content.find(":", func_start)
             func_body_start = content.find("\n", func_body_start) + 1
-            
-            sanitization_code = '''    # Input sanitization
+
+            sanitization_code = """    # Input sanitization
     service_name = sanitize_input(service_name)
     
     # Validate service name
@@ -148,9 +155,13 @@ def validate_jwt_token(token: str) -> dict:
     if service_name.lower() not in allowed_services:
         raise HTTPException(400, "Invalid service name")
     
-'''
-            content = content[:func_body_start] + sanitization_code + content[func_body_start:]
-    
+"""
+            content = (
+                content[:func_body_start]
+                + sanitization_code
+                + content[func_body_start:]
+            )
+
     # Secure admin endpoints
     admin_pattern = '@app.get("/admin/users")'
     if admin_pattern in content:
@@ -158,36 +169,37 @@ def validate_jwt_token(token: str) -> dict:
         if func_start != -1:
             func_body_start = content.find(":", func_start)
             func_body_start = content.find("\n", func_body_start) + 1
-            
-            secure_query_code = '''    # Secure database query
+
+            secure_query_code = """    # Secure database query
     users = safe_db_query(db, 
         "SELECT id, email, credits, created_at FROM users WHERE is_active = :active ORDER BY created_at DESC", 
         {"active": True}
     ).fetchall()
     
     return [{"id": u.id, "email": u.email, "credits": u.credits, "created_at": u.created_at} for u in users]
-'''
+"""
             # Replace the existing query
             func_end = content.find("\n\n", func_body_start)
             if func_end == -1:
                 func_end = content.find("@app.", func_body_start)
-            
+
             content = content[:func_body_start] + secure_query_code + content[func_end:]
-    
+
     # Write the updated content
     with open("main.py", "w") as f:
         f.write(content)
-    
+
     print("✅ Security fixes applied successfully")
+
 
 def add_bulk_verification():
     """Add bulk verification endpoint"""
     print("📦 Adding bulk verification endpoint...")
-    
+
     with open("main.py", "r") as f:
         content = f.read()
-    
-    bulk_endpoint = '''
+
+    bulk_endpoint = """
 # Bulk verification endpoint
 @app.post("/verify/bulk")
 async def create_bulk_verifications(
@@ -233,32 +245,35 @@ async def create_bulk_verifications(
             results.append({"service": service, "status": "error", "error": str(e)})
     
     return {"results": results, "total": len(services), "successful": len([r for r in results if r["status"] == "success"])}
-'''
-    
+"""
+
     # Add at the end of the file
     content += "\n" + bulk_endpoint
-    
+
     with open("main.py", "w") as f:
         f.write(content)
-    
+
     print("✅ Bulk verification endpoint added")
+
 
 def add_websocket_support():
     """Add basic WebSocket support"""
     print("🔌 Adding WebSocket support...")
-    
+
     with open("main.py", "r") as f:
         content = f.read()
-    
+
     # Add WebSocket import if not present
     if "from fastapi import WebSocket" not in content:
         fastapi_import = content.find("from fastapi import")
         import_end = content.find("\n", fastapi_import)
         old_import = content[fastapi_import:import_end]
-        new_import = old_import.replace("from fastapi import", "from fastapi import WebSocket,")
+        new_import = old_import.replace(
+            "from fastapi import", "from fastapi import WebSocket,"
+        )
         content = content.replace(old_import, new_import)
-    
-    websocket_code = '''
+
+    websocket_code = """
 # WebSocket connection manager
 class ConnectionManager:
     def __init__(self):
@@ -321,23 +336,24 @@ async def verification_websocket(websocket: WebSocket, verification_id: str):
         pass
     finally:
         manager.disconnect(verification_id)
-'''
-    
+"""
+
     # Add WebSocket code
     content += "\n" + websocket_code
-    
+
     with open("main.py", "w") as f:
         f.write(content)
-    
+
     print("✅ WebSocket support added")
+
 
 def test_security_fixes():
     """Test if security fixes are working"""
     print("🧪 Testing security fixes...")
-    
+
     try:
         import requests
-        
+
         # Test rate limiting (simplified)
         print("  - Testing rate limiting...")
         for i in range(5):
@@ -348,47 +364,51 @@ def test_security_fixes():
                     break
             except:
                 pass
-        
+
         # Test XSS prevention
         print("  - Testing XSS prevention...")
         try:
-            response = requests.post("http://localhost:8000/verify/create", 
-                                   json={"service_name": "<script>alert('xss')</script>"}, 
-                                   timeout=2)
+            response = requests.post(
+                "http://localhost:8000/verify/create",
+                json={"service_name": "<script>alert('xss')</script>"},
+                timeout=2,
+            )
             if response.status_code in [400, 422]:
                 print("    ✅ XSS prevention active")
         except:
             pass
-        
+
         print("✅ Security tests completed")
-        
+
     except ImportError:
         print("⚠️ Requests module not available, skipping tests")
+
 
 def main():
     """Main function to apply all fixes"""
     print("🚀 Applying Critical Security Fixes")
     print("=" * 50)
-    
+
     try:
         # Create backup
         backup_path = create_backup()
-        
+
         # Apply fixes
         apply_security_fixes()
         add_bulk_verification()
         add_websocket_support()
-        
+
         print("\n✅ All critical fixes applied successfully!")
         print(f"📁 Backup saved as: {backup_path}")
         print("\n🔧 Next steps:")
         print("1. Restart the application: uvicorn main:app --reload")
         print("2. Test the security fixes")
         print("3. Monitor the application logs")
-        
+
         # Test if server is running
         try:
             import requests
+
             response = requests.get("http://localhost:8000/health", timeout=2)
             if response.status_code == 200:
                 print("\n🟢 Server is running - fixes will take effect on restart")
@@ -396,11 +416,12 @@ def main():
                 print("\n🟡 Server status unknown")
         except:
             print("\n🔴 Server not running - start with: uvicorn main:app --reload")
-        
+
     except Exception as e:
         print(f"\n❌ Error applying fixes: {str(e)}")
         print("Check the backup file and try again")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
