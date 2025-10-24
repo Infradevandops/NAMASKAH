@@ -1418,6 +1418,12 @@ async def test_buttons_page(request: Request):
     from fastapi.responses import FileResponse
     return FileResponse("test_buttons.html")
 
+@app.get("/test_google_button.html")
+async def test_google_button_page(request: Request):
+    """Serve Google button test page for debugging"""
+    from fastapi.responses import FileResponse
+    return FileResponse("test_google_button.html")
+
 @app.get("/privacy")
 async def privacy_page(request: Request):
     seo_meta = get_seo_meta('/privacy', str(request.url))

@@ -1292,12 +1292,33 @@
             console.log('🧪 Testing Google button...');
             console.log('Client ID:', window.GOOGLE_CLIENT_ID);
             console.log('Google SDK:', typeof google);
+            console.log('Google initialized:', googleInitialized);
+            console.log('Google attempted:', googleInitAttempted);
+            
+            const container = document.getElementById('google-auth-btn');
+            const separator = document.getElementById('google-separator');
+            console.log('Container:', container);
+            console.log('Container display:', container ? container.style.display : 'N/A');
+            console.log('Container innerHTML:', container ? container.innerHTML.substring(0, 100) : 'N/A');
+            
             if (typeof google !== 'undefined' && google.accounts) {
                 console.log('✅ Google SDK available');
-                initGoogleSignIn();
+                if (!googleInitialized) {
+                    console.log('Initializing Google Sign-In...');
+                    initGoogleSignIn();
+                } else {
+                    console.log('Google already initialized');
+                }
             } else {
                 console.log('❌ Google SDK not available');
+                console.log('Loading Google SDK...');
+                window.loadGoogleSDK();
             }
+        };
+        
+        // Prevent Google search when typing in console
+        window.testGoogleButton.toString = function() {
+            return 'function testGoogleButton() { [native code] }';
         };
 
         if (document.readyState === 'loading') {
