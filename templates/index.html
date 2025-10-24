@@ -1051,7 +1051,17 @@
                             
                             // Check if rendering was successful after a brief delay
                             setTimeout(() => {
-                                if (container.children.length > 0 && !container.innerHTML.includes('<div')) {
+                                // Clean up any raw HTML first
+                                if (cleanupGoogleButton()) {
+                                    return; // Exit if we found and cleaned raw HTML
+                                }
+                                
+                                // Check for proper Google button
+                                const hasValidButton = container.children.length > 0 && 
+                                                     !container.innerHTML.includes('tabindex=') && 
+                                                     !container.innerHTML.includes('<div class="nsm7Bb-HzV7m-LgbsSe');
+                                
+                                if (hasValidButton) {
                                     container.style.display = 'flex';
                                     container.style.justifyContent = 'center';
                                     if (separator) separator.style.display = 'block';
@@ -1080,11 +1090,28 @@
             if (container) {
                 container.style.display = 'none';
                 container.innerHTML = ''; // Clear any existing content
+                // Force hide with important CSS
+                container.style.setProperty('display', 'none', 'important');
             }
             if (separator) {
                 separator.style.display = 'none';
+                separator.style.setProperty('display', 'none', 'important');
             }
             console.log('Google OAuth button hidden');
+        }
+        
+        function cleanupGoogleButton() {
+            const container = document.getElementById('google-auth-btn');
+            if (container && container.innerHTML) {
+                // Check for raw HTML content
+                if (container.innerHTML.includes('tabindex=') || container.innerHTML.includes('<div')) {
+                    console.log('Cleaning up raw Google HTML content');
+                    container.innerHTML = '';
+                    hideGoogleButton();
+                    return true;
+                }
+            }
+            return false;
         }
 
         // Handle Google Sign-In response
@@ -1218,6 +1245,13 @@
         } else {
             waitForConfig();
         }
+        
+        // Continuous cleanup check for raw HTML
+        setInterval(() => {
+            if (!googleInitialized) {
+                cleanupGoogleButton();
+            }
+        }, 1000);
         
         // Timeout fallback - hide Google button after 8 seconds if not loaded
         setTimeout(() => {
