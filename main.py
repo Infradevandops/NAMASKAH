@@ -1369,6 +1369,11 @@ async def app_page(request: Request):
     }
     return templates.TemplateResponse("index.html", context)
 
+@app.get("/app-clean")
+async def clean_app_page(request: Request):
+    """Clean app page that redirects to login if not authenticated"""
+    return templates.TemplateResponse("login_clean.html", {"request": request})
+
 @app.get("/simple")
 async def simple_dashboard(request: Request):
     """Minimal dashboard for testing and development"""
@@ -1423,6 +1428,11 @@ async def test_google_button_page(request: Request):
     """Serve Google button test page for debugging"""
     from fastapi.responses import FileResponse
     return FileResponse("test_google_button.html")
+
+@app.get("/login")
+async def clean_login_page(request: Request):
+    """Serve clean login page without raw HTML issues"""
+    return templates.TemplateResponse("login_clean.html", {"request": request})
 
 @app.get("/privacy")
 async def privacy_page(request: Request):
