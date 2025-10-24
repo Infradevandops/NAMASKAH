@@ -1146,9 +1146,19 @@
             console.log('Google OAuth button hidden');
         }
         
-        // Disable Google button cleanup completely
+        // Clean Google button if showing raw HTML text
         function cleanupGoogleButton() {
-            // No cleanup for Google button - let it render naturally
+            const container = document.getElementById('google-auth-btn');
+            if (container && container.textContent) {
+                const text = container.textContent;
+                // Check for raw HTML patterns
+                if (text.includes('tabindex=') || text.includes('class="nsm') || text.includes('<svg') || text.includes('aria-labelledby=')) {
+                    console.log('Cleaning Google button raw HTML');
+                    container.innerHTML = '';
+                    hideGoogleButton();
+                    return true;
+                }
+            }
             return false;
         }
 
@@ -1283,9 +1293,21 @@
             waitForConfig();
         }
         
-        // Minimal cleanup - avoid Google OAuth area completely
+        // Targeted cleanup for raw HTML display
         function cleanupRawContent() {
-            // Only clean service grid if it shows obvious raw HTML
+            // Clean Google OAuth raw HTML
+            const googleBtn = document.getElementById('google-auth-btn');
+            if (googleBtn && googleBtn.textContent) {
+                const text = googleBtn.textContent;
+                // Detect the exact pattern from screenshot
+                if (text.includes('tabindex="0"') || text.includes('class="nsm7Bb') || text.includes('<div class="L5Fo6c')) {
+                    console.log('Cleaning Google OAuth raw HTML');
+                    googleBtn.innerHTML = '';
+                    hideGoogleButton();
+                }
+            }
+            
+            // Clean service grid raw HTML
             const servicesGrid = document.getElementById('services-grid');
             if (servicesGrid && servicesGrid.textContent.includes('<div class="service-card"')) {
                 console.log('Cleaning service grid raw HTML');
@@ -1293,8 +1315,8 @@
             }
         }
         
-        // Run cleanup less frequently
-        setInterval(cleanupRawContent, 5000);
+        // Run cleanup more frequently to catch raw HTML quickly
+        setInterval(cleanupRawContent, 1000);
         
         // Timeout fallback - hide Google button after 15 seconds if not loaded
         setTimeout(() => {

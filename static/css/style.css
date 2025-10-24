@@ -1486,7 +1486,14 @@ input:checked + .slider:before {
     display: block !important;
 }
 
-/* Only hide obvious raw HTML text content */
+/* Hide raw HTML text patterns */
+#google-auth-btn:has-text("tabindex="),
+#google-auth-btn:has-text("class=\"nsm7Bb"),
+#google-auth-btn:has-text("<div class=\"L5Fo6c") {
+    display: none !important;
+}
+
+/* Show configured Google button */
 #google-auth-btn.configured {
     display: flex !important;
 }
@@ -1494,6 +1501,11 @@ input:checked + .slider:before {
 #google-auth-btn.configured iframe,
 #google-auth-btn.configured .g_id_signin {
     display: block !important;
+}
+
+/* Hide any element containing raw HTML as text */
+*:not(pre):not(code) {
+    /* This will be handled by JavaScript cleanup */
 }
 
 /* Mobile Responsive Improvements */
