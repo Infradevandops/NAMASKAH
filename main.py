@@ -2106,14 +2106,19 @@ def google_auth(req: GoogleAuthRequest, db: Session = Depends(get_db)):
 @app.post("/auth/login", tags=["Authentication"], summary="Login User")
 def login(req: LoginRequest, request: Request, db: Session = Depends(get_db)):
     # Enhanced input validation
-    if SECURITY_PATCHES_AVAILABLE:
-        req.email = sanitize_input(req.email.lower().strip())
-        if not validate_email(req.email):
-            raise HTTPException(status_code=400, detail="Invalid email format")
-        
-        # Log security event
-        client_ip = request.client.host if request.client else "unknown"
-        log_security_event("login_attempt", None, client_ip, f"Email: {req.email}")
+    try:
+        if SECURITY_PATCHES_AVAILABLE:
+            req.email = sanitize_input(req.email.lower().strip())
+            if not validate_email(req.email):
+                raise HTTPException(status_code=400, detail="Invalid email format")
+            
+            # Log security event
+            client_ip = request.client.host if request.client else "unknown"
+            log_security_event("login_attempt", None, client_ip, f"Email: {req.email}")
+    except Exception as e:
+        logger.error(f"Security validation error: {e}")
+        # Continue with basic validation
+        req.email = req.email.lower().strip()
     """Login with email and password
     
     Returns JWT token valid for 30 days.
@@ -2129,8 +2134,12 @@ def login(req: LoginRequest, request: Request, db: Session = Depends(get_db)):
         else:
             password_valid = verify_password(req.password, user.password_hash)
     except Exception as e:
-        print(f"Password verify error: {e}")
-        password_valid = False
+        logger.error(f"Password verify error: {e}")
+        # Fallback to bcrypt verification
+        try:
+            password_valid = bcrypt.checkpw(req.password.encode(), user.password_hash.encode())
+        except:
+            password_valid = False
     
     if not password_valid:
         raise HTTPException(status_code=401, detail="Invalid credentials")
