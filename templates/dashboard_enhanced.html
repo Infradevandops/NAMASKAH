@@ -3,680 +3,339 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Namaskah SMS - Enhanced Dashboard</title>
+    <title>Enhanced Dashboard - Namaskah SMS</title>
+    <link rel="stylesheet" href="/static/css/enhanced-dashboard.css">
     <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="/static/css/mobile.css">
-    <style>
-        /* Enhanced Verification Flow Styles */
-        .verification-flow {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        .service-selector {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            border: 2px solid var(--border);
-        }
-        
-        .service-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 12px;
-            margin-top: 15px;
-        }
-        
-        .service-card {
-            background: var(--bg);
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-        
-        .service-card:hover {
-            border-color: #667eea;
-            transform: translateY(-2px);
-        }
-        
-        .service-card.selected {
-            border-color: #10b981;
-            background: rgba(16, 185, 129, 0.1);
-        }
-        
-        .service-icon {
-            font-size: 2rem;
-            margin-bottom: 8px;
-            display: block;
-        }
-        
-        .service-name {
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--text-primary);
-        }
-        
-        .service-tier {
-            font-size: 11px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
-        
-        .capability-selector {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            border: 2px solid var(--border);
-        }
-        
-        .capability-options {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 15px;
-        }
-        
-        .capability-card {
-            background: var(--bg);
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-        
-        .capability-card:hover {
-            border-color: #667eea;
-        }
-        
-        .capability-card.selected {
-            border-color: #10b981;
-            background: rgba(16, 185, 129, 0.1);
-        }
-        
-        .capability-icon {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            display: block;
-        }
-        
-        .capability-title {
-            font-weight: 700;
-            font-size: 16px;
-            margin-bottom: 5px;
-        }
-        
-        .capability-price {
-            font-size: 14px;
-            color: #10b981;
-            font-weight: 600;
-        }
-        
-        .capability-description {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-top: 8px;
-        }
-        
-        .advanced-options {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            border: 2px solid var(--border);
-            display: none;
-        }
-        
-        .advanced-options.visible {
-            display: block;
-        }
-        
-        .verification-status {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        
-        .status-phone {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            font-family: monospace;
-        }
-        
-        .status-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-        
-        .status-item {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            padding: 12px;
-            text-align: center;
-        }
-        
-        .status-label {
-            font-size: 12px;
-            opacity: 0.9;
-            margin-bottom: 5px;
-        }
-        
-        .status-value {
-            font-weight: 600;
-            font-size: 14px;
-        }
-        
-        .verification-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        
-        .action-btn {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .action-btn.primary {
-            background: #10b981;
-            color: white;
-        }
-        
-        .action-btn.secondary {
-            background: #667eea;
-            color: white;
-        }
-        
-        .action-btn.danger {
-            background: #ef4444;
-            color: white;
-        }
-        
-        .messages-display {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 20px;
-            border: 2px solid var(--border);
-        }
-        
-        .message-item {
-            background: var(--bg);
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-            border: 1px solid var(--border);
-        }
-        
-        .message-code {
-            font-family: monospace;
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #10b981;
-            background: rgba(16, 185, 129, 0.1);
-            padding: 10px;
-            border-radius: 6px;
-            text-align: center;
-            margin: 10px 0;
-        }
-        
-        .countdown-display {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: white;
-            border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-            margin: 15px 0;
-        }
-        
-        .countdown-timer {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-        
-        .countdown-label {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-        
-        @media (max-width: 768px) {
-            .verification-flow {
-                padding: 15px;
-            }
-            
-            .capability-options {
-                grid-template-columns: 1fr;
-            }
-            
-            .verification-actions {
-                flex-direction: column;
-            }
-        }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🚀 Enhanced SMS Verification</h1>
-            <p>Streamlined verification flow with real-time updates</p>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="header-content">
+                <h1>Namaskah SMS</h1>
+                <div class="user-info">
+                    <span id="user-credits">N0.00</span>
+                    <button id="logout-btn" class="btn-secondary">Logout</button>
+                </div>
+            </div>
         </header>
 
-        <div class="verification-flow">
-            <!-- Service Selection -->
-            <div class="service-selector">
-                <h3>📱 Select Service</h3>
-                <p style="color: var(--text-secondary); margin-bottom: 15px;">Choose the service you want to verify</p>
-                
-                <div class="service-grid" id="service-grid">
-                    <!-- Services will be populated by JavaScript -->
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <!-- Smart Verification Section -->
+            <section id="smart-verification-form" class="verification-section">
+                <div class="section-header">
+                    <h2>Smart Verification</h2>
+                    <span class="beta-badge">Enhanced</span>
                 </div>
-                
-                <button onclick="toggleAdvancedOptions()" style="margin-top: 15px; background: var(--bg); border: 1px solid var(--border); padding: 8px 16px; border-radius: 6px; cursor: pointer;">
-                    ⚙️ Advanced Options
-                </button>
-            </div>
 
-            <!-- Advanced Options -->
-            <div class="advanced-options" id="advanced-options">
-                <h4>🔧 Advanced Options</h4>
-                
-                <div style="margin-bottom: 15px;">
-                    <label style="font-weight: 600; display: block; margin-bottom: 8px;">Area Code (Premium +$4)</label>
-                    <select id="area-code-select" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
-                        <option value="">Any area code</option>
-                        <option value="212">New York (212)</option>
-                        <option value="310">Los Angeles (310)</option>
-                        <option value="415">San Francisco (415)</option>
-                        <option value="312">Chicago (312)</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label style="font-weight: 600; display: block; margin-bottom: 8px;">Carrier (Premium +$6)</label>
-                    <select id="carrier-select" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
-                        <option value="">Any carrier</option>
-                        <option value="verizon">Verizon</option>
-                        <option value="att">AT&T</option>
-                        <option value="tmobile">T-Mobile</option>
-                        <option value="sprint">Sprint</option>
-                    </select>
-                </div>
-            </div>
+                <div class="verification-form">
+                    <!-- Service Selection -->
+                    <div class="form-group">
+                        <label for="service-select">Select Service</label>
+                        <select id="service-select" class="service-dropdown">
+                            <option value="">Loading services...</option>
+                        </select>
+                        <div id="tier-badge" class="tier-badge" style="display: none;"></div>
+                    </div>
 
-            <!-- Capability Selection -->
-            <div class="capability-selector" id="capability-selector" style="display: none;">
-                <h3>🎯 Verification Type</h3>
-                <p style="color: var(--text-secondary); margin-bottom: 15px;">Choose how you want to receive the verification code</p>
+                    <!-- Optimization Options -->
+                    <div class="optimization-options">
+                        <div class="option-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="auto-optimize" checked>
+                                <span class="checkmark"></span>
+                                Auto-optimize for best success rate
+                            </label>
+                        </div>
+                        
+                        <div class="option-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="priority-processing">
+                                <span class="checkmark"></span>
+                                Priority processing (+$0.50)
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Preferences -->
+                    <div class="advanced-preferences">
+                        <h4>Advanced Preferences</h4>
+                        
+                        <div class="preference-row">
+                            <div class="form-group">
+                                <label for="carrier-select">Preferred Carrier</label>
+                                <select id="carrier-select">
+                                    <option value="">Any Carrier</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="area-code">Area Code</label>
+                                <input type="text" id="area-code" placeholder="e.g., 212" maxlength="3">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pricing Display -->
+                    <div class="pricing-display">
+                        <div class="price-main">
+                            <span class="price-label">Current Price:</span>
+                            <strong id="current-price" class="price-value">N0.00</strong>
+                        </div>
+                        
+                        <div class="price-details">
+                            <div id="base-price-container" style="display: none;">
+                                <span class="price-label">Base Price:</span>
+                                <span id="base-price" class="price-crossed">N0.00</span>
+                            </div>
+                            
+                            <div id="savings" class="savings hidden">
+                                <span class="savings-text">Save N0.00</span>
+                            </div>
+                        </div>
+
+                        <div id="timing-tip" class="timing-tip" style="display: none;"></div>
+                    </div>
+
+                    <!-- Optimization Tips -->
+                    <div id="optimization-tips" class="optimization-tips" style="display: none;"></div>
+
+                    <!-- Action Button -->
+                    <button id="create-verification-btn" class="btn-primary verification-btn">
+                        Create Verification
+                    </button>
+                </div>
+            </section>
+
+            <!-- Active Verifications -->
+            <section class="verifications-section">
+                <div class="section-header">
+                    <h3>Active Verifications</h3>
+                    <button id="refresh-verifications" class="btn-secondary">Refresh</button>
+                </div>
                 
-                <div class="capability-options">
-                    <div class="capability-card selected" onclick="selectCapability('sms')" id="sms-card">
-                        <span class="capability-icon">📱</span>
-                        <div class="capability-title">SMS Text</div>
-                        <div class="capability-price" id="sms-price">N1.00</div>
-                        <div class="capability-description">Receive code via text message</div>
+                <div id="active-verifications" class="verifications-list">
+                    <div class="loading-state">Loading verifications...</div>
+                </div>
+            </section>
+
+            <!-- Quick Stats -->
+            <section class="stats-section">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-verifications">0</div>
+                        <div class="stat-label">Total Verifications</div>
                     </div>
                     
-                    <div class="capability-card" onclick="selectCapability('voice')" id="voice-card">
-                        <span class="capability-icon">📞</span>
-                        <div class="capability-title">Voice Call</div>
-                        <div class="capability-price" id="voice-price">N1.30</div>
-                        <div class="capability-description">Receive code via automated call</div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="success-rate">0%</div>
+                        <div class="stat-label">Success Rate</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-spent">N0.00</div>
+                        <div class="stat-label">Total Spent</div>
                     </div>
                 </div>
+            </section>
+        </main>
+
+        <!-- Sidebar -->
+        <aside class="dashboard-sidebar">
+            <nav class="sidebar-nav">
+                <a href="/app" class="nav-item active">
+                    <span class="nav-icon">📱</span>
+                    Dashboard
+                </a>
+                <a href="/analytics" class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    Analytics
+                </a>
+                <a href="#" class="nav-item" onclick="showWalletModal()">
+                    <span class="nav-icon">💰</span>
+                    Fund Wallet
+                </a>
+                <a href="#" class="nav-item" onclick="showHistoryModal()">
+                    <span class="nav-icon">📋</span>
+                    History
+                </a>
+            </nav>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <h4>Quick Actions</h4>
+                <button class="quick-btn" onclick="quickVerify('whatsapp')">
+                    <span class="service-icon">📱</span>
+                    WhatsApp
+                </button>
+                <button class="quick-btn" onclick="quickVerify('telegram')">
+                    <span class="service-icon">✈️</span>
+                    Telegram
+                </button>
+                <button class="quick-btn" onclick="quickVerify('discord')">
+                    <span class="service-icon">🎮</span>
+                    Discord
+                </button>
             </div>
+        </aside>
+    </div>
 
-            <!-- Create Button -->
-            <button id="create-btn" onclick="createEnhancedVerification()" style="display: none; width: 100%; padding: 15px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">
-                🚀 Create Verification
-            </button>
+    <!-- Notification Container -->
+    <div id="notification-container" class="notification-container"></div>
 
-            <!-- Verification Status -->
-            <div class="verification-status" id="verification-status" style="display: none;">
-                <div class="status-phone" id="status-phone">+1 (555) 123-4567</div>
-                <div id="status-service">WhatsApp • SMS Verification</div>
-                
-                <div class="countdown-display" id="countdown-display">
-                    <div class="countdown-timer" id="countdown-timer">60</div>
-                    <div class="countdown-label">seconds remaining</div>
-                </div>
-                
-                <div class="status-details">
-                    <div class="status-item">
-                        <div class="status-label">Status</div>
-                        <div class="status-value" id="status-value">Pending</div>
-                    </div>
-                    <div class="status-item">
-                        <div class="status-label">Type</div>
-                        <div class="status-value" id="status-type">SMS</div>
-                    </div>
-                    <div class="status-item">
-                        <div class="status-label">Cost</div>
-                        <div class="status-value" id="status-cost">N1.00</div>
-                    </div>
-                    <div class="status-item">
-                        <div class="status-label">Elapsed</div>
-                        <div class="status-value" id="status-elapsed">0s</div>
-                    </div>
-                </div>
-                
-                <div class="verification-actions">
-                    <button class="action-btn primary" onclick="checkVerificationMessages()" id="check-btn">
-                        📨 Check Messages
-                    </button>
-                    <button class="action-btn secondary" onclick="showEnhancedRetryModal()">
-                        🔄 Retry Options
-                    </button>
-                    <button class="action-btn danger" onclick="cancelEnhancedVerification()">
-                        ❌ Cancel
-                    </button>
-                </div>
+    <!-- Modals -->
+    <div id="wallet-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Fund Wallet</h3>
+                <button class="modal-close" onclick="closeModal('wallet-modal')">&times;</button>
             </div>
-
-            <!-- Messages Display -->
-            <div class="messages-display" id="messages-display" style="display: none;">
-                <h3>✅ Verification Complete!</h3>
-                <div id="messages-content">
-                    <!-- Messages will be populated here -->
+            <div class="modal-body">
+                <div class="funding-options">
+                    <div class="funding-option">
+                        <h4>Paystack Payment</h4>
+                        <p>Pay with card, bank transfer, or mobile money</p>
+                        <div class="amount-input">
+                            <label>Amount (USD):</label>
+                            <input type="number" id="fund-amount" min="5" step="0.01" placeholder="5.00">
+                        </div>
+                        <button class="btn-primary" onclick="initializePayment()">
+                            Pay with Paystack
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Enhanced JavaScript -->
-    <script>
-        // Enhanced verification state
-        let enhancedState = {
-            selectedService: null,
-            selectedCapability: 'sms',
-            verificationId: null,
-            startTime: null,
-            elapsedInterval: null,
-            countdownInterval: null,
-            autoCheckInterval: null
-        };
-
-        // Popular services with icons and tiers
-        const popularServices = [
-            { id: 'whatsapp', name: 'WhatsApp', icon: '💬', tier: 'Popular' },
-            { id: 'telegram', name: 'Telegram', icon: '✈️', tier: 'Popular' },
-            { id: 'discord', name: 'Discord', icon: '🎮', tier: 'Popular' },
-            { id: 'google', name: 'Google', icon: '🔍', tier: 'Popular' },
-            { id: 'instagram', name: 'Instagram', icon: '📷', tier: 'Standard' },
-            { id: 'facebook', name: 'Facebook', icon: '👥', tier: 'Standard' },
-            { id: 'twitter', name: 'Twitter/X', icon: '🐦', tier: 'Standard' },
-            { id: 'tiktok', name: 'TikTok', icon: '🎵', tier: 'Standard' }
-        ];
-
-        // Initialize enhanced dashboard
-        function initEnhancedDashboard() {
-            populateServiceGrid();
-            updatePricing();
-        }
-
-        function populateServiceGrid() {
-            const grid = document.getElementById('service-grid');
-            grid.innerHTML = popularServices.map(service => `
-                <div class="service-card" onclick="selectService('${service.id}')" id="service-${service.id}">
-                    <span class="service-icon">${service.icon}</span>
-                    <div class="service-name">${service.name}</div>
-                    <div class="service-tier">${service.tier}</div>
+    <div id="history-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Verification History</h3>
+                <button class="modal-close" onclick="closeModal('history-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="history-list" class="history-list">
+                    Loading history...
                 </div>
-            `).join('');
-        }
+            </div>
+        </div>
+    </div>
 
-        function selectService(serviceId) {
-            // Clear previous selection
-            document.querySelectorAll('.service-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-            
-            // Select new service
-            document.getElementById(`service-${serviceId}`).classList.add('selected');
-            enhancedState.selectedService = serviceId;
-            
-            // Show capability selector
-            document.getElementById('capability-selector').style.display = 'block';
-            document.getElementById('create-btn').style.display = 'block';
-            
-            updatePricing();
-        }
-
-        function selectCapability(capability) {
-            // Clear previous selection
-            document.querySelectorAll('.capability-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-            
-            // Select new capability
-            document.getElementById(`${capability}-card`).classList.add('selected');
-            enhancedState.selectedCapability = capability;
-            
-            updatePricing();
-        }
-
-        async function updatePricing() {
-            if (!enhancedState.selectedService) return;
-            
-            try {
-                const response = await fetch(`/services/price/${enhancedState.selectedService}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    document.getElementById('sms-price').textContent = `N${data.base_price.toFixed(2)}`;
-                    document.getElementById('voice-price').textContent = `N${(data.base_price + data.voice_premium).toFixed(2)}`;
-                }
-            } catch (error) {
-                console.error('Pricing update failed:', error);
+    <!-- Scripts -->
+    <script src="/static/js/performance-monitor.js"></script>
+    <script src="/static/js/error-tracker.js"></script>
+    <script src="/static/js/cache-manager.js"></script>
+    <script src="/static/js/smart-verification.js"></script>
+    <script src="/static/js/enhanced-dashboard.js"></script>
+    <script>
+        // Quick verification function
+        function quickVerify(service) {
+            trackPerformance('quick_verify', service);
+            const serviceSelect = document.getElementById('service-select');
+            if (serviceSelect) {
+                serviceSelect.value = service;
+                serviceSelect.dispatchEvent(new Event('change'));
             }
         }
 
-        function toggleAdvancedOptions() {
-            const options = document.getElementById('advanced-options');
-            options.classList.toggle('visible');
+        // Modal functions
+        function showWalletModal() {
+            document.getElementById('wallet-modal').style.display = 'flex';
         }
 
-        async function createEnhancedVerification() {
-            if (!enhancedState.selectedService) {
-                alert('Please select a service');
+        function showHistoryModal() {
+            document.getElementById('history-modal').style.display = 'flex';
+            loadHistory();
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Payment initialization
+        async function initializePayment() {
+            trackPerformance('payment_init', 'paystack_button');
+            const amount = document.getElementById('fund-amount').value;
+            if (!amount || amount < 5) {
+                alert('Minimum amount is $5.00');
                 return;
             }
-            
-            const payload = {
-                service_name: enhancedState.selectedService,
-                capability: enhancedState.selectedCapability
-            };
-            
-            // Add advanced options if selected
-            const areaCode = document.getElementById('area-code-select').value;
-            const carrier = document.getElementById('carrier-select').value;
-            
-            if (areaCode) payload.area_code = areaCode;
-            if (carrier) payload.carrier = carrier;
-            
+
             try {
-                const response = await fetch('/verify/create', {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/wallet/paystack/initialize', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({
+                        amount: parseFloat(amount),
+                        payment_method: 'paystack'
+                    })
                 });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    startEnhancedVerification(data);
+
+                const result = await response.json();
+                if (result.success) {
+                    window.open(result.authorization_url, '_blank');
+                    closeModal('wallet-modal');
                 } else {
-                    const error = await response.json();
-                    alert(`Error: ${error.detail}`);
+                    alert('Payment initialization failed');
                 }
             } catch (error) {
-                alert('Network error. Please try again.');
+                console.error('Payment error:', error);
+                alert('Payment initialization failed');
             }
         }
 
-        function startEnhancedVerification(data) {
-            enhancedState.verificationId = data.id;
-            enhancedState.startTime = Date.now();
-            
-            // Update UI
-            document.getElementById('status-phone').textContent = data.phone_number;
-            document.getElementById('status-service').textContent = `${enhancedState.selectedService} • ${enhancedState.selectedCapability.toUpperCase()} Verification`;
-            document.getElementById('status-type').textContent = enhancedState.selectedCapability.toUpperCase();
-            document.getElementById('status-cost').textContent = `N${data.cost}`;
-            
-            // Show verification status
-            document.getElementById('verification-status').style.display = 'block';
-            
-            // Start timers
-            startEnhancedCountdown(60);
-            startElapsedTimer();
-            startAutoCheck();
-            
-            // Update check button text
-            const checkBtn = document.getElementById('check-btn');
-            checkBtn.textContent = enhancedState.selectedCapability === 'voice' ? '📞 Check Call' : '📨 Check Messages';
+        // Performance tracking
+        function trackPerformance(action, element) {
+            if (window.performanceMonitor) {
+                window.performanceMonitor.trackAction(action, element);
+            }
         }
 
-        function startEnhancedCountdown(seconds) {
-            let remaining = seconds;
-            const timer = document.getElementById('countdown-timer');
-            const display = document.getElementById('countdown-display');
-            
-            enhancedState.countdownInterval = setInterval(() => {
-                timer.textContent = remaining;
-                
-                // Color coding
-                if (remaining <= 10) {
-                    display.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
-                } else if (remaining <= 30) {
-                    display.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
-                }
-                
-                remaining--;
-                
-                if (remaining < 0) {
-                    clearInterval(enhancedState.countdownInterval);
-                    showEnhancedRetryModal();
-                }
-            }, 1000);
-        }
-
-        function startElapsedTimer() {
-            enhancedState.elapsedInterval = setInterval(() => {
-                const elapsed = Math.floor((Date.now() - enhancedState.startTime) / 1000);
-                document.getElementById('status-elapsed').textContent = `${elapsed}s`;
-            }, 1000);
-        }
-
-        function startAutoCheck() {
-            enhancedState.autoCheckInterval = setInterval(() => {
-                checkVerificationMessages(true);
-            }, 5000);
-        }
-
-        async function checkVerificationMessages(silent = false) {
-            if (!enhancedState.verificationId) return;
-            
+        // Load history
+        async function loadHistory() {
             try {
-                const endpoint = enhancedState.selectedCapability === 'voice' 
-                    ? `/verify/${enhancedState.verificationId}/voice`
-                    : `/verify/${enhancedState.verificationId}/messages`;
-                
-                const response = await fetch(endpoint, {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                const token = localStorage.getItem('token');
+                const response = await fetch('/verifications/history?limit=20', {
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
-                if (response.ok) {
-                    const data = await response.json();
-                    
-                    if (enhancedState.selectedCapability === 'voice') {
-                        if (data.transcription || data.call_status === 'completed') {
-                            displayEnhancedResults(data);
-                        }
-                    } else {
-                        if (data.messages && data.messages.length > 0) {
-                            displayEnhancedResults(data);
-                        }
-                    }
+                const data = await response.json();
+                const historyList = document.getElementById('history-list');
+                
+                if (data.verifications.length === 0) {
+                    historyList.innerHTML = '<p>No verifications yet</p>';
+                    return;
                 }
-            } catch (error) {
-                if (!silent) {
-                    console.error('Check failed:', error);
-                }
-            }
-        }
 
-        function displayEnhancedResults(data) {
-            // Stop all timers
-            clearInterval(enhancedState.countdownInterval);
-            clearInterval(enhancedState.elapsedInterval);
-            clearInterval(enhancedState.autoCheckInterval);
-            
-            // Hide status, show messages
-            document.getElementById('verification-status').style.display = 'none';
-            document.getElementById('messages-display').style.display = 'block';
-            
-            const content = document.getElementById('messages-content');
-            
-            if (enhancedState.selectedCapability === 'voice') {
-                const code = data.transcription ? data.transcription.match(/\b\d{4,8}\b/)?.[0] : null;
-                content.innerHTML = `
-                    <div class="message-item">
-                        <strong>📞 Voice Call Received</strong>
-                        ${code ? `<div class="message-code">${code}</div>` : ''}
-                        <p><strong>Duration:</strong> ${data.call_duration || 'N/A'}</p>
-                        ${data.transcription ? `<p><strong>Transcription:</strong> ${data.transcription}</p>` : ''}
+                historyList.innerHTML = data.verifications.map(v => `
+                    <div class="history-item">
+                        <div class="history-service">${v.service_name}</div>
+                        <div class="history-status status-${v.status}">${v.status}</div>
+                        <div class="history-cost">N${v.cost}</div>
+                        <div class="history-date">${new Date(v.created_at).toLocaleDateString()}</div>
                     </div>
-                `;
-            } else {
-                content.innerHTML = data.messages.map(msg => {
-                    const code = msg.match(/\b\d{4,8}\b/)?.[0];
-                    return `
-                        <div class="message-item">
-                            <strong>📨 SMS Received</strong>
-                            ${code ? `<div class="message-code">${code}</div>` : ''}
-                            <p>${msg}</p>
-                        </div>
-                    `;
-                }).join('');
+                `).join('');
+            } catch (error) {
+                console.error('Failed to load history:', error);
+                document.getElementById('history-list').innerHTML = '<p>Failed to load history</p>';
             }
         }
 
-        function showEnhancedRetryModal() {
-            // Implementation for enhanced retry modal
-            alert('Retry options coming soon!');
+        // Close modals on outside click
+        window.onclick = function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
         }
-
-        function cancelEnhancedVerification() {
-            if (confirm('Cancel verification and get refund?')) {
-                // Implementation for cancellation
-                alert('Cancellation coming soon!');
-            }
-        }
-
-        // Initialize on load
-        document.addEventListener('DOMContentLoaded', initEnhancedDashboard);
     </script>
 </body>
 </html>

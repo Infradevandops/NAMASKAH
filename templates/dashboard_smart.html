@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Dashboard - Namaskah SMS</title>
+    <link rel="stylesheet" href="/static/css/dashboard-smart.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <h1>📱 Namaskah SMS</h1>
+        </div>
+        <div class="nav-user">
+            <span class="credits">Credits: <strong id="user-credits">N0.00</strong></span>
+            <button id="logout-btn" class="btn-outline">Logout</button>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <!-- Smart Verification Panel -->
+        <div class="panel verification-panel">
+            <div class="panel-header">
+                <h2>🚀 Smart Verification</h2>
+                <div class="panel-actions">
+                    <button id="bulk-toggle" class="btn-secondary">Bulk Mode</button>
+                </div>
+            </div>
+
+            <div class="verification-form">
+                <div class="service-selector">
+                    <select id="service-select" class="form-control">
+                        <option value="">Select Service...</option>
+                    </select>
+                    <div id="service-info" class="service-info hidden"></div>
+                </div>
+
+                <div class="optimization-controls">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="auto-optimize" checked>
+                        <span class="checkmark"></span>
+                        Auto-optimize routing
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="priority-mode">
+                        <span class="checkmark"></span>
+                        Priority processing (+N0.50)
+                    </label>
+                </div>
+
+                <div class="advanced-options" id="advanced-options">
+                    <div class="options-grid">
+                        <select id="carrier-select" class="form-control">
+                            <option value="">Any Carrier</option>
+                            <option value="verizon">Verizon (+N0.25)</option>
+                            <option value="att">AT&T (+N0.25)</option>
+                            <option value="tmobile">T-Mobile (+N0.25)</option>
+                        </select>
+                        <input type="text" id="area-code" class="form-control" placeholder="Area Code">
+                    </div>
+                </div>
+
+                <div class="pricing-widget">
+                    <div class="price-display">
+                        <span class="price-label">Price:</span>
+                        <span id="current-price" class="price-value">N0.00</span>
+                    </div>
+                    <div id="savings-indicator" class="savings hidden">
+                        <span id="savings-text"></span>
+                    </div>
+                    <div id="timing-tip" class="timing-tip hidden"></div>
+                </div>
+
+                <button id="create-verification" class="btn-primary" disabled>
+                    Select Service
+                </button>
+            </div>
+
+            <!-- Bulk Operations -->
+            <div id="bulk-panel" class="bulk-panel hidden">
+                <div class="bulk-header">
+                    <h3>Batch Operations</h3>
+                    <span class="batch-count">0/10</span>
+                </div>
+                <div id="batch-items" class="batch-items"></div>
+                <div class="bulk-actions">
+                    <button id="add-to-batch" class="btn-secondary" disabled>Add to Batch</button>
+                    <button id="process-batch" class="btn-primary" disabled>Process Batch</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Verifications -->
+        <div class="panel verifications-panel">
+            <div class="panel-header">
+                <h2>📋 Active Verifications</h2>
+                <button id="refresh-verifications" class="btn-outline">Refresh</button>
+            </div>
+            <div id="active-verifications" class="verifications-list">
+                <div class="empty-state">
+                    <p>No active verifications</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Panel -->
+        <div class="panel analytics-panel">
+            <div class="panel-header">
+                <h2>📊 Analytics</h2>
+                <select id="analytics-period" class="form-control-sm">
+                    <option value="24h">Last 24 Hours</option>
+                    <option value="7d">Last 7 Days</option>
+                    <option value="30d">Last 30 Days</option>
+                </select>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-value" id="success-rate">--</div>
+                    <div class="metric-label">Success Rate</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="total-spent">N0</div>
+                    <div class="metric-label">Total Spent</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="avg-time">--</div>
+                    <div class="metric-label">Avg. Time</div>
+                </div>
+            </div>
+
+            <div class="insights-section">
+                <h3>💡 Insights</h3>
+                <div id="insights-container"></div>
+            </div>
+        </div>
+
+        <!-- Service Recommendations -->
+        <div class="panel recommendations-panel">
+            <div class="panel-header">
+                <h2>🎯 Recommendations</h2>
+            </div>
+            <div id="recommendations-list"></div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notifications" class="notifications-container"></div>
+
+    <script>
+        class SmartDashboard {
+            constructor() {
+                this.currentService = null;
+                this.userCredits = 0;
+                this.batchItems = [];
+                this.ws = null;
+                this.init();
+            }
+
+            async init() {
+                await this.loadUserData();
+                await this.loadServices();
+                this.setupEventListeners();
+                this.connectWebSocket();
+                this.startPeriodicUpdates();
+            }
+
+            async loadUserData() {
+                try {
+                    const response = await this.apiCall('/auth/me');
+                    this.userCredits = response.credits;
+                    document.getElementById('user-credits').textContent = `N${response.credits.toFixed(2)}`;
+                } catch (error) {
+                    this.showNotification('Failed to load user data', 'error');
+                }
+            }
+
+            async loadServices() {
+                try {
+                    const response = await fetch('/services/list');
+                    const data = await response.json();
+                    this.populateServices(data.categories);
+                } catch (error) {
+                    this.showNotification('Failed to load services', 'error');
+                }
+            }
+
+            populateServices(categories) {
+                const select = document.getElementById('service-select');
+                select.innerHTML = '<option value="">Select Service...</option>';
+
+                Object.entries(categories).forEach(([category, services]) => {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = category;
+
+                    services.forEach(service => {
+                        const option = document.createElement('option');
+                        option.value = typeof service === 'string' ? service : service.name;
+                        option.textContent = (typeof service === 'string' ? service : service.name)
+                            .charAt(0).toUpperCase() + (typeof service === 'string' ? service : service.name).slice(1);
+                        optgroup.appendChild(option);
+                    });
+
+                    select.appendChild(optgroup);
+                });
+            }
+
+            setupEventListeners() {
+                // Service selection
+                document.getElementById('service-select').addEventListener('change', (e) => {
+                    this.handleServiceChange(e.target.value);
+                });
+
+                // Create verification
+                document.getElementById('create-verification').addEventListener('click', () => {
+                    this.createVerification();
+                });
+
+                // Bulk operations
+                document.getElementById('bulk-toggle').addEventListener('click', () => {
+                    this.toggleBulkMode();
+                });
+
+                document.getElementById('add-to-batch').addEventListener('click', () => {
+                    this.addToBatch();
+                });
+
+                document.getElementById('process-batch').addEventListener('click', () => {
+                    this.processBatch();
+                });
+
+                // Logout
+                document.getElementById('logout-btn').addEventListener('click', () => {
+                    localStorage.clear();
+                    window.location.href = '/login';
+                });
+
+                // Pricing updates
+                ['carrier-select', 'area-code', 'priority-mode'].forEach(id => {
+                    document.getElementById(id).addEventListener('change', () => {
+                        this.updatePricing();
+                    });
+                });
+            }
+
+            async handleServiceChange(serviceName) {
+                this.currentService = serviceName;
+                
+                if (!serviceName) {
+                    document.getElementById('create-verification').disabled = true;
+                    document.getElementById('create-verification').textContent = 'Select Service';
+                    return;
+                }
+
+                await this.updatePricing();
+                await this.loadServiceInfo(serviceName);
+                
+                document.getElementById('create-verification').disabled = false;
+            }
+
+            async updatePricing() {
+                if (!this.currentService) return;
+
+                try {
+                    const params = new URLSearchParams({
+                        service_name: this.currentService,
+                        include_forecast: 'true'
+                    });
+
+                    const response = await this.apiCall(`/api/v2/pricing/analysis?${params}`);
+                    this.displayPricing(response);
+                } catch (error) {
+                    // Fallback to basic pricing
+                    this.displayPricing({ current_price: 1.0, base_price: 1.0 });
+                }
+            }
+
+            displayPricing(pricing) {
+                document.getElementById('current-price').textContent = `N${pricing.current_price}`;
+                document.getElementById('create-verification').textContent = 
+                    `Create Verification (N${pricing.current_price})`;
+
+                // Show savings if any
+                if (pricing.savings > 0) {
+                    const savingsEl = document.getElementById('savings-indicator');
+                    document.getElementById('savings-text').textContent = `Save N${pricing.savings}`;
+                    savingsEl.classList.remove('hidden');
+                } else {
+                    document.getElementById('savings-indicator').classList.add('hidden');
+                }
+
+                // Show timing tip
+                if (pricing.timing_optimization && pricing.timing_optimization.recommendation === 'wait') {
+                    const tipEl = document.getElementById('timing-tip');
+                    tipEl.textContent = `💡 Wait for better pricing - save N${pricing.timing_optimization.potential_savings}`;
+                    tipEl.classList.remove('hidden');
+                } else {
+                    document.getElementById('timing-tip').classList.add('hidden');
+                }
+            }
+
+            async createVerification() {
+                if (!this.currentService) return;
+
+                const button = document.getElementById('create-verification');
+                button.disabled = true;
+                button.textContent = 'Creating...';
+
+                try {
+                    const payload = {
+                        service_name: this.currentService,
+                        user_preferences: {
+                            carrier_preference: document.getElementById('carrier-select').value,
+                            area_code: document.getElementById('area-code').value,
+                            priority: document.getElementById('priority-mode').checked
+                        },
+                        auto_optimize: document.getElementById('auto-optimize').checked
+                    };
+
+                    const response = await this.apiCall('/api/v2/verify/smart', 'POST', payload);
+                    this.addActiveVerification(response);
+                    this.showNotification('Verification created successfully!', 'success');
+                    
+                    // Update credits
+                    this.userCredits -= response.cost;
+                    document.getElementById('user-credits').textContent = `N${this.userCredits.toFixed(2)}`;
+
+                } catch (error) {
+                    this.showNotification(error.message || 'Failed to create verification', 'error');
+                } finally {
+                    button.disabled = false;
+                    button.textContent = `Create Verification (N${document.getElementById('current-price').textContent.slice(1)})`;
+                }
+            }
+
+            addActiveVerification(verification) {
+                const container = document.getElementById('active-verifications');
+                
+                // Remove empty state
+                const emptyState = container.querySelector('.empty-state');
+                if (emptyState) emptyState.remove();
+
+                const verificationEl = document.createElement('div');
+                verificationEl.className = 'verification-item';
+                verificationEl.id = `verification-${verification.id}`;
+                verificationEl.innerHTML = `
+                    <div class="verification-header">
+                        <span class="service-name">${verification.service_name}</span>
+                        <span class="status ${verification.status}">${verification.status}</span>
+                    </div>
+                    <div class="verification-details">
+                        <span class="phone-number">${verification.phone_number || 'Pending...'}</span>
+                        <span class="cost">N${verification.cost}</span>
+                    </div>
+                    <div class="verification-actions">
+                        <button onclick="dashboard.checkMessages('${verification.id}')" class="btn-sm">Messages</button>
+                        <button onclick="dashboard.cancelVerification('${verification.id}')" class="btn-sm btn-danger">Cancel</button>
+                    </div>
+                    <div class="messages-container" id="messages-${verification.id}"></div>
+                `;
+
+                container.appendChild(verificationEl);
+            }
+
+            async checkMessages(verificationId) {
+                try {
+                    const response = await fetch(`/verify/${verificationId}/messages`);
+                    const data = await response.json();
+                    
+                    const container = document.getElementById(`messages-${verificationId}`);
+                    if (data.messages && data.messages.length > 0) {
+                        container.innerHTML = data.messages.map(msg => 
+                            `<div class="message">${msg}</div>`
+                        ).join('');
+                    } else {
+                        container.innerHTML = '<div class="no-messages">No messages yet...</div>';
+                    }
+                } catch (error) {
+                    this.showNotification('Failed to check messages', 'error');
+                }
+            }
+
+            async cancelVerification(verificationId) {
+                if (!confirm('Cancel this verification?')) return;
+
+                try {
+                    const response = await fetch(`/verify/${verificationId}`, { method: 'DELETE' });
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        document.getElementById(`verification-${verificationId}`).remove();
+                        this.showNotification(`Refunded N${data.refunded}`, 'success');
+                        this.userCredits += data.refunded;
+                        document.getElementById('user-credits').textContent = `N${this.userCredits.toFixed(2)}`;
+                    }
+                } catch (error) {
+                    this.showNotification('Failed to cancel verification', 'error');
+                }
+            }
+
+            toggleBulkMode() {
+                const panel = document.getElementById('bulk-panel');
+                const button = document.getElementById('bulk-toggle');
+                
+                if (panel.classList.contains('hidden')) {
+                    panel.classList.remove('hidden');
+                    button.textContent = 'Single Mode';
+                } else {
+                    panel.classList.add('hidden');
+                    button.textContent = 'Bulk Mode';
+                }
+            }
+
+            connectWebSocket() {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                this.ws = new WebSocket(`${protocol}//${window.location.host}/ws?token=${token}`);
+                
+                this.ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    this.handleWebSocketMessage(data);
+                };
+            }
+
+            handleWebSocketMessage(data) {
+                if (data.type === 'verification_status') {
+                    this.updateVerificationStatus(data.payload.verification_id, data.payload.status);
+                }
+            }
+
+            updateVerificationStatus(verificationId, status) {
+                const element = document.getElementById(`verification-${verificationId}`);
+                if (element) {
+                    const statusEl = element.querySelector('.status');
+                    statusEl.textContent = status;
+                    statusEl.className = `status ${status}`;
+                    
+                    if (status === 'completed') {
+                        element.classList.add('completed');
+                        this.showNotification('Verification completed!', 'success');
+                        this.checkMessages(verificationId);
+                    }
+                }
+            }
+
+            startPeriodicUpdates() {
+                // Update analytics every 30 seconds
+                setInterval(() => this.updateAnalytics(), 30000);
+                this.updateAnalytics();
+            }
+
+            async updateAnalytics() {
+                try {
+                    const response = await this.apiCall('/analytics/dashboard');
+                    
+                    document.getElementById('success-rate').textContent = 
+                        `${response.success_rate || 0}%`;
+                    document.getElementById('total-spent').textContent = 
+                        `N${response.total_spent || 0}`;
+                    document.getElementById('avg-time').textContent = 
+                        `${response.avg_delivery_time || 0}s`;
+                        
+                } catch (error) {
+                    // Silently fail for analytics
+                }
+            }
+
+            async apiCall(endpoint, method = 'GET', data = null) {
+                const config = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                };
+
+                if (data) {
+                    config.body = JSON.stringify(data);
+                }
+
+                const response = await fetch(endpoint, config);
+                
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({ message: 'Request failed' }));
+                    throw new Error(error.detail || error.message || 'Request failed');
+                }
+
+                return response.json();
+            }
+
+            showNotification(message, type = 'info') {
+                const container = document.getElementById('notifications');
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.textContent = message;
+                
+                container.appendChild(notification);
+                
+                setTimeout(() => notification.classList.add('show'), 100);
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }
+        }
+
+        // Initialize dashboard
+        const dashboard = new SmartDashboard();
+
+        // Check authentication
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/login';
+        }
+    </script>
+</body>
+</html>

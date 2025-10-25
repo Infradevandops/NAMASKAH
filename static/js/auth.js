@@ -46,6 +46,12 @@ async function register() {
             window.token = data.token;
             localStorage.setItem('token', data.token);
             if (data.is_admin) localStorage.setItem('admin_token', data.token);
+            
+            // Track user registration
+            if (typeof trackUserRegistration === 'function') {
+                trackUserRegistration('email');
+            }
+            
             showLoading(false);
             showNotification(`✅ Welcome! You got 1 free verification`, 'success');
             console.log('Calling checkAuth to load app');
@@ -78,10 +84,15 @@ async function register() {
 async function login() {
     const email = document.getElementById('login-email')?.value;
     const password = document.getElementById('login-password')?.value;
+    const loginBtn = document.getElementById('login-btn') || document.querySelector('[onclick*="login"]');
     
     console.log('Login attempt for:', email);
     
-    if (!email || !password) {
+    // Use minimal validation if available
+    if (typeof validateForm === 'function') {
+        const form = document.getElementById('login-form') || document.querySelector('form');
+        if (form && !validateForm(form)) return;
+    } else if (!email || !password) {
         showNotification('⚠️ Please enter email and password', 'error');
         return;
     }
@@ -113,6 +124,11 @@ async function login() {
             localStorage.setItem('token', data.token);
             if (data.is_admin) localStorage.setItem('admin_token', data.token);
             
+            // Track user login
+            if (typeof trackUserLogin === 'function') {
+                trackUserLogin('email');
+            }
+            
             showLoading(false);
             showNotification('✅ Login successful!', 'success');
             console.log('Calling checkAuth to load app');
@@ -132,12 +148,16 @@ async function login() {
     } catch (err) {
         showLoading(false);
         console.error('Login error:', err);
-        console.error('Error name:', err.name);
-        console.error('Error message:', err.message);
-        if (err.name === 'AbortError') {
-            showNotification('⏱️ Request timeout. Please check your connection', 'error');
+        
+        // Use minimal error handling if available
+        if (typeof handleNetworkError === 'function') {
+            handleNetworkError(err);
         } else {
-            showNotification(`🌐 Network error: ${err.message}`, 'error');
+            if (err.name === 'AbortError') {
+                showNotification('⏱️ Request timeout. Please check your connection', 'error');
+            } else {
+                showNotification(`🌐 Network error: ${err.message}`, 'error');
+            }
         }
     }
 }

@@ -270,7 +270,7 @@
             <span>or</span>
         </div>
         
-        <button class="google-btn" onclick="googleLogin()" id="google-login-btn">
+        <button class="google-btn" onclick="safeGoogleLogin()" id="google-login-btn">
             <svg width="20" height="20" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -344,20 +344,21 @@
             e.preventDefault();
             console.log('Form submitted for:', currentTab);
             
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+            const form = e.target;
             const submitBtn = document.getElementById('submit-btn');
             
-            submitBtn.disabled = true;
-            submitBtn.textContent = currentTab === 'login' ? 'Logging in...' : 'Registering...';
+            // Minimal form validation
+            if (!validateForm(form)) {
+                return;
+            }
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            setButtonState(submitBtn, 'loading', currentTab === 'login' ? 'Logging in...' : 'Registering...');
             
             try {
-                // Basic validation
-                if (!email || !password) {
-                    showNotification('❌ Please fill in all fields', 'error');
-                    return;
-                }
-                
+                // Additional validation for registration
                 if (currentTab === 'register' && password.length < 6) {
                     showNotification('❌ Password must be at least 6 characters', 'error');
                     return;
@@ -443,5 +444,6 @@
             }
         }
     </script>
+    <script src="/static/js/minimal-error-handling.js"></script>
 </body>
 </html>

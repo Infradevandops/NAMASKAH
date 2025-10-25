@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Button Functionality Test - Namaskah SMS</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .button-category {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        .button-category h3 {
+            margin: 0 0 15px 0;
+            color: #1f2937;
+            font-size: 16px;
+        }
+        .test-button {
+            width: 100%;
+            padding: 10px 15px;
+            margin: 5px 0;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .test-button:hover {
+            border-color: #667eea;
+            background: #f8faff;
+        }
+        .test-button.success {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+        .test-button.error {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+        .test-button.loading {
+            border-color: #f59e0b;
+            background: #fffbeb;
+        }
+        .status-indicator {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .results-summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .credentials {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .log-container {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Button Functionality Test - Namaskah SMS</h1>
+        <p>This page tests all dashboard buttons to ensure they're connecting and productive.</p>
+        
+        <div class="credentials">
+            <h3>🔑 Admin Credentials</h3>
+            <p><strong>Email:</strong> admin@namaskah.app</p>
+            <p><strong>Password:</strong> Namaskah@Admin2024</p>
+            <button onclick="loginAdmin()" style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">🔐 Login as Admin</button>
+        </div>
+        
+        <div class="results-summary" id="results-summary" style="display: none;">
+            <h2>📊 Test Results Summary</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="total-buttons">0</div>
+                    <div>Total Buttons</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="working-buttons">0</div>
+                    <div>Working</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="failed-buttons">0</div>
+                    <div>Failed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="success-rate">0%</div>
+                    <div>Success Rate</div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <button onclick="testAllButtons()" id="test-all-btn" style="padding: 15px 30px; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin-right: 10px;">🚀 Test All Buttons</button>
+            <button onclick="resetTests()" style="padding: 15px 30px; background: #6b7280; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">🔄 Reset Tests</button>
+        </div>
+        
+        <div class="button-grid" id="button-grid">
+            <!-- Buttons will be populated here -->
+        </div>
+        
+        <div class="log-container" id="log-container">
+            <strong>Test Log:</strong><br>
+            Ready to test buttons...
+        </div>
+    </div>
+    
+    <script>
+        let token = null;
+        let testResults = {};
+        
+        const buttonCategories = {
+            "🔐 Authentication & User": [
+                { name: "Login Status", endpoint: "/auth/me", method: "GET" },
+                { name: "Google OAuth Config", endpoint: "/auth/google/config", method: "GET" }
+            ],
+            "📊 Dashboard Navigation": [
+                { name: "Analytics Dashboard", endpoint: "/analytics/dashboard", method: "GET" },
+                { name: "Verification History", endpoint: "/verifications/history", method: "GET" },
+                { name: "Transaction History", endpoint: "/transactions/history", method: "GET" },
+                { name: "Wallet Transactions", endpoint: "/wallet/transactions", method: "GET" }
+            ],
+            "📱 Services & Verification": [
+                { name: "Services List", endpoint: "/services/list", method: "GET" },
+                { name: "Service Status", endpoint: "/services/status", method: "GET" },
+                { name: "Active Verifications", endpoint: "/verifications/active", method: "GET" },
+                { name: "Carriers List", endpoint: "/carriers/list", method: "GET" },
+                { name: "Area Codes List", endpoint: "/area-codes/list", method: "GET" }
+            ],
+            "⚙️ Settings & Configuration": [
+                { name: "API Keys List", endpoint: "/api-keys/list", method: "GET" },
+                { name: "Webhooks List", endpoint: "/webhooks/list", method: "GET" },
+                { name: "Notification Settings", endpoint: "/notifications/settings", method: "GET" }
+            ],
+            "🧾 Receipts & Notifications": [
+                { name: "Receipts History", endpoint: "/receipts/history", method: "GET" },
+                { name: "Notifications List", endpoint: "/notifications/list", method: "GET" }
+            ],
+            "💰 Subscriptions & Referrals": [
+                { name: "Subscription Plans", endpoint: "/subscription/plans", method: "GET" },
+                { name: "Current Subscription", endpoint: "/subscription/current", method: "GET" },
+                { name: "Referral Stats", endpoint: "/referrals/stats", method: "GET" }
+            ],
+            "👑 Admin Panel": [
+                { name: "Admin Stats", endpoint: "/admin/stats", method: "GET" },
+                { name: "Admin Users", endpoint: "/admin/users", method: "GET" },
+                { name: "Admin Verifications", endpoint: "/admin/verifications/active", method: "GET" },
+                { name: "Admin Rentals", endpoint: "/admin/rentals/active", method: "GET" },
+                { name: "Admin Payment Logs", endpoint: "/admin/payment-logs", method: "GET" },
+                { name: "Admin Activity Logs", endpoint: "/admin/activity-logs", method: "GET" }
+            ],
+            "🔧 System & Health": [
+                { name: "Health Check", endpoint: "/health", method: "GET" },
+                { name: "System Health", endpoint: "/system/health", method: "GET" }
+            ],
+            "📥 Export & Downloads": [
+                { name: "Export Verifications", endpoint: "/verifications/export", method: "GET" },
+                { name: "Export Transactions", endpoint: "/transactions/export", method: "GET" }
+            ]
+        };
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logContainer = document.getElementById('log-container');
+            const colors = {
+                success: '#10b981',
+                error: '#ef4444',
+                info: '#3b82f6',
+                warning: '#f59e0b'
+            };
+            logContainer.innerHTML += `<div style="color: ${colors[type] || colors.info}">[${timestamp}] ${message}</div>`;
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        async function loginAdmin() {
+            log('Attempting admin login...');
+            try {
+                const response = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'admin@namaskah.app',
+                        password: 'Namaskah@Admin2024'
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    token = data.token;
+                    log('✅ Admin login successful', 'success');
+                    log(`Credits: ${data.credits}, Admin: ${data.is_admin}`, 'info');
+                    document.getElementById('test-all-btn').disabled = false;
+                } else {
+                    log('❌ Admin login failed', 'error');
+                }
+            } catch (error) {
+                log(`❌ Login error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testButton(buttonName, endpoint, method = 'GET') {
+            if (!token) {
+                log('❌ No token available. Please login first.', 'error');
+                return false;
+            }
+            
+            const buttonElement = document.querySelector(`[data-button="${buttonName}"]`);
+            if (buttonElement) {
+                buttonElement.className = 'test-button loading';
+                buttonElement.querySelector('.status-indicator').textContent = '⏳';
+            }
+            
+            try {
+                const options = {
+                    method: method,
+                    headers: { 'Authorization': `Bearer ${token}` }
+                };
+                
+                const response = await fetch(endpoint, options);
+                const success = response.ok;
+                
+                if (success) {
+                    try {
+                        const data = await response.json();
+                        const dataInfo = extractDataInfo(data);
+                        testResults[buttonName] = { status: 'success', info: dataInfo };
+                        log(`✅ ${buttonName}: ${dataInfo}`, 'success');
+                        
+                        if (buttonElement) {
+                            buttonElement.className = 'test-button success';
+                            buttonElement.querySelector('.status-indicator').textContent = '✅';
+                        }
+                    } catch {
+                        testResults[buttonName] = { status: 'success', info: 'Non-JSON response' };
+                        log(`✅ ${buttonName}: Working (non-JSON)`, 'success');
+                        
+                        if (buttonElement) {
+                            buttonElement.className = 'test-button success';
+                            buttonElement.querySelector('.status-indicator').textContent = '✅';
+                        }
+                    }
+                } else {
+                    testResults[buttonName] = { status: 'failed', error: response.status };
+                    log(`❌ ${buttonName}: Failed (${response.status})`, 'error');
+                    
+                    if (buttonElement) {
+                        buttonElement.className = 'test-button error';
+                        buttonElement.querySelector('.status-indicator').textContent = '❌';
+                    }
+                }
+                
+                return success;
+            } catch (error) {
+                testResults[buttonName] = { status: 'error', error: error.message };
+                log(`❌ ${buttonName}: Error - ${error.message}`, 'error');
+                
+                if (buttonElement) {
+                    buttonElement.className = 'test-button error';
+                    buttonElement.querySelector('.status-indicator').textContent = '💥';
+                }
+                
+                return false;
+            }
+        }
+        
+        function extractDataInfo(data) {
+            if (typeof data === 'object' && data !== null) {
+                if (data.verifications) return `${data.verifications.length} verifications`;
+                if (data.transactions) return `${data.transactions.length} transactions`;
+                if (data.users) return `${data.users.length} users`;
+                if (data.keys) return `${data.keys.length} API keys`;
+                if (data.webhooks) return `${data.webhooks.length} webhooks`;
+                if (data.receipts) return `${data.receipts.length} receipts`;
+                if (data.notifications) return `${data.total_count || 0} notifications`;
+                if (data.total_users) return `${data.total_users} users, ${data.total_verifications || 0} verifications`;
+                if (data.categories) return `${Object.keys(data.categories).length} service categories`;
+                if (data.status && data.service) return `Service: ${data.service} - ${data.status}`;
+                if (data.plans) return `${data.plans.length} subscription plans`;
+                return `${Object.keys(data).length} data items`;
+            }
+            return 'Response received';
+        }
+        
+        async function testAllButtons() {
+            if (!token) {
+                log('❌ Please login first', 'error');
+                return;
+            }
+            
+            log('🚀 Starting comprehensive button test...', 'info');
+            testResults = {};
+            
+            const allButtons = [];
+            Object.values(buttonCategories).forEach(category => {
+                allButtons.push(...category);
+            });
+            
+            for (const button of allButtons) {
+                await testButton(button.name, button.endpoint, button.method);
+                await new Promise(resolve => setTimeout(resolve, 200)); // Small delay
+            }
+            
+            updateSummary();
+            log('🏁 Button testing completed!', 'success');
+        }
+        
+        function updateSummary() {
+            const total = Object.keys(testResults).length;
+            const working = Object.values(testResults).filter(r => r.status === 'success').length;
+            const failed = total - working;
+            const successRate = total > 0 ? Math.round((working / total) * 100) : 0;
+            
+            document.getElementById('total-buttons').textContent = total;
+            document.getElementById('working-buttons').textContent = working;
+            document.getElementById('failed-buttons').textContent = failed;
+            document.getElementById('success-rate').textContent = `${successRate}%`;
+            document.getElementById('results-summary').style.display = 'block';
+            
+            log(`📊 Summary: ${working}/${total} buttons working (${successRate}%)`, 'info');
+        }
+        
+        function resetTests() {
+            testResults = {};
+            document.querySelectorAll('.test-button').forEach(button => {
+                button.className = 'test-button';
+                button.querySelector('.status-indicator').textContent = '⚪';
+            });
+            document.getElementById('results-summary').style.display = 'none';
+            document.getElementById('log-container').innerHTML = '<strong>Test Log:</strong><br>Tests reset. Ready to test buttons...';
+            log('🔄 Tests reset', 'info');
+        }
+        
+        function createButtonGrid() {
+            const grid = document.getElementById('button-grid');
+            grid.innerHTML = '';
+            
+            Object.entries(buttonCategories).forEach(([categoryName, buttons]) => {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'button-category';
+                categoryDiv.innerHTML = `<h3>${categoryName}</h3>`;
+                
+                buttons.forEach(button => {
+                    const buttonDiv = document.createElement('div');
+                    buttonDiv.className = 'test-button';
+                    buttonDiv.setAttribute('data-button', button.name);
+                    buttonDiv.onclick = () => testButton(button.name, button.endpoint, button.method);
+                    buttonDiv.innerHTML = `
+                        <span>${button.name}</span>
+                        <span class="status-indicator">⚪</span>
+                    `;
+                    categoryDiv.appendChild(buttonDiv);
+                });
+                
+                grid.appendChild(categoryDiv);
+            });
+        }
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', () => {
+            createButtonGrid();
+            log('🧪 Button Functionality Test loaded', 'info');
+            log('👆 Click individual buttons to test or use "Test All Buttons"', 'info');
+        });
+    </script>
+</body>
+</html>

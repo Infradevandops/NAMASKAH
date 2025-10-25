@@ -87,6 +87,11 @@ async function verifyPayment(reference) {
         });
         const data = await response.json();
         if (response.ok && data.status === 'success') {
+            // Track wallet top-up
+            if (typeof trackWalletTopup === 'function') {
+                trackWalletTopup(reference, data.amount);
+            }
+            
             showNotification(`✅ Payment successful! Added ₵${data.amount} to wallet`, 'success');
             checkAuth();
         } else {

@@ -1,22 +1,35 @@
-<!-- Google Analytics -->
-{% if analytics_id %}
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id={{ analytics_id }}"></script>
+<!-- Google Analytics 4 Integration -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-  gtag('config', '{{ analytics_id }}');
-</script>
-{% endif %}
+  gtag('config', 'G-XXXXXXXXXX');
 
-<!-- Performance Monitoring -->
-<script>
-  // Basic performance monitoring
-  window.addEventListener('load', function() {
-    if ('performance' in window) {
-      const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
-      console.log('Page load time:', loadTime + 'ms');
-    }
-  });
+  // Track verification events
+  function trackVerification(serviceName, userPlan, cost) {
+    gtag('event', 'verification_created', {
+      'service_name': serviceName,
+      'user_plan': userPlan,
+      'value': cost,
+      'currency': 'USD'
+    });
+  }
+
+  // Track payment events
+  function trackPayment(amount, method) {
+    gtag('event', 'purchase', {
+      'transaction_id': Date.now(),
+      'value': amount,
+      'currency': 'USD',
+      'payment_method': method
+    });
+  }
+
+  // Track user registration
+  function trackRegistration() {
+    gtag('event', 'sign_up', {
+      'method': 'email'
+    });
+  }
 </script>

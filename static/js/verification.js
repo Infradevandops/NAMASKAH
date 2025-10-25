@@ -134,6 +134,11 @@ async function createVerification() {
             displayVerification(data);
             document.getElementById('user-credits').textContent = data.remaining_credits.toFixed(2);
             
+            // Track verification purchase
+            if (typeof trackVerificationPurchase === 'function') {
+                trackVerificationPurchase(data.id, service, data.cost);
+            }
+            
             const capabilityText = capability === 'voice' ? '📞 Voice' : '📱 SMS';
             showNotification(`✅ ${capabilityText} verification created! Cost: N${data.cost} (${getTierName(service)})`, 'success');
             
@@ -682,6 +687,12 @@ async function checkMessages(silent = false) {
             `;
             
             if (!silent) {
+                // Track verification success
+                if (typeof trackVerificationSuccess === 'function' && currentServiceName) {
+                    const price = await getServicePrice(currentServiceName, currentCapability);
+                    trackVerificationSuccess(currentServiceName, price);
+                }
+                
                 showNotification('🎉 Verification successful!', 'success');
                 
                 if (firstVerificationCompleted && !hasShownPricingOffer) {

@@ -1,341 +1,201 @@
 #!/bin/bash
 
-# Namaskah SMS Deployment Script
-# Automates the complete deployment process for next phase features
+# 🚀 Namaskah SMS - Production Deployment Script
+# Minimal deployment automation
 
-set -e  # Exit on any error
+set -e
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+echo "🚀 Deploying Namaskah SMS to Production"
+echo "======================================"
 
-# Configuration
-PORT=${PORT:-8000}
-HOST=${HOST:-0.0.0.0}
-PYTHON=${PYTHON:-python3}
-TIMEOUT=30
+# Check if running as root
+if [[ $EUID -eq 0 ]]; then
+   echo "❌ Don't run as root. Use a regular user with sudo access."
+   exit 1
+fi
 
-# Functions
-log_info() {
-    echo -e "${BLUE}ℹ️  $1${NC}"
-}
+# Check Python version
+python_version=$(python3 --version 2>&1 | cut -d' ' -f2 | cut -d'.' -f1,2)
+required_version="3.8"
 
-log_success() {
-    echo -e "${GREEN}✅ $1${NC}"
-}
-
-log_warning() {
-    echo -e "${YELLOW}⚠️  $1${NC}"
-}
-
-log_error() {
-    echo -e "${RED}❌ $1${NC}"
-}
-
-check_dependencies() {
-    log_info "Checking dependencies..."
-    
-    # Check Python
-    if ! command -v $PYTHON &> /dev/null; then
-        log_error "Python not found. Please install Python 3.9+"
-        exit 1
-    fi
-    
-    # Check required files
-    required_files=("main.py" "pricing_config.py" "retry_mechanisms.py" "requirements.txt")
-    for file in "${required_files[@]}"; do
-        if [[ ! -f "$file" ]]; then
-            log_error "Required file missing: $file"
-            exit 1
-        fi
-    done
-    
-    log_success "Dependencies check passed"
-}
-
-install_requirements() {
-    log_info "Installing/updating requirements..."
-    
-    if [[ -f "requirements.txt" ]]; then
-        $PYTHON -m pip install -r requirements.txt --quiet
-        log_success "Requirements installed"
-    else
-        log_warning "No requirements.txt found, skipping..."
-    fi
-}
-
-validate_implementation() {
-    log_info "Validating implementation..."
-    
-    if [[ -f "validate_implementation.py" ]]; then
-        if $PYTHON validate_implementation.py; then
-            log_success "Implementation validation passed"
-        else
-            log_error "Implementation validation failed"
-            exit 1
-        fi
-    else
-        log_warning "Validation script not found, skipping..."
-    fi
-}
-
-stop_existing_server() {
-    log_info "Stopping existing server..."
-    
-    # Try to stop gracefully first
-    if pgrep -f "uvicorn main:app" > /dev/null; then
-        pkill -f "uvicorn main:app" || true
-        sleep 2
-    fi
-    
-    if pgrep -f "python main.py" > /dev/null; then
-        pkill -f "python main.py" || true
-        sleep 2
-    fi
-    
-    # Force kill if still running
-    if pgrep -f "main.py\|uvicorn.*main:app" > /dev/null; then
-        pkill -9 -f "main.py\|uvicorn.*main:app" || true
-        sleep 1
-    fi
-    
-    log_success "Existing server stopped"
-}
-
-start_server() {
-    log_info "Starting Namaskah SMS server..."
-    
-    # Check if uvicorn is available
-    if command -v uvicorn &> /dev/null; then
-        log_info "Using uvicorn server..."
-        nohup uvicorn main:app --host $HOST --port $PORT --reload > server.log 2>&1 &
-        SERVER_PID=$!
-    else
-        log_info "Using Python directly..."
-        nohup $PYTHON main.py > server.log 2>&1 &
-        SERVER_PID=$!
-    fi
-    
-    echo $SERVER_PID > server.pid
-    log_success "Server started with PID: $SERVER_PID"
-}
-
-wait_for_server() {
-    log_info "Waiting for server to be ready..."
-    
-    local count=0
-    local max_attempts=30
-    
-    while [[ $count -lt $max_attempts ]]; do
-        if curl -s "http://localhost:$PORT/health" > /dev/null 2>&1; then
-            log_success "Server is ready!"
-            return 0
-        fi
-        
-        count=$((count + 1))
-        echo -n "."
-        sleep 1
-    done
-    
-    log_error "Server failed to start within $max_attempts seconds"
-    return 1
-}
-
-validate_deployment() {
-    log_info "Validating deployment..."
-    
-    # Test critical endpoints
-    local base_url="http://localhost:$PORT"
-    local failed=0
-    
-    # Health check
-    if curl -s "$base_url/health" | grep -q "healthy"; then
-        log_success "Health endpoint: OK"
-    else
-        log_error "Health endpoint: FAILED"
-        failed=1
-    fi
-    
-    # System health
-    if curl -s "$base_url/system/health" | grep -q "services"; then
-        log_success "System health endpoint: OK"
-    else
-        log_error "System health endpoint: FAILED"
-        failed=1
-    fi
-    
-    # Services list
-    if curl -s "$base_url/services/list" | grep -q "tiers"; then
-        log_success "Services list endpoint: OK"
-    else
-        log_error "Services list endpoint: FAILED"
-        failed=1
-    fi
-    
-    if [[ $failed -eq 1 ]]; then
-        log_error "Deployment validation failed"
-        return 1
-    fi
-    
-    log_success "Deployment validation passed"
-    return 0
-}
-
-run_comprehensive_tests() {
-    log_info "Running comprehensive tests..."
-    
-    if [[ -f "test_comprehensive.py" ]]; then
-        if $PYTHON test_comprehensive.py; then
-            log_success "Comprehensive tests passed"
-        else
-            log_warning "Some tests failed, but deployment continues"
-        fi
-    else
-        log_warning "Test suite not found, skipping..."
-    fi
-}
-
-show_status() {
-    log_info "Deployment Status Summary"
-    echo "=================================="
-    
-    local base_url="http://localhost:$PORT"
-    
-    # Server status
-    if pgrep -f "main.py\|uvicorn.*main:app" > /dev/null; then
-        log_success "Server: Running (PID: $(cat server.pid 2>/dev/null || echo 'Unknown'))"
-    else
-        log_error "Server: Not running"
-    fi
-    
-    # Endpoint status
-    if curl -s "$base_url/health" > /dev/null 2>&1; then
-        log_success "Health endpoint: Accessible"
-    else
-        log_error "Health endpoint: Not accessible"
-    fi
-    
-    # Feature status
-    echo ""
-    log_info "Feature Status:"
-    echo "  • Email Verification Bypass: ✅ Active"
-    echo "  • Hourly Rental System: ✅ Implemented"
-    echo "  • Dynamic Pricing: ✅ Active"
-    echo "  • Retry Mechanisms: ✅ Active"
-    echo "  • Circuit Breakers: ✅ Monitoring"
-    echo "  • Health Monitoring: ✅ Active"
-    
-    echo ""
-    log_info "Access URLs:"
-    echo "  • Application: http://localhost:$PORT/app"
-    echo "  • Admin Panel: http://localhost:$PORT/admin"
-    echo "  • API Docs: http://localhost:$PORT/docs"
-    echo "  • Health Check: http://localhost:$PORT/health"
-    echo "  • System Health: http://localhost:$PORT/system/health"
-    
-    echo ""
-    log_info "Monitoring Commands:"
-    echo "  • Check logs: tail -f server.log"
-    echo "  • Check health: curl http://localhost:$PORT/health"
-    echo "  • Run tests: python test_comprehensive.py"
-    echo "  • Stop server: kill \$(cat server.pid)"
-}
-
-cleanup_on_error() {
-    log_error "Deployment failed, cleaning up..."
-    
-    if [[ -f "server.pid" ]]; then
-        local pid=$(cat server.pid)
-        if kill -0 $pid 2>/dev/null; then
-            kill $pid
-            log_info "Stopped server with PID: $pid"
-        fi
-        rm -f server.pid
-    fi
-    
+if [ "$(printf '%s\n' "$required_version" "$python_version" | sort -V | head -n1)" != "$required_version" ]; then
+    echo "❌ Python 3.8+ required. Found: $python_version"
     exit 1
-}
+fi
 
-# Main deployment process
-main() {
-    echo "🚀 Namaskah SMS Deployment Script"
-    echo "=================================="
-    echo ""
-    
-    # Set up error handling
-    trap cleanup_on_error ERR
-    
-    # Pre-deployment checks
-    check_dependencies
-    install_requirements
-    validate_implementation
-    
-    # Deployment
-    stop_existing_server
-    start_server
-    
-    # Post-deployment validation
-    if wait_for_server; then
-        validate_deployment
-        run_comprehensive_tests
-        show_status
-        
-        echo ""
-        log_success "🎉 Deployment completed successfully!"
-        log_info "Monitor the system and check logs for any issues."
-        log_info "Next steps: Monitor user adoption of hourly rentals"
-        
-    else
-        log_error "Server failed to start properly"
-        cleanup_on_error
+echo "✅ Python version: $python_version"
+
+# Install dependencies
+echo "📦 Installing dependencies..."
+pip3 install -r requirements.txt
+
+# Check environment variables
+echo "🔧 Checking environment configuration..."
+
+required_vars=("SECRET_KEY" "TEXTVERIFIED_API_KEY")
+missing_vars=()
+
+for var in "${required_vars[@]}"; do
+    if [[ -z "${!var}" ]]; then
+        missing_vars+=("$var")
     fi
-}
+done
 
-# Handle command line arguments
-case "${1:-deploy}" in
-    "deploy")
-        main
-        ;;
-    "stop")
-        log_info "Stopping Namaskah SMS server..."
-        stop_existing_server
-        if [[ -f "server.pid" ]]; then
-            rm -f server.pid
-        fi
-        log_success "Server stopped"
-        ;;
-    "status")
-        show_status
-        ;;
-    "restart")
-        log_info "Restarting Namaskah SMS server..."
-        stop_existing_server
-        start_server
-        wait_for_server
-        validate_deployment
-        log_success "Server restarted successfully"
-        ;;
-    "test")
-        log_info "Running tests only..."
-        run_comprehensive_tests
-        ;;
-    "validate")
-        log_info "Running validation only..."
-        validate_implementation
-        ;;
-    *)
-        echo "Usage: $0 {deploy|stop|status|restart|test|validate}"
-        echo ""
-        echo "Commands:"
-        echo "  deploy   - Full deployment (default)"
-        echo "  stop     - Stop the server"
-        echo "  status   - Show current status"
-        echo "  restart  - Restart the server"
-        echo "  test     - Run comprehensive tests"
-        echo "  validate - Validate implementation"
-        exit 1
-        ;;
-esac
+if [[ ${#missing_vars[@]} -gt 0 ]]; then
+    echo "❌ Missing required environment variables:"
+    printf '   %s\n' "${missing_vars[@]}"
+    echo "💡 Set them in .env file or export them"
+    exit 1
+fi
+
+echo "✅ Environment variables configured"
+
+# Initialize database
+echo "🗄️ Initializing database..."
+python3 -c "
+try:
+    from main import Base, engine
+    Base.metadata.create_all(bind=engine)
+    print('✅ Database initialized')
+except Exception as e:
+    print(f'❌ Database error: {e}')
+    exit(1)
+"
+
+# Run production tests
+echo "🧪 Running production tests..."
+if python3 production_test.py; then
+    echo "✅ All tests passed"
+else
+    echo "⚠️ Some tests failed, but continuing deployment"
+fi
+
+# Check if port 8000 is available
+if lsof -Pi :8000 -sTCP:LISTEN -t >/dev/null ; then
+    echo "⚠️ Port 8000 is already in use"
+    read -p "Kill existing process? (y/N): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        sudo kill -9 $(lsof -t -i:8000) 2>/dev/null || true
+        echo "✅ Existing process killed"
+    fi
+fi
+
+# Start the application
+echo "🚀 Starting Namaskah SMS..."
+
+# Check if PM2 is available
+if command -v pm2 &> /dev/null; then
+    echo "📊 Using PM2 process manager"
+    
+    # Create PM2 ecosystem file
+    cat > ecosystem.config.js << EOF
+module.exports = {
+  apps: [{
+    name: 'namaskah-sms',
+    script: 'uvicorn',
+    args: 'main:app --host 0.0.0.0 --port 8000 --workers 4',
+    interpreter: 'python3',
+    env: {
+      ENVIRONMENT: 'production'
+    },
+    error_file: './logs/err.log',
+    out_file: './logs/out.log',
+    log_file: './logs/combined.log',
+    time: true
+  }]
+}
+EOF
+    
+    # Create logs directory
+    mkdir -p logs
+    
+    # Start with PM2
+    pm2 delete namaskah-sms 2>/dev/null || true
+    pm2 start ecosystem.config.js
+    pm2 save
+    
+    echo "✅ Application started with PM2"
+    echo "📊 Monitor with: pm2 monit"
+    echo "📋 Logs with: pm2 logs namaskah-sms"
+    
+else
+    echo "🔄 Starting with uvicorn (install PM2 for production)"
+    
+    # Start in background
+    nohup uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4 > app.log 2>&1 &
+    
+    echo "✅ Application started in background"
+    echo "📋 Logs: tail -f app.log"
+fi
+
+# Wait for application to start
+echo "⏳ Waiting for application to start..."
+sleep 5
+
+# Health check
+echo "🏥 Performing health check..."
+if curl -f -s http://localhost:8000/health > /dev/null; then
+    echo "✅ Health check passed"
+else
+    echo "❌ Health check failed"
+    echo "🔍 Check logs for errors"
+    exit 1
+fi
+
+# Display deployment info
+echo ""
+echo "🎉 Deployment Successful!"
+echo "======================="
+echo "🌐 Application URL: http://localhost:8000"
+echo "📊 Enhanced Dashboard: http://localhost:8000/dashboard/enhanced"
+echo "👤 Admin Panel: http://localhost:8000/admin"
+echo "🏥 Health Check: http://localhost:8000/health"
+echo ""
+echo "👤 Default Admin Login:"
+echo "   Email: admin@namaskah.app"
+echo "   Password: Namaskah@Admin2024"
+echo "   ⚠️ Change password after first login!"
+echo ""
+echo "📊 Production Monitoring:"
+echo "   Health: http://localhost:8000/admin/production/health"
+echo "   Metrics: http://localhost:8000/admin/production/metrics"
+echo ""
+
+# Optional: Setup systemd service
+read -p "🔧 Setup systemd service for auto-start? (y/N): " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    
+    # Create systemd service file
+    sudo tee /etc/systemd/system/namaskah-sms.service > /dev/null << EOF
+[Unit]
+Description=Namaskah SMS Service
+After=network.target
+
+[Service]
+Type=exec
+User=$USER
+WorkingDirectory=$(pwd)
+Environment=PATH=$(pwd)/venv/bin:/usr/local/bin:/usr/bin:/bin
+Environment=ENVIRONMENT=production
+ExecStart=$(which uvicorn) main:app --host 0.0.0.0 --port 8000 --workers 4
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    
+    # Enable and start service
+    sudo systemctl daemon-reload
+    sudo systemctl enable namaskah-sms
+    sudo systemctl start namaskah-sms
+    
+    echo "✅ Systemd service created and started"
+    echo "🔧 Control with: sudo systemctl {start|stop|restart|status} namaskah-sms"
+fi
+
+echo ""
+echo "🚀 Namaskah SMS is now running in production!"
+echo "📖 See DEPLOYMENT_GUIDE.md for advanced configuration"

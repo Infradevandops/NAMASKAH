@@ -293,7 +293,7 @@
             </div>
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
-            <button onclick="window.location.href='/app'" class="login-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); position: relative; overflow: hidden;">Login</button>
+            <button onclick="safeCTAClick('login')" class="login-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); position: relative; overflow: hidden;">Login</button>
             <div class="theme-toggle" onclick="toggleTheme()"></div>
             <button class="hamburger-menu" onclick="toggleMenu()" style="background: none; border: none; padding: 8px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; width: 30px;">
                 <span style="width: 100%; height: 3px; background: var(--text-primary); border-radius: 2px; transition: all 0.3s;"></span>
@@ -349,11 +349,11 @@
             <h1>Namaskah SMS</h1>
             <p>Instant SMS Verification for 1,807+ Services</p>
             <p style="font-size: 0.85rem; margin-bottom: 30px;">WhatsApp • Telegram • Google • Discord • Instagram • Facebook • 1,800+ more</p>
-            <button class="cta-button pulse-btn" onclick="window.location.href='/app'">
+            <button class="cta-button pulse-btn" onclick="safeCTAClick('register')">
                 Get Started Free
             </button>
-            <button class="cta-button secondary" onclick="window.location.href='/app'">Login</button>
-            <button class="cta-button secondary" onclick="window.location.href='/app#affiliates'">Affiliate Program</button>
+            <button class="cta-button secondary" onclick="safeCTAClick('login')">Login</button>
+            <button class="cta-button secondary" onclick="safeCTAClick('affiliates')">Affiliate Program</button>
         </div>
     </div>
     
@@ -1087,6 +1087,29 @@
                 faqItem.classList.add('active');
             }
         }
+        
+        // Minimal CTA error handling
+        function safeCTAClick(action) {
+            try {
+                switch (action) {
+                    case 'login':
+                        window.location.href = '/app';
+                        break;
+                    case 'register':
+                        window.location.href = '/app#register';
+                        break;
+                    case 'affiliates':
+                        window.location.href = '/app#affiliates';
+                        break;
+                    default:
+                        window.location.href = '/app';
+                }
+            } catch (error) {
+                console.error('Navigation error:', error);
+                alert('⚠️ Navigation failed. Please try again.');
+            }
+        }
     </script>
+    <script src="/static/js/minimal-error-handling.js"></script>
 </body>
 </html>

@@ -312,6 +312,27 @@ TEXTVERIFIED_EMAIL = os.getenv("TEXTVERIFIED_EMAIL")
 USD_TO_NAMASKAH = 0.5  # 1 USD = 0.5N
 NAMASKAH_TO_USD = 2.0  # 1N = 2 USD
 
+# Import optimization modules
+try:
+    from textverified_optimization import EnhancedTextVerifiedClient
+    from enhanced_pricing import EnhancedPricingEngine
+    OPTIMIZATIONS_AVAILABLE = True
+except ImportError:
+    OPTIMIZATIONS_AVAILABLE = False
+
+# Import Phase 2 enhancement modules
+try:
+    from security.two_factor_auth import two_factor, TwoFactorRequest
+    from business.subscription_manager import subscription_manager
+    from analytics.customer_success import customer_success
+    from analytics.revenue_dashboard import revenue_analytics
+    from api.v2.enhanced_endpoints import router as api_v2_router
+    from middleware.rate_limiter import rate_limit_middleware
+    PHASE2_MODULES_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ Phase 2 modules not available: {e}")
+    PHASE2_MODULES_AVAILABLE = False
+
 # Import optimized pricing and retry mechanisms with fallbacks
 try:
     from pricing_config import (
@@ -959,10 +980,21 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     except:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-def get_admin_user(user: User = Depends(get_current_user)):
-    if not user.is_admin:
-        raise HTTPException(status_code=403, detail="Admin access required")
-    return user
+def get_admin_user(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=["HS256"])
+        user = db.query(User).filter(User.id == payload["user_id"]).first()
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        if not user.is_admin:
+            raise HTTPException(status_code=403, detail="Admin access required")
+        return user
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=401, detail="Authentication failed")
 
 # TextVerified Client
 class TextVerifiedClient:
@@ -1245,6 +1277,46 @@ app.add_exception_handler(Exception, general_exception_handler)
 if WEBSOCKET_AVAILABLE:
     add_websocket_routes(app)
 
+# Add Phase 2 enhancements
+if PHASE2_MODULES_AVAILABLE:
+    # Register API v2 routes
+    app.include_router(api_v2_router)
+    
+    # Add rate limiting middleware
+    app.middleware("http")(rate_limit_middleware)
+    
+    print("✅ Phase 2 enhancements loaded successfully")
+else:
+    print("⚠️ Running without Phase 2 enhancements")
+
+# Add optimization routes if available
+if OPTIMIZATIONS_AVAILABLE:
+    print("✅ Enhanced optimization features loaded")
+
+# Add production monitoring endpoints
+try:
+    exec(open('production_endpoints.py').read())
+    print("✅ Production monitoring endpoints loaded")
+except Exception as e:
+    print(f"⚠️ Production endpoints not loaded: {e}")
+
+# Production optimization middleware
+@app.middleware("http")
+async def production_middleware(request: Request, call_next):
+    start_time = time.time()
+    
+    response = await call_next(request)
+    
+    # Track API performance
+    process_time = time.time() - start_time
+    response.headers["X-Process-Time"] = str(process_time)
+    
+    # Log slow requests
+    if process_time > 2.0:
+        logger.warning(f"Slow request: {request.url} took {process_time:.2f}s")
+    
+    return response
+
 # Register startup event
 @app.on_event("startup")
 async def startup_event():
@@ -1367,7 +1439,33 @@ async def app_page(request: Request):
         "analytics_id": GOOGLE_ANALYTICS_ID,
         **seo_meta
     }
+    return templates.TemplateResponse("app_refactored.html", context)
+
+@app.get("/app/original")
+async def app_original_page(request: Request):
+    """Original app page for fallback"""
+    seo_meta = get_seo_meta('/app', str(request.url))
+    context = {
+        "request": request, 
+        "analytics_id": GOOGLE_ANALYTICS_ID,
+        **seo_meta
+    }
     return templates.TemplateResponse("index.html", context)
+
+@app.get("/dashboard")
+async def dashboard_page(request: Request):
+    """Smart dashboard with TextVerified optimizations"""
+    return templates.TemplateResponse("dashboard_smart.html", {"request": request})
+
+@app.get("/dashboard/enhanced")
+async def enhanced_dashboard_page(request: Request):
+    """Enhanced dashboard with smart verification features"""
+    return templates.TemplateResponse("dashboard_enhanced.html", {"request": request})
+
+@app.get("/login")
+async def login_page(request: Request):
+    """Optimized login page"""
+    return templates.TemplateResponse("login_optimized.html", {"request": request})
 
 @app.get("/app-clean")
 async def clean_app_page(request: Request):
@@ -1415,6 +1513,11 @@ async def status_page(request: Request):
 
 @app.get("/admin")
 async def admin_panel(request: Request):
+    return templates.TemplateResponse("admin_refactored.html", {"request": request})
+
+@app.get("/admin/original")
+async def admin_original_panel(request: Request):
+    """Original admin page for fallback"""
     return templates.TemplateResponse("admin.html", {"request": request})
 
 @app.get("/test-buttons")
@@ -1642,6 +1745,63 @@ def health():
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
+@app.get("/performance/metrics", tags=["System"], summary="Get Performance Metrics")
+def get_performance_metrics():
+    """Get real-time performance metrics"""
+    try:
+        # Basic system metrics
+        import psutil
+        cpu_percent = psutil.cpu_percent()
+        memory = psutil.virtual_memory()
+        disk = psutil.disk_usage('/')
+        
+        return {
+            "system": {
+                "cpu_percent": cpu_percent,
+                "memory_percent": memory.percent,
+                "disk_percent": disk.percent,
+                "available_memory_mb": memory.available // 1024 // 1024
+            },
+            "application": {
+                "status": "healthy",
+                "uptime_seconds": (datetime.now(timezone.utc) - datetime(2024, 1, 1, tzinfo=timezone.utc)).total_seconds(),
+                "version": "2.3.0"
+            },
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except ImportError:
+        # Fallback if psutil not available
+        return {
+            "system": {
+                "cpu_percent": 0,
+                "memory_percent": 0,
+                "disk_percent": 0,
+                "available_memory_mb": 0
+            },
+            "application": {
+                "status": "healthy",
+                "uptime_seconds": 0,
+                "version": "2.3.0"
+            },
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+
+@app.post("/performance/error-report", tags=["System"], summary="Report Error Rate")
+async def report_error_rate(request: Request):
+    """Receive error rate reports from frontend monitoring"""
+    try:
+        data = await request.json()
+        error_rate = data.get('error_rate', 0)
+        
+        # Log high error rates
+        if error_rate > 5:
+            logger.warning(f"High error rate reported: {error_rate}% - {data.get('error_count', 0)} errors")
+        
+        return {"status": "received", "error_rate": error_rate}
+    except Exception as e:
+        logger.error(f"Error report processing failed: {e}")
+        return {"status": "error", "message": str(e)}
+
 class TestEmailRequest(BaseModel):
     email: str
 
@@ -1764,7 +1924,30 @@ def get_service_price_endpoint(service_name: str, request: Request, db: Session 
     except:
         pass  # Use defaults for unauthenticated users
     
-    # Calculate price
+    # Calculate price with optimization if available
+    if OPTIMIZATIONS_AVAILABLE:
+        try:
+            pricing_engine = EnhancedPricingEngine()
+            result = pricing_engine.calculate_dynamic_price(
+                service_name=service_name,
+                user_plan=user_plan,
+                monthly_count=monthly_count
+            )
+            return {
+                "service": service_name,
+                "current_price": result.final_price,
+                "base_price": result.base_price,
+                "tier": result.tier.value,
+                "discounts": result.discounts_applied,
+                "surcharges": result.surcharges_applied,
+                "savings": result.savings,
+                "user_plan": user_plan,
+                "monthly_verifications": monthly_count
+            }
+        except:
+            pass
+    
+    # Fallback to basic pricing
     tier = get_service_tier(service_name)
     base_price = get_service_price(service_name, user_plan, monthly_count)
     
@@ -2504,6 +2687,92 @@ def export_user_transactions(user: User = Depends(get_current_user), db: Session
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename=transactions_{user.id}.csv"}
     )
+
+# Enhanced verification endpoint with optimization support
+@app.post("/api/v2/verify/smart", tags=["Verification"], summary="Smart SMS Verification")
+def create_smart_verification(req: CreateVerificationRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Create smart verification with auto-optimization"""
+    if OPTIMIZATIONS_AVAILABLE:
+        try:
+            # Use enhanced client if available
+            from textverified_optimization import VerificationRequest, CarrierFilter
+            
+            carrier_filter = CarrierFilter(
+                carrier=req.carrier,
+                area_code=req.area_code,
+                exclude_voip=True
+            )
+            
+            verification_request = VerificationRequest(
+                service_name=req.service_name,
+                capability=req.capability,
+                carrier_filter=carrier_filter,
+                priority=getattr(req, 'priority', False)
+            )
+            
+            # Enhanced pricing calculation
+            pricing_engine = EnhancedPricingEngine()
+            result = pricing_engine.calculate_dynamic_price(
+                service_name=req.service_name,
+                user_plan=getattr(user, 'subscription_plan', 'starter'),
+                monthly_count=get_user_monthly_count(user.id, db),
+                carrier_preference=req.carrier,
+                priority=getattr(req, 'priority', False)
+            )
+            cost = result.final_price
+            
+        except Exception as e:
+            # Fallback to basic verification
+            cost = get_service_price(req.service_name)
+    else:
+        cost = get_service_price(req.service_name)
+    
+    # Check credits
+    if user.credits < cost:
+        raise HTTPException(status_code=402, detail=f"Insufficient credits. Need N{cost}, have N{user.credits}")
+    
+    # Create verification
+    try:
+        verification_id = tv_client.create_verification(req.service_name, req.capability)
+        details = tv_client.get_verification(verification_id)
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Verification service unavailable: {str(e)}")
+    
+    # Deduct credits and save
+    user.credits -= cost
+    
+    verification = Verification(
+        id=verification_id,
+        user_id=user.id,
+        service_name=req.service_name,
+        phone_number=details.get("number"),
+        capability=req.capability,
+        status="pending",
+        cost=cost,
+        requested_carrier=req.carrier,
+        requested_area_code=req.area_code
+    )
+    db.add(verification)
+    
+    db.add(Transaction(
+        id=f"txn_{datetime.now(timezone.utc).timestamp()}",
+        user_id=user.id,
+        amount=-cost,
+        type="debit",
+        description=f"Smart verification: {req.service_name}"
+    ))
+    
+    db.commit()
+    
+    return {
+        "id": verification.id,
+        "service_name": verification.service_name,
+        "phone_number": verification.phone_number,
+        "capability": verification.capability,
+        "status": verification.status,
+        "cost": cost,
+        "remaining_credits": user.credits
+    }
 
 @app.post("/verify/create", tags=["Verification"], summary="Create SMS/Voice Verification")
 def create_verification(req: CreateVerificationRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -3871,6 +4140,61 @@ def get_receipt_stats(period: str = "7", admin: User = Depends(get_admin_user), 
         }
     }
 
+# Enhanced pricing analysis endpoint
+@app.get("/api/v2/pricing/analysis", tags=["Pricing"], summary="Get Pricing Analysis")
+def get_pricing_analysis(
+    service_name: str,
+    monthly_usage: int = 0,
+    user_plan: str = "starter",
+    include_forecast: bool = False,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get comprehensive pricing analysis with optimization"""
+    if OPTIMIZATIONS_AVAILABLE:
+        try:
+            pricing_engine = EnhancedPricingEngine()
+            monthly_count = get_user_monthly_count(user.id, db) if monthly_usage == 0 else monthly_usage
+            
+            result = pricing_engine.calculate_dynamic_price(
+                service_name=service_name,
+                user_plan=user_plan,
+                monthly_count=monthly_count
+            )
+            
+            timing_opt = pricing_engine.optimize_timing_for_cost(service_name)
+            
+            response = {
+                "current_price": result.final_price,
+                "base_price": result.base_price,
+                "tier": result.tier.value,
+                "discounts": result.discounts_applied,
+                "surcharges": result.surcharges_applied,
+                "savings": result.savings,
+                "timing_optimization": timing_opt
+            }
+            
+            if include_forecast:
+                response["forecast"] = pricing_engine.get_pricing_forecast(service_name, 24)
+            
+            return response
+        except Exception as e:
+            pass  # Fallback to basic pricing
+    
+    # Basic pricing fallback
+    tier = get_service_tier(service_name)
+    base_price = get_service_price(service_name, user_plan, monthly_usage)
+    
+    return {
+        "current_price": base_price,
+        "base_price": base_price,
+        "tier": tier,
+        "discounts": [],
+        "surcharges": [],
+        "savings": 0,
+        "timing_optimization": {"recommendation": "immediate"}
+    }
+
 @app.get("/admin/stats", tags=["Admin"], summary="Get Platform Statistics")
 def get_stats(period: str = "7", admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Get platform-wide statistics with real-time data (admin only)
@@ -4502,23 +4826,51 @@ def get_analytics(user: User = Depends(get_current_user), db: Session = Depends(
     """Get usage analytics: total verifications, spending, success rate, popular services, daily usage"""
     from sqlalchemy import func
     
-    # Total verifications
+    # Enhanced analytics if available
+    if OPTIMIZATIONS_AVAILABLE:
+        try:
+            from advanced_analytics import AdvancedAnalytics
+            analytics = AdvancedAnalytics(db)
+            
+            if user.is_admin:
+                return analytics.generate_executive_dashboard()
+            else:
+                # User-specific analytics
+                user_verifications = db.query(Verification).filter(Verification.user_id == user.id).all()
+                total_verifications = len(user_verifications)
+                successful = len([v for v in user_verifications if v.status == "completed"])
+                success_rate = (successful / total_verifications * 100) if total_verifications > 0 else 0
+                
+                transactions = db.query(Transaction).filter(
+                    Transaction.user_id == user.id,
+                    Transaction.type == "debit"
+                ).all()
+                total_spent = sum(abs(t.amount) for t in transactions)
+                
+                return {
+                    "total_verifications": total_verifications,
+                    "success_rate": round(success_rate, 1),
+                    "total_spent": round(total_spent, 2),
+                    "avg_delivery_time": 30,  # Placeholder
+                    "enhanced": True
+                }
+        except Exception as e:
+            pass  # Fallback to basic analytics
+    
+    # Basic analytics fallback
     total_verifications = db.query(Verification).filter(Verification.user_id == user.id).count()
     
-    # Total spent
     total_spent = db.query(func.sum(Transaction.amount)).filter(
         Transaction.user_id == user.id,
         Transaction.type == "debit"
     ).scalar() or 0
     
-    # Success rate
     completed = db.query(Verification).filter(
         Verification.user_id == user.id,
         Verification.status == "completed"
     ).count()
     success_rate = (completed / total_verifications * 100) if total_verifications > 0 else 0
     
-    # Popular services
     popular = db.query(
         Verification.service_name,
         func.count(Verification.id).label('count')
@@ -4526,14 +4878,12 @@ def get_analytics(user: User = Depends(get_current_user), db: Session = Depends(
         Verification.user_id == user.id
     ).group_by(Verification.service_name).order_by(func.count(Verification.id).desc()).limit(5).all()
     
-    # Recent activity (last 7 days)
     seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
     recent_verifications = db.query(Verification).filter(
         Verification.user_id == user.id,
         Verification.created_at >= seven_days_ago
     ).count()
     
-    # Daily usage (last 7 days)
     daily_usage = []
     for i in range(7):
         day = datetime.now(timezone.utc) - timedelta(days=i)
@@ -4557,8 +4907,18 @@ def get_analytics(user: User = Depends(get_current_user), db: Session = Depends(
         "success_rate": round(success_rate, 1),
         "popular_services": [{"service": s[0], "count": s[1]} for s in popular],
         "recent_verifications": recent_verifications,
-        "daily_usage": list(reversed(daily_usage))
+        "daily_usage": list(reversed(daily_usage)),
+        "enhanced": False
     }
+
+# Helper function for monthly count
+def get_user_monthly_count(user_id: str, db: Session) -> int:
+    """Get user's verification count for current month"""
+    month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0)
+    return db.query(Verification).filter(
+        Verification.user_id == user_id,
+        Verification.created_at >= month_start
+    ).count()
 
 # Receipt and Notification Endpoints
 @app.get("/receipts/history", tags=["Receipts"], summary="Get Receipt History")

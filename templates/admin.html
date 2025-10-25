@@ -392,30 +392,42 @@
         const headers = { 'Authorization': `Bearer ${token}` };
 
         async function loadStats() {
-            try {
-                const res = await fetch(`${API_BASE}/admin/stats?period=7`, { headers });
-                const data = await res.json();
-                
-                document.getElementById('stat-users').textContent = data.total_users;
-                document.getElementById('stat-users-change').textContent = `+${data.new_users} this week`;
-                document.getElementById('stat-revenue').textContent = `N${data.total_revenue.toFixed(2)}`;
-                document.getElementById('stat-verifications').textContent = data.total_verifications;
-                document.getElementById('stat-verifications-change').textContent = `${data.pending_verifications} pending`;
-                document.getElementById('stat-success').textContent = `${data.success_rate}%`;
-            } catch (error) {
-                console.error('Stats error:', error);
+            const res = await fetch(`${API_BASE}/admin/stats?period=7`, { headers });
+            
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}: ${res.statusText}`);
             }
+            
+            const data = await res.json();
+            
+            // Safely update DOM elements
+            const updates = [
+                ['stat-users', data.total_users || 0],
+                ['stat-users-change', `+${data.new_users || 0} this week`],
+                ['stat-revenue', `N${(data.total_revenue || 0).toFixed(2)}`],
+                ['stat-verifications', data.total_verifications || 0],
+                ['stat-verifications-change', `${data.pending_verifications || 0} pending`],
+                ['stat-success', `${data.success_rate || 0}%`]
+            ];
+            
+            updates.forEach(([id, value]) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = value;
+                }
+            });
         }
 
         async function loadUsers() {
-            try {
-                const res = await fetch(`${API_BASE}/admin/users?limit=100`, { headers });
-                const data = await res.json();
-                allUsers = data.users;
-                renderUsers(allUsers);
-            } catch (error) {
-                console.error('Users error:', error);
+            const res = await fetch(`${API_BASE}/admin/users?limit=100`, { headers });
+            
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}: ${res.statusText}`);
             }
+            
+            const data = await res.json();
+            allUsers = data.users || [];
+            renderUsers(allUsers);
         }
 
         function getUserPlan(user) {
@@ -481,49 +493,72 @@
             const amount = parseFloat(document.getElementById('fund-amount').value);
             const reason = document.getElementById('fund-reason').value;
 
-            if (!amount || amount <= 0) {
-                alert('Please enter a valid amount');
+            if (!userId) {
+                alert('❌ User ID missing');
                 return;
             }
 
-            try {
+            if (!amount || amount <= 0 || isNaN(amount)) {
+                alert('❌ Please enter a valid amount');
+                return;
+            }
+
+            if (amount > 10000) {
+                alert('❌ Amount too large. Maximum: N10,000');
+                return;
+            }
+
+            await safeAPICall(async () => {
                 const endpoint = action === 'credit' ? 'add' : 'deduct';
                 const res = await fetch(`${API_BASE}/admin/credits/${endpoint}`, {
                     method: 'POST',
                     headers: { ...headers, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: userId, amount })
+                    body: JSON.stringify({ user_id: userId, amount, reason })
                 });
 
-                if (res.ok) {
-                    alert(`✅ Successfully ${action === 'credit' ? 'added' : 'deducted'} N${amount}`);
-                    closeModal('fund-modal');
-                    loadUsers();
-                } else {
-                    alert('❌ Operation failed');
+                if (!res.ok) {
+                    const errorData = await res.json().catch(() => ({}));
+                    throw new Error(errorData.detail || `HTTP ${res.status}`);
                 }
-            } catch (error) {
-                alert('❌ Error: ' + error.message);
-            }
+
+                alert(`✅ Successfully ${action === 'credit' ? 'added' : 'deducted'} N${amount}`);
+                closeModal('fund-modal');
+                
+                // Clear form
+                document.getElementById('fund-amount').value = '';
+                document.getElementById('fund-reason').value = '';
+                
+                await loadUsersWithRetry();
+            }, 'processing fund operation');
         }
 
         async function viewUser(userId) {
-            try {
+            await safeAPICall(async () => {
                 const res = await fetch(`${API_BASE}/admin/users/${userId}`, { headers });
-                const data = await res.json();
                 
-                document.getElementById('user-details').innerHTML = `
-                    <p><strong>Email:</strong> ${data.user.email}</p>
-                    <p><strong>Credits:</strong> N${data.user.credits}</p>
-                    <p><strong>Free Verifications:</strong> ${data.user.free_verifications}</p>
-                    <p><strong>Total Verifications:</strong> ${data.stats.total_verifications}</p>
-                    <p><strong>Total Spent:</strong> N${data.stats.total_spent}</p>
-                    <p><strong>Total Funded:</strong> N${data.stats.total_funded}</p>
-                    <p><strong>Joined:</strong> ${new Date(data.user.created_at).toLocaleString()}</p>
-                `;
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                }
+                
+                const data = await res.json();
+                const user = data.user || {};
+                const stats = data.stats || {};
+                
+                const userDetails = document.getElementById('user-details');
+                if (userDetails) {
+                    userDetails.innerHTML = `
+                        <p><strong>Email:</strong> ${user.email || 'N/A'}</p>
+                        <p><strong>Credits:</strong> N${(user.credits || 0).toFixed(2)}</p>
+                        <p><strong>Free Verifications:</strong> ${user.free_verifications || 0}</p>
+                        <p><strong>Total Verifications:</strong> ${stats.total_verifications || 0}</p>
+                        <p><strong>Total Spent:</strong> N${(stats.total_spent || 0).toFixed(2)}</p>
+                        <p><strong>Total Funded:</strong> N${(stats.total_funded || 0).toFixed(2)}</p>
+                        <p><strong>Joined:</strong> ${user.created_at ? new Date(user.created_at).toLocaleString() : 'N/A'}</p>
+                    `;
+                }
+                
                 document.getElementById('user-modal').classList.add('active');
-            } catch (error) {
-                alert('Error loading user details');
-            }
+            }, 'loading user details');
         }
 
         function closeModal(modalId) {
@@ -543,46 +578,58 @@
         }
 
         async function loadVerifications() {
-            try {
+            await safeAPICall(async () => {
                 const res = await fetch(`${API_BASE}/admin/verifications/active`, { headers });
+                
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                }
+                
                 const data = await res.json();
+                const verifications = data.verifications || [];
                 
                 const tbody = document.getElementById('verifications-table');
-                tbody.innerHTML = data.verifications.map(v => `
-                    <tr>
-                        <td>${v.user_email}</td>
-                        <td>${v.service_name}</td>
-                        <td>${v.phone_number}</td>
-                        <td>${v.status}</td>
-                        <td>N${v.cost}</td>
-                        <td>${new Date(v.created_at).toLocaleString()}</td>
-                        <td><button class="btn btn-danger" onclick="cancelVerification('${v.id}')">Cancel</button></td>
-                    </tr>
-                `).join('');
-            } catch (error) {
-                console.error('Verifications error:', error);
-            }
+                if (tbody) {
+                    tbody.innerHTML = verifications.map(v => `
+                        <tr>
+                            <td>${v.user_email || 'N/A'}</td>
+                            <td>${v.service_name || 'N/A'}</td>
+                            <td>${v.phone_number || 'N/A'}</td>
+                            <td>${v.status || 'N/A'}</td>
+                            <td>N${(v.cost || 0).toFixed(2)}</td>
+                            <td>${v.created_at ? new Date(v.created_at).toLocaleString() : 'N/A'}</td>
+                            <td><button class="btn btn-danger" onclick="cancelVerification('${v.id}')">Cancel</button></td>
+                        </tr>
+                    `).join('') || '<tr><td colspan="7" style="text-align: center; color: #6b7280;">No active verifications</td></tr>';
+                }
+            }, 'loading verifications');
         }
 
         async function loadPayments() {
-            try {
+            await safeAPICall(async () => {
                 const res = await fetch(`${API_BASE}/admin/payment-logs`, { headers });
+                
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                }
+                
                 const data = await res.json();
+                const logs = (data.logs || []).slice(0, 50);
                 
                 const tbody = document.getElementById('payments-table');
-                tbody.innerHTML = data.logs.slice(0, 50).map(p => `
-                    <tr>
-                        <td>${p.email}</td>
-                        <td>N${p.namaskah_amount}</td>
-                        <td>Paystack</td>
-                        <td>${p.status}</td>
-                        <td>${p.reference}</td>
-                        <td>${new Date(p.created_at).toLocaleString()}</td>
-                    </tr>
-                `).join('');
-            } catch (error) {
-                console.error('Payments error:', error);
-            }
+                if (tbody) {
+                    tbody.innerHTML = logs.map(p => `
+                        <tr>
+                            <td>${p.email || 'N/A'}</td>
+                            <td>N${(p.namaskah_amount || 0).toFixed(2)}</td>
+                            <td>Paystack</td>
+                            <td>${p.status || 'N/A'}</td>
+                            <td>${p.reference || 'N/A'}</td>
+                            <td>${p.created_at ? new Date(p.created_at).toLocaleString() : 'N/A'}</td>
+                        </tr>
+                    `).join('') || '<tr><td colspan="6" style="text-align: center; color: #6b7280;">No payment logs</td></tr>';
+                }
+            }, 'loading payments');
         }
 
         function loadAnalytics() {
@@ -596,10 +643,71 @@
             window.location.reload();
         }
 
-        // Load data on page load
-        loadStats();
-        loadUsers();
-        setInterval(loadStats, 30000); // Refresh every 30s
+        // Enhanced error handling for admin functions
+        async function safeAPICall(apiFunction, context = '') {
+            try {
+                await apiFunction();
+            } catch (error) {
+                console.error(`Admin API Error ${context}:`, error);
+                
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    alert('🌐 Network error. Check your connection.');
+                } else if (error.status === 401) {
+                    alert('🔐 Admin session expired. Please login again.');
+                    logout();
+                } else if (error.status === 403) {
+                    alert('⛔ Access denied. Admin privileges required.');
+                    logout();
+                } else if (error.status >= 500) {
+                    alert('🔧 Server error. Please try again later.');
+                } else {
+                    alert('❌ Operation failed. Please try again.');
+                }
+            }
+        }
+        
+        // Enhanced load functions with error handling
+        async function loadStatsWithRetry() {
+            await safeAPICall(loadStats, 'loading stats');
+        }
+        
+        async function loadUsersWithRetry() {
+            await safeAPICall(loadUsers, 'loading users');
+        }
+        
+        // Auto-refresh with error handling
+        let refreshInterval;
+        function startAutoRefresh() {
+            refreshInterval = setInterval(async () => {
+                try {
+                    await loadStatsWithRetry();
+                } catch (error) {
+                    console.error('Auto-refresh error:', error);
+                }
+            }, 30000);
+        }
+        
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+        }
+        
+        // Enhanced visibility change handling
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopAutoRefresh();
+            } else {
+                startAutoRefresh();
+                loadStatsWithRetry();
+            }
+        });
+        
+        // Load data on page load with error handling
+        loadStatsWithRetry();
+        loadUsersWithRetry();
+        startAutoRefresh();
     </script>
 </body>
 </html>
