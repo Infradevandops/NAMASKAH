@@ -11,22 +11,22 @@ class SimpleRateLimiter:
         self.requests = {}
         self.limit = 100
         self.window = 60
-    
+
     def is_allowed(self, client_ip: str) -> bool:
         now = time.time()
         window_start = now - self.window
-        
+
         if client_ip in self.requests:
             self.requests[client_ip] = [
-                req_time for req_time in self.requests[client_ip] 
+                req_time for req_time in self.requests[client_ip]
                 if req_time > window_start
             ]
         else:
             self.requests[client_ip] = []
-        
+
         if len(self.requests[client_ip]) >= self.limit:
             return False
-        
+
         self.requests[client_ip].append(now)
         return True
 
@@ -37,15 +37,15 @@ rate_limiter = SimpleRateLimiter()
 def sanitize_input(input_str: str) -> str:
     if not input_str:
         return ""
-    
+
     import re
     # Remove dangerous patterns
     dangerous = [r"<script[^>]*>.*?</script>", r"javascript:", r"on\w+\s*="]
     cleaned = input_str
-    
+
     for pattern in dangerous:
         cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE | re.DOTALL)
-    
+
     return cleaned.strip()
 
 
@@ -62,7 +62,7 @@ from dotenv import load_dotenv
 # Import security modules
 try:
     from security_utils import (
-        hash_password, verify_password, validate_password, 
+        hash_password, verify_password, validate_password,
         sanitize_input, validate_email, generate_secure_token, rate_limiter
     )
     from middleware import SecurityHeadersMiddleware, RequestLoggingMiddleware, RateLimitMiddleware
@@ -144,16 +144,16 @@ try:
 except ImportError:
     import logging
     logger = logging.getLogger(__name__)
-    
+
     async def http_exception_handler(request, exc):
         return {"error": "Internal server error", "message": "An unexpected error occurred. Please try again later.", "timestamp": datetime.now(timezone.utc).isoformat()}
-    
+
     async def validation_exception_handler(request, exc):
         return {"error": "Validation error", "message": str(exc)}
-    
+
     async def general_exception_handler(request, exc):
         return {"error": "Internal server error", "message": "An unexpected error occurred. Please try again later.", "timestamp": datetime.now(timezone.utc).isoformat()}
-    
+
     def log_transaction(*args, **kwargs): pass
     def log_security_event(*args, **kwargs): pass
 
@@ -273,7 +273,7 @@ SEO_CONFIG = {
 def get_seo_meta(path: str, request_url: str = None):
     """Get SEO metadata for a given path"""
     config = SEO_CONFIG.get(path, SEO_CONFIG['/'])  # Default to homepage config
-    
+
     return {
         'title': config.get('title', 'Namaskah SMS'),
         'description': config.get('description', 'Instant SMS verification service'),
@@ -429,14 +429,14 @@ exchange_rate_cache = {"rate": 1478.24, "last_updated": None}
 def get_usd_to_ngn_rate():
     """Get current USD to NGN exchange rate with 1-hour caching"""
     from datetime import datetime, timedelta, timezone
-    
+
     now = datetime.now(timezone.utc)
-    
+
     # Check if cache is valid (less than 1 hour old)
     if exchange_rate_cache["last_updated"] and \
        (now - exchange_rate_cache["last_updated"]) < timedelta(hours=1):
         return exchange_rate_cache["rate"]
-    
+
     # Fetch new rate
     try:
         response = requests.get("https://api.exchangerate-api.com/v4/latest/USD", timeout=5)
@@ -449,7 +449,7 @@ def get_usd_to_ngn_rate():
             return new_rate
     except Exception as e:
         print(f"⚠️ Exchange rate API error: {e}")
-    
+
     # Return cached/fallback rate
     return exchange_rate_cache["rate"]
 
@@ -696,34 +696,34 @@ def create_indexes():
             # User indexes
             conn.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_users_referral_code ON users(referral_code)")
-            
+
             # Verification indexes
             conn.execute("CREATE INDEX IF NOT EXISTS idx_verifications_user_id ON verifications(user_id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_verifications_status ON verifications(status)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_verifications_created_at ON verifications(created_at)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_verifications_service_name ON verifications(service_name)")
-            
+
             # Transaction indexes
             conn.execute("CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(type)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_transactions_created_at ON transactions(created_at)")
-            
+
             # Rental indexes
             conn.execute("CREATE INDEX IF NOT EXISTS idx_rentals_user_id ON number_rentals(user_id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_rentals_status ON number_rentals(status)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_rentals_expires_at ON number_rentals(expires_at)")
-            
+
             # Receipt and notification indexes
             conn.execute("CREATE INDEX IF NOT EXISTS idx_receipts_user_id ON verification_receipts(user_id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_receipts_verification_id ON verification_receipts(verification_id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON in_app_notifications(user_id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_notifications_read ON in_app_notifications(is_read)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_notification_prefs_user_id ON notification_preferences(user_id)")
-            
+
             # Service status indexes
             conn.execute("CREATE INDEX IF NOT EXISTS idx_service_status_name ON service_status(service_name)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_service_status_checked ON service_status(last_checked)")
-            
+
             conn.commit()
             print("✅ Database indexes created")
     except Exception as e:
@@ -743,7 +743,7 @@ def create_admin_if_not_exists():
             if not ADMIN_PASSWORD:
                 print(f"⚠️ Using default admin password. Set ADMIN_PASSWORD environment variable for production security.")
                 admin_password = "Namaskah@Admin2024"
-            
+
             admin = User(
                 id=f"user_{datetime.now(timezone.utc).timestamp()}",
                 email="admin@namaskah.app",
@@ -779,12 +779,12 @@ async def check_textverified_health_loop():
             except Exception as e:
                 status = "down"
                 logger.error(f"❌ TextVerified API: Down - {str(e)}")
-            
+
             # Update or create status record
             status_record = db.query(ServiceStatus).filter(
                 ServiceStatus.service_name == "textverified_api"
             ).first()
-            
+
             if status_record:
                 status_record.status = status
                 status_record.last_checked = datetime.now(timezone.utc)
@@ -796,12 +796,12 @@ async def check_textverified_health_loop():
                     success_rate=100.0 if status == "operational" else 0.0
                 )
                 db.add(status_record)
-            
+
             db.commit()
             db.close()
         except Exception as e:
             logger.error(f"Health check error: {e}")
-        
+
         # Wait 5 minutes
         await asyncio.sleep(300)
 
@@ -812,17 +812,17 @@ def send_email(to_email: str, subject: str, body: str):
         import smtplib
         from email.mime.text import MIMEText
         from email.mime.multipart import MIMEMultipart
-        
+
         if not SMTP_HOST or not SMTP_USER or not SMTP_PASSWORD:
             print(f"⚠️ Email not configured, skipping: {subject}")
             return False
-        
+
         msg = MIMEMultipart()
         msg['From'] = FROM_EMAIL
         msg['To'] = to_email
         msg['Subject'] = subject
         msg.attach(MIMEText(body, 'html'))
-        
+
         server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
         server.starttls()
         server.login(SMTP_USER, SMTP_PASSWORD)
@@ -902,7 +902,7 @@ class CreateVerificationRequest(BaseModel):
     capability: str = "sms"
     area_code: str = None
     carrier: str = None
-    
+
     class Config:
         schema_extra = {
             "example": {
@@ -934,7 +934,7 @@ class CreateRentalRequest(BaseModel):
     auto_extend: bool = False
     area_code: str = None
     carrier: str = None
-    
+
     class Config:
         schema_extra = {
             "example": {
@@ -977,7 +977,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
         return user
-    except:
+    except Exception:
         raise HTTPException(status_code=401, detail="Invalid token")
 
 def get_admin_user(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
@@ -1011,7 +1011,7 @@ class TextVerifiedClient:
         if self.token and not force_refresh:
             if self.token_expires and datetime.now(timezone.utc) < self.token_expires:
                 return self.token
-        
+
         # Get new token
         try:
             headers = {"X-API-KEY": self.api_key, "X-API-USERNAME": self.email}
@@ -1030,13 +1030,13 @@ class TextVerifiedClient:
     def create_verification(self, service_name: str, capability: str = "sms", area_code: str = None, carrier: str = None):
         """Create verification with automatic token refresh and retry on 401"""
         payload = {"serviceName": service_name, "capability": capability}
-        
+
         # Add filters if provided
         if area_code:
             payload["areaCode"] = area_code
         if carrier:
             payload["carrier"] = carrier
-        
+
         # Try with current token
         try:
             headers = {"Authorization": f"Bearer {self.get_token()}"}
@@ -1109,14 +1109,14 @@ class TextVerifiedClient:
         """Cancel verification with automatic token refresh on 401"""
         try:
             headers = {"Authorization": f"Bearer {self.get_token()}"}
-            r = requests.post(f"{self.base_url}/api/pub/v2/verifications/{verification_id}/cancel", 
+            r = requests.post(f"{self.base_url}/api/pub/v2/verifications/{verification_id}/cancel",
                             headers=headers, timeout=10)
             r.raise_for_status()
             return True
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 401:
                 headers = {"Authorization": f"Bearer {self.get_token(force_refresh=True)}"}
-                r = requests.post(f"{self.base_url}/api/pub/v2/verifications/{verification_id}/cancel", 
+                r = requests.post(f"{self.base_url}/api/pub/v2/verifications/{verification_id}/cancel",
                                 headers=headers, timeout=10)
                 r.raise_for_status()
                 return True
@@ -1134,18 +1134,18 @@ app = FastAPI(
 @app.middleware("http")
 async def security_middleware(request: Request, call_next):
     client_ip = request.client.host
-    
+
     # Rate limiting
     if not rate_limiter.is_allowed(client_ip):
         return JSONResponse({"error": "Rate limit exceeded"}, 429)
-    
+
     response = await call_next(request)
-    
+
     # Security headers
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
-    
+
     return response
 
 
@@ -1157,21 +1157,21 @@ Namaskah SMS provides temporary phone numbers for SMS verification across 1,807+
 # Add security middleware with proper integration
 if SECURITY_PATCHES_AVAILABLE:
     from fastapi.middleware.base import BaseHTTPMiddleware
-    
+
     class SecurityMiddleware(BaseHTTPMiddleware):
         async def dispatch(self, request, call_next):
             # Rate limiting
             response = rate_limit_middleware(request, call_next)
             if hasattr(response, 'status_code') and response.status_code == 429:
                 return response
-            
+
             # Process request
             response = await call_next(request)
-            
+
             # Add security headers
             response = add_security_headers(response)
             return response
-    
+
     app.add_middleware(SecurityMiddleware)
 
 - 🔐 JWT & Google OAuth authentication
@@ -1281,10 +1281,10 @@ if WEBSOCKET_AVAILABLE:
 if PHASE2_MODULES_AVAILABLE:
     # Register API v2 routes
     app.include_router(api_v2_router)
-    
+
     # Add rate limiting middleware
     app.middleware("http")(rate_limit_middleware)
-    
+
     print("✅ Phase 2 enhancements loaded successfully")
 else:
     print("⚠️ Running without Phase 2 enhancements")
@@ -1304,17 +1304,17 @@ except Exception as e:
 @app.middleware("http")
 async def production_middleware(request: Request, call_next):
     start_time = time.time()
-    
+
     response = await call_next(request)
-    
+
     # Track API performance
     process_time = time.time() - start_time
     response.headers["X-Process-Time"] = str(process_time)
-    
+
     # Log slow requests
     if process_time > 2.0:
         logger.warning(f"Slow request: {request.url} took {process_time:.2f}s")
-    
+
     return response
 
 # Register startup event
@@ -1323,12 +1323,12 @@ async def startup_event():
     """Run background tasks on startup"""
     import asyncio
     asyncio.create_task(check_textverified_health_loop())
-    
+
     # Start WebSocket background tasks
     if WEBSOCKET_AVAILABLE:
         from websocket_realtime import sms_checker_task
         asyncio.create_task(sms_checker_task())
-    
+
     # Auto-fix admin password
     try:
         db = SessionLocal()
@@ -1337,7 +1337,7 @@ async def startup_event():
             try:
                 bcrypt.checkpw(b"Namaskah@Admin2024", admin.password_hash.encode('utf-8'))
                 print("✅ Admin password OK")
-            except:
+            except Exception:
                 admin.password_hash = bcrypt.hashpw("Namaskah@Admin2024".encode(), bcrypt.gensalt()).decode()
                 admin.is_admin = True
                 db.commit()
@@ -1372,7 +1372,7 @@ async def tracking_script():
     script = """
 (function() {
     const API_BASE = '';
-    
+
     function track(action, element, details) {
         const token = localStorage.getItem('token') || localStorage.getItem('admin_token');
         fetch(API_BASE + '/track', {
@@ -1389,10 +1389,10 @@ async def tracking_script():
             })
         }).catch(() => {});
     }
-    
+
     // Track page view
     track('page_view', null, document.title);
-    
+
     // Track button clicks
     document.addEventListener('click', function(e) {
         const target = e.target.closest('button, a, [onclick]');
@@ -1402,14 +1402,14 @@ async def tracking_script():
             track('click', id || text, text);
         }
     });
-    
+
     // Track form submissions
     document.addEventListener('submit', function(e) {
         const form = e.target;
         const formId = form.id || form.action;
         track('form_submit', formId, 'Form submitted');
     });
-    
+
     // Track errors
     window.addEventListener('error', function(e) {
         track('error', 'window', e.message);
@@ -1423,7 +1423,7 @@ async def tracking_script():
 async def root(request: Request):
     seo_meta = get_seo_meta('/', str(request.url))
     context = {
-        "request": request, 
+        "request": request,
         "analytics_id": GOOGLE_ANALYTICS_ID,
         **seo_meta
     }
@@ -1435,7 +1435,7 @@ async def root(request: Request):
 async def app_page(request: Request):
     seo_meta = get_seo_meta('/app', str(request.url))
     context = {
-        "request": request, 
+        "request": request,
         "analytics_id": GOOGLE_ANALYTICS_ID,
         **seo_meta
     }
@@ -1446,7 +1446,7 @@ async def app_original_page(request: Request):
     """Original app page for fallback"""
     seo_meta = get_seo_meta('/app', str(request.url))
     context = {
-        "request": request, 
+        "request": request,
         "analytics_id": GOOGLE_ANALYTICS_ID,
         **seo_meta
     }
@@ -1481,7 +1481,7 @@ async def simple_dashboard(request: Request):
 async def api_docs_page(request: Request):
     seo_meta = get_seo_meta('/api-docs', str(request.url))
     context = {
-        "request": request, 
+        "request": request,
         "analytics_id": GOOGLE_ANALYTICS_ID,
         **seo_meta
     }
@@ -1583,7 +1583,7 @@ async def manifest():
 async def generate_sitemap():
     """Generate dynamic XML sitemap for SEO"""
     from datetime import datetime
-    
+
     # Define all public pages with priorities and change frequencies
     pages = [
         {
@@ -1659,11 +1659,11 @@ async def generate_sitemap():
             'lastmod': '2025-01-19'
         }
     ]
-    
+
     # Generate XML
     xml_content = '<?xml version="1.0" encoding="UTF-8"?>\n'
     xml_content += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-    
+
     for page in pages:
         xml_content += f'  <url>\n'
         xml_content += f'    <loc>{page["url"]}</loc>\n'
@@ -1671,9 +1671,9 @@ async def generate_sitemap():
         xml_content += f'    <changefreq>{page["changefreq"]}</changefreq>\n'
         xml_content += f'    <priority>{page["priority"]}</priority>\n'
         xml_content += f'  </url>\n'
-    
+
     xml_content += '</urlset>'
-    
+
     return Response(content=xml_content, media_type="application/xml")
 
 @app.get("/robots.txt")
@@ -1694,27 +1694,27 @@ async def websocket_endpoint(websocket: WebSocket, token: str = None):
     if not token:
         await websocket.close(code=4001, reason="Authentication required")
         return
-    
+
     try:
         # Verify token
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         user_id = payload["user_id"]
-        
+
         # Connect user
         await manager.connect(websocket, user_id)
-        
+
         try:
             while True:
                 # Listen for messages
                 data = await websocket.receive_json()
-                
+
                 # Handle ping/pong for heartbeat
                 if data.get("type") == "ping":
                     await websocket.send_json({"type": "pong"})
-                    
+
         except WebSocketDisconnect:
             manager.disconnect(user_id)
-            
+
     except jwt.InvalidTokenError:
         await websocket.close(code=4001, reason="Invalid token")
     except Exception as e:
@@ -1733,7 +1733,7 @@ def health():
     websocket_connections = 0
     if WEBSOCKET_AVAILABLE:
         websocket_connections = len(manager.active_connections)
-    
+
     return {
         "status": "healthy",
         "service": "namaskah-sms",
@@ -1754,7 +1754,7 @@ def get_performance_metrics():
         cpu_percent = psutil.cpu_percent()
         memory = psutil.virtual_memory()
         disk = psutil.disk_usage('/')
-        
+
         return {
             "system": {
                 "cpu_percent": cpu_percent,
@@ -1792,11 +1792,11 @@ async def report_error_rate(request: Request):
     try:
         data = await request.json()
         error_rate = data.get('error_rate', 0)
-        
+
         # Log high error rates
         if error_rate > 5:
             logger.warning(f"High error rate reported: {error_rate}% - {data.get('error_count', 0)} errors")
-        
+
         return {"status": "received", "error_rate": error_rate}
     except Exception as e:
         logger.error(f"Error report processing failed: {e}")
@@ -1826,7 +1826,7 @@ def emergency_admin_reset(secret: str, db: Session = Depends(get_db)):
     """Emergency endpoint to reset admin password - remove after use"""
     if secret != "NAMASKAH_EMERGENCY_2024":
         raise HTTPException(status_code=403, detail="Invalid secret")
-    
+
     try:
         admin = db.query(User).filter(User.email == "admin@namaskah.app").first()
         if admin:
@@ -1855,7 +1855,7 @@ def emergency_admin_reset(secret: str, db: Session = Depends(get_db)):
 @app.get("/services/list", tags=["System"], summary="List All Services")
 def get_services_list():
     """Get complete list of supported services with categories and pricing tiers
-    
+
     Returns:
     - categories: Services grouped by category
     - tiers: Services grouped by pricing tier
@@ -1865,7 +1865,7 @@ def get_services_list():
         import json
         with open('services_categorized.json', 'r') as f:
             data = json.load(f)
-        
+
         # Add tier information with dynamic pricing
         data['tiers'] = {
             tier_id: {
@@ -1877,7 +1877,7 @@ def get_services_list():
             }
             for tier_id, tier_data in SERVICE_TIERS.items()
         }
-        
+
         # Add pricing plans info
         data['plans'] = {
             plan_id: {
@@ -1887,9 +1887,9 @@ def get_services_list():
             }
             for plan_id, plan_data in SUBSCRIPTION_PLANS.items()
         }
-        
+
         return data
-    except:
+    except Exception:
         return {"categories": {}, "uncategorized": [], "tiers": {}}
 
 @app.get("/services/price/{service_name}", tags=["System"], summary="Get Service Price")
@@ -1898,7 +1898,7 @@ def get_service_price_endpoint(service_name: str, request: Request, db: Session 
     # Default to starter plan for unauthenticated users
     user_plan = 'starter'
     monthly_count = 0
-    
+
     # Try to get user info if authenticated
     try:
         auth_header = request.headers.get("authorization")
@@ -1906,7 +1906,7 @@ def get_service_price_endpoint(service_name: str, request: Request, db: Session 
             token = auth_header.split(" ")[1]
             payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
             user_id = payload.get("user_id")
-            
+
             if user_id:
                 # Get user's subscription
                 subscription = db.query(Subscription).filter(
@@ -1914,16 +1914,16 @@ def get_service_price_endpoint(service_name: str, request: Request, db: Session 
                     Subscription.status == "active"
                 ).first()
                 user_plan = subscription.plan if subscription else 'starter'
-                
+
                 # Get monthly count
                 month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0)
                 monthly_count = db.query(Verification).filter(
                     Verification.user_id == user_id,
                     Verification.created_at >= month_start
                 ).count()
-    except:
+    except Exception:
         pass  # Use defaults for unauthenticated users
-    
+
     # Calculate price with optimization if available
     if OPTIMIZATIONS_AVAILABLE:
         try:
@@ -1944,13 +1944,13 @@ def get_service_price_endpoint(service_name: str, request: Request, db: Session 
                 "user_plan": user_plan,
                 "monthly_verifications": monthly_count
             }
-        except:
+        except Exception:
             pass
-    
+
     # Fallback to basic pricing
     tier = get_service_tier(service_name)
     base_price = get_service_price(service_name, user_plan, monthly_count)
-    
+
     return {
         "service": service_name,
         "tier": tier,
@@ -1970,7 +1970,7 @@ def get_service_price_endpoint(service_name: str, request: Request, db: Session 
 @app.get("/services/status", tags=["System"], summary="Get Service Status")
 def get_services_status(db: Session = Depends(get_db)):
     """Get real-time status of all services based on recent verification success rates
-    
+
     Returns:
     - categories: Services grouped by category
     - status: Service status (operational, degraded, down)
@@ -1980,13 +1980,13 @@ def get_services_status(db: Session = Depends(get_db)):
         import json
         with open('services_categorized.json', 'r') as f:
             data = json.load(f)
-        
+
         # Check recent verifications (last 24 hours) for each service
         from sqlalchemy import func
         from datetime import timedelta
-        
+
         twenty_four_hours_ago = datetime.now(timezone.utc) - timedelta(hours=24)
-        
+
         # Get success rates per service from verifications
         service_stats = db.query(
             Verification.service_name,
@@ -1995,15 +1995,15 @@ def get_services_status(db: Session = Depends(get_db)):
         ).filter(
             Verification.created_at >= twenty_four_hours_ago
         ).group_by(Verification.service_name).all()
-        
+
         status_map = {}
         down_count = 0
         degraded_count = 0
-        
+
         for stat in service_stats:
             if stat.total > 0:
                 success_rate = (stat.completed / stat.total) * 100
-                
+
                 # Determine status
                 if success_rate < 50:
                     service_status = 'down'
@@ -2013,14 +2013,14 @@ def get_services_status(db: Session = Depends(get_db)):
                     degraded_count += 1
                 else:
                     service_status = 'operational'
-                
+
                 status_map[stat.service_name] = service_status
-                
+
                 # Update or create service status record
                 status_record = db.query(ServiceStatus).filter(
                     ServiceStatus.service_name == stat.service_name
                 ).first()
-                
+
                 if status_record:
                     status_record.status = service_status
                     status_record.success_rate = success_rate
@@ -2033,9 +2033,9 @@ def get_services_status(db: Session = Depends(get_db)):
                         success_rate=success_rate
                     )
                     db.add(status_record)
-        
+
         db.commit()
-        
+
         # Determine overall status
         if down_count > 5:
             overall_status = 'down'
@@ -2043,7 +2043,7 @@ def get_services_status(db: Session = Depends(get_db)):
             overall_status = 'degraded'
         else:
             overall_status = 'operational'
-        
+
         return {
             "categories": data.get("categories", {}),
             "status": status_map,
@@ -2069,12 +2069,12 @@ def get_services_status(db: Session = Depends(get_db)):
 def get_service_status_history(service_name: str = None, db: Session = Depends(get_db)):
     """Get historical status data for services"""
     query = db.query(ServiceStatus)
-    
+
     if service_name:
         query = query.filter(ServiceStatus.service_name == service_name)
-    
+
     statuses = query.order_by(ServiceStatus.created_at.desc()).limit(100).all()
-    
+
     return {
         "history": [
             {
@@ -2106,7 +2106,7 @@ def get_available_carriers():
 def get_available_area_codes():
     """Get list of supported area codes for Pro users"""
     popular_codes = ["212", "310", "415", "312", "214", "305"]
-    
+
     return {
         "area_codes": [
             {
@@ -2134,31 +2134,31 @@ def register(req: RegisterRequest, request: Request, referral_code: str = None, 
             req.password = validated_data['password']
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
-        
+
         # Log security event
         client_ip = request.client.host if request.client else "unknown"
         log_security_event("user_registration", None, client_ip, f"Email: {req.email}")
     """Register a new user account
-    
+
     - **email**: Valid email address
     - **password**: Minimum 6 characters
     - **referral_code**: Optional referral code for bonus credits
-    
+
     Returns JWT token and user details. New users get 1 free verification.
     """
     if db.query(User).filter(User.email == req.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
-    
+
     import secrets
     user_referral_code = secrets.token_urlsafe(6)
     verification_token = secrets.token_urlsafe(32)
-    
+
     # Use secure password hashing
     if SECURITY_PATCHES_AVAILABLE:
         password_hash = hash_password_secure(req.password)
     else:
         password_hash = hash_password(req.password)
-    
+
     user = User(
         id=f"user_{datetime.now(timezone.utc).timestamp()}",
         email=req.email,
@@ -2169,7 +2169,7 @@ def register(req: RegisterRequest, request: Request, referral_code: str = None, 
         email_verified=False,
         verification_token=verification_token
     )
-    
+
     # Handle referral
     if referral_code:
         referrer = db.query(User).filter(User.referral_code == referral_code).first()
@@ -2178,7 +2178,7 @@ def register(req: RegisterRequest, request: Request, referral_code: str = None, 
             user.free_verifications += 1.0  # Bonus for being referred
             # Referrer gets 1 free verification when referred user funds N2.50+
             referrer.referral_earnings += 0.0  # Track pending
-            
+
             # Create referral record
             referral = Referral(
                 id=f"ref_{datetime.now(timezone.utc).timestamp()}",
@@ -2187,15 +2187,15 @@ def register(req: RegisterRequest, request: Request, referral_code: str = None, 
                 reward_amount=1.0
             )
             db.add(referral)
-            
+
             # Transactions will be created when referred user funds wallet
-    
+
     db.add(user)
     db.commit()
-    
+
     # Log registration
     log_activity(db, user_id=user.id, email=user.email, action="register", status="success", details=f"New user registered")
-    
+
     # Send verification email
     try:
         send_email(
@@ -2208,7 +2208,7 @@ def register(req: RegisterRequest, request: Request, referral_code: str = None, 
         )
     except Exception as e:
         print(f"Email send error: {e}")
-    
+
     token = jwt.encode({"user_id": user.id, "exp": datetime.now(timezone.utc) + timedelta(days=30)}, JWT_SECRET, algorithm="HS256")
     if isinstance(token, bytes):
         token = token.decode('utf-8')
@@ -2219,11 +2219,11 @@ def get_google_config():
     """Get Google OAuth configuration"""
     # Check if Google OAuth is properly configured
     is_configured = (
-        GOOGLE_CLIENT_ID and 
+        GOOGLE_CLIENT_ID and
         GOOGLE_CLIENT_ID != "your-google-client-id.apps.googleusercontent.com" and
         len(GOOGLE_CLIENT_ID) > 20  # Basic validation
     )
-    
+
     return {
         "client_id": GOOGLE_CLIENT_ID if is_configured else None,
         "enabled": is_configured
@@ -2234,23 +2234,23 @@ def google_auth(req: GoogleAuthRequest, db: Session = Depends(get_db)):
     """Authenticate with Google OAuth"""
     if not GOOGLE_CLIENT_ID or GOOGLE_CLIENT_ID == "your-google-client-id.apps.googleusercontent.com":
         raise HTTPException(status_code=503, detail="Google OAuth not configured")
-    
+
     try:
         from google.oauth2 import id_token
         from google.auth.transport import requests as google_requests
-        
+
         # Verify Google token
         idinfo = id_token.verify_oauth2_token(
             req.token, google_requests.Request(), GOOGLE_CLIENT_ID
         )
-        
+
         email = idinfo['email']
         google_id = idinfo['sub']
         email_verified = idinfo.get('email_verified', False)
-        
+
         # Check if user exists
         user = db.query(User).filter(User.email == email).first()
-        
+
         if not user:
             # Create new user
             import secrets
@@ -2265,20 +2265,20 @@ def google_auth(req: GoogleAuthRequest, db: Session = Depends(get_db)):
             )
             db.add(user)
             db.commit()
-            
+
             # Log registration
-            log_activity(db, user_id=user.id, email=user.email, action="google_register", 
+            log_activity(db, user_id=user.id, email=user.email, action="google_register",
                         status="success", details="New user via Google OAuth")
         else:
             # Update email verification if Google verified
             if email_verified and not user.email_verified:
                 user.email_verified = True
                 db.commit()
-            
+
             # Log login
-            log_activity(db, user_id=user.id, email=user.email, action="google_login", 
+            log_activity(db, user_id=user.id, email=user.email, action="google_login",
                         status="success", details="Login via Google OAuth")
-        
+
         # Generate JWT
         token = jwt.encode(
             {"user_id": user.id, "exp": datetime.now(timezone.utc) + timedelta(days=30)},
@@ -2287,7 +2287,7 @@ def google_auth(req: GoogleAuthRequest, db: Session = Depends(get_db)):
         )
         if isinstance(token, bytes):
             token = token.decode('utf-8')
-        
+
         return {
             "token": token,
             "user_id": user.id,
@@ -2310,7 +2310,7 @@ def login(req: LoginRequest, request: Request, db: Session = Depends(get_db)):
             req.email = sanitize_input(req.email.lower().strip())
             if not validate_email(req.email):
                 raise HTTPException(status_code=400, detail="Invalid email format")
-            
+
             # Log security event
             client_ip = request.client.host if request.client else "unknown"
             log_security_event("login_attempt", None, client_ip, f"Email: {req.email}")
@@ -2319,13 +2319,13 @@ def login(req: LoginRequest, request: Request, db: Session = Depends(get_db)):
         # Continue with basic validation
         req.email = req.email.lower().strip()
     """Login with email and password
-    
+
     Returns JWT token valid for 30 days.
     """
     user = db.query(User).filter(User.email == req.email).first()
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     # Verify password using secure function
     try:
         if SECURITY_PATCHES_AVAILABLE:
@@ -2337,20 +2337,20 @@ def login(req: LoginRequest, request: Request, db: Session = Depends(get_db)):
         # Fallback to bcrypt verification
         try:
             password_valid = bcrypt.checkpw(req.password.encode(), user.password_hash.encode())
-        except:
+        except Exception:
             password_valid = False
-    
+
     if not password_valid:
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     # Generate token immediately (activity logging disabled due to schema issues)
     token = jwt.encode({"user_id": user.id, "exp": datetime.now(timezone.utc) + timedelta(days=30)}, JWT_SECRET, algorithm="HS256")
     if isinstance(token, bytes):
         token = token.decode('utf-8')
     return {
-        "token": token, 
-        "user_id": user.id, 
-        "credits": user.credits, 
+        "token": token,
+        "user_id": user.id,
+        "credits": user.credits,
         "free_verifications": user.free_verifications,
         "is_admin": user.is_admin,
         "email_verified": user.email_verified
@@ -2367,15 +2367,15 @@ def verify_email_api(token: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.verification_token == token).first()
     if not user:
         raise HTTPException(status_code=400, detail="Invalid verification token")
-    
+
     # Check if already verified
     if user.email_verified:
         return {"message": "Email already verified", "redirect": "/app"}
-    
+
     user.email_verified = True
     user.verification_token = None
     db.commit()
-    
+
     # Send welcome email
     try:
         send_email(
@@ -2388,9 +2388,9 @@ def verify_email_api(token: str, db: Session = Depends(get_db)):
         )
     except Exception as e:
         print(f"Welcome email error: {e}")
-    
+
     return {
-        "message": "🎉 Email verified successfully! Welcome to Namaskah SMS. You now have 1 free verification and are eligible to use all verification services.", 
+        "message": "🎉 Email verified successfully! Welcome to Namaskah SMS. You now have 1 free verification and are eligible to use all verification services.",
         "redirect": "/app",
         "verified": True,
         "free_verifications": user.free_verifications
@@ -2401,12 +2401,12 @@ def resend_verification(user: User = Depends(get_current_user), db: Session = De
     """Resend email verification link"""
     if user.email_verified:
         raise HTTPException(status_code=400, detail="Email already verified")
-    
+
     import secrets
     verification_token = secrets.token_urlsafe(32)
     user.verification_token = verification_token
     db.commit()
-    
+
     # Send verification email
     try:
         send_email(
@@ -2418,7 +2418,7 @@ def resend_verification(user: User = Depends(get_current_user), db: Session = De
         )
     except Exception as e:
         print(f"Email send error: {e}")
-    
+
     return {"message": "Verification email sent"}
 
 @app.post("/auth/forgot-password", tags=["Authentication"], summary="Request Password Reset")
@@ -2427,13 +2427,13 @@ def forgot_password(req: PasswordResetRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == req.email).first()
     if not user:
         return {"message": "If email exists, reset link sent"}
-    
+
     import secrets
     reset_token = secrets.token_urlsafe(32)
     user.reset_token = reset_token
     user.reset_token_expires = datetime.now(timezone.utc) + timedelta(hours=1)
     db.commit()
-    
+
     # Send password reset email
     try:
         send_email(
@@ -2446,7 +2446,7 @@ def forgot_password(req: PasswordResetRequest, db: Session = Depends(get_db)):
         )
     except Exception as e:
         print(f"Password reset email error: {e}")
-    
+
     return {"message": "If email exists, reset link sent"}
 
 @app.post("/auth/reset-password", tags=["Authentication"], summary="Reset Password")
@@ -2455,19 +2455,19 @@ def reset_password(req: PasswordResetConfirm, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.reset_token == req.token).first()
     if not user or not user.reset_token_expires or user.reset_token_expires < datetime.now(timezone.utc):
         raise HTTPException(status_code=400, detail="Invalid or expired reset token")
-    
+
     user.password_hash = hash_password(req.new_password)
     user.reset_token = None
     user.reset_token_expires = None
     db.commit()
-    
+
     return {"message": "Password reset successfully"}
 
 @app.get("/auth/me", tags=["Authentication"], summary="Get Current User")
 def get_me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Get authenticated user information and credit balance"""
     credits = user.credits
-    
+
     # If admin, show real TextVerified balance
     if user.is_admin:
         try:
@@ -2477,9 +2477,9 @@ def get_me(user: User = Depends(get_current_user), db: Session = Depends(get_db)
             r = requests.get(f"{tv_client.base_url}/api/pub/v2/account/me", headers=headers)
             data = r.json()
             credits = data.get("currentBalance", user.credits)
-        except:
+        except Exception:
             pass
-    
+
     # Get subscription plan
     plan = "starter"
     try:
@@ -2491,7 +2491,7 @@ def get_me(user: User = Depends(get_current_user), db: Session = Depends(get_db)
             plan = subscription.plan
     except Exception as e:
         logger.error(f"Subscription query failed: {e}")
-    
+
     return {
         "id": user.id,
         "email": user.email,
@@ -2510,7 +2510,7 @@ def get_active_verifications(user: User = Depends(get_current_user), db: Session
         Verification.user_id == user.id,
         Verification.status == "pending"
     ).order_by(Verification.created_at.desc()).all()
-    
+
     return {
         "verifications": [
             {
@@ -2536,17 +2536,17 @@ def get_history(
 ):
     """Get verification history with filtering for current user"""
     query = db.query(Verification).filter(Verification.user_id == user.id)
-    
+
     # Filter by service
     if service:
         query = query.filter(Verification.service_name == service)
-    
+
     # Filter by status
     if status and status in ['pending', 'completed', 'cancelled']:
         query = query.filter(Verification.status == status)
-    
+
     verifications = query.order_by(Verification.created_at.desc()).limit(limit).all()
-    
+
     return {
         "verifications": [
             {
@@ -2568,17 +2568,17 @@ def export_user_verifications(user: User = Depends(get_current_user), db: Sessio
     from fastapi.responses import StreamingResponse
     import io
     import csv
-    
+
     verifications = db.query(Verification).filter(
         Verification.user_id == user.id
     ).order_by(Verification.created_at.desc()).all()
-    
+
     output = io.StringIO()
     writer = csv.writer(output)
-    
+
     # Header
     writer.writerow(['Date', 'Service', 'Phone Number', 'Type', 'Status', 'Cost (N)'])
-    
+
     # Data
     for v in verifications:
         writer.writerow([
@@ -2589,7 +2589,7 @@ def export_user_verifications(user: User = Depends(get_current_user), db: Sessio
             v.status.upper(),
             f"{v.cost:.2f}"
         ])
-    
+
     output.seek(0)
     return StreamingResponse(
         iter([output.getvalue()]),
@@ -2606,13 +2606,13 @@ def get_transactions(
 ):
     """Get transaction history with filtering (credits/debits) for current user"""
     query = db.query(Transaction).filter(Transaction.user_id == user.id)
-    
+
     # Filter by type
     if type and type in ['credit', 'debit']:
         query = query.filter(Transaction.type == type)
-    
+
     transactions = query.order_by(Transaction.created_at.desc()).limit(limit).all()
-    
+
     return {
         "transactions": [
             {
@@ -2635,13 +2635,13 @@ def get_wallet_transactions(
 ):
     """Get wallet transaction history with filtering (credits/debits) for current user"""
     query = db.query(Transaction).filter(Transaction.user_id == user.id)
-    
+
     # Filter by type
     if type and type in ['credit', 'debit']:
         query = query.filter(Transaction.type == type)
-    
+
     transactions = query.order_by(Transaction.created_at.desc()).limit(limit).all()
-    
+
     return {
         "transactions": [
             {
@@ -2661,17 +2661,17 @@ def export_user_transactions(user: User = Depends(get_current_user), db: Session
     from fastapi.responses import StreamingResponse
     import io
     import csv
-    
+
     transactions = db.query(Transaction).filter(
         Transaction.user_id == user.id
     ).order_by(Transaction.created_at.desc()).all()
-    
+
     output = io.StringIO()
     writer = csv.writer(output)
-    
+
     # Header
     writer.writerow(['Date', 'Type', 'Amount (N)', 'Description'])
-    
+
     # Data
     for t in transactions:
         writer.writerow([
@@ -2680,7 +2680,7 @@ def export_user_transactions(user: User = Depends(get_current_user), db: Session
             f"{t.amount:.2f}",
             t.description
         ])
-    
+
     output.seek(0)
     return StreamingResponse(
         iter([output.getvalue()]),
@@ -2696,20 +2696,20 @@ def create_smart_verification(req: CreateVerificationRequest, user: User = Depen
         try:
             # Use enhanced client if available
             from textverified_optimization import VerificationRequest, CarrierFilter
-            
+
             carrier_filter = CarrierFilter(
                 carrier=req.carrier,
                 area_code=req.area_code,
                 exclude_voip=True
             )
-            
+
             verification_request = VerificationRequest(
                 service_name=req.service_name,
                 capability=req.capability,
                 carrier_filter=carrier_filter,
                 priority=getattr(req, 'priority', False)
             )
-            
+
             # Enhanced pricing calculation
             pricing_engine = EnhancedPricingEngine()
             result = pricing_engine.calculate_dynamic_price(
@@ -2720,27 +2720,27 @@ def create_smart_verification(req: CreateVerificationRequest, user: User = Depen
                 priority=getattr(req, 'priority', False)
             )
             cost = result.final_price
-            
+
         except Exception as e:
             # Fallback to basic verification
             cost = get_service_price(req.service_name)
     else:
         cost = get_service_price(req.service_name)
-    
+
     # Check credits
     if user.credits < cost:
         raise HTTPException(status_code=402, detail=f"Insufficient credits. Need N{cost}, have N{user.credits}")
-    
+
     # Create verification
     try:
         verification_id = tv_client.create_verification(req.service_name, req.capability)
         details = tv_client.get_verification(verification_id)
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Verification service unavailable: {str(e)}")
-    
+
     # Deduct credits and save
     user.credits -= cost
-    
+
     verification = Verification(
         id=verification_id,
         user_id=user.id,
@@ -2753,7 +2753,7 @@ def create_smart_verification(req: CreateVerificationRequest, user: User = Depen
         requested_area_code=req.area_code
     )
     db.add(verification)
-    
+
     db.add(Transaction(
         id=f"txn_{datetime.now(timezone.utc).timestamp()}",
         user_id=user.id,
@@ -2761,9 +2761,9 @@ def create_smart_verification(req: CreateVerificationRequest, user: User = Depen
         type="debit",
         description=f"Smart verification: {req.service_name}"
     ))
-    
+
     db.commit()
-    
+
     return {
         "id": verification.id,
         "service_name": verification.service_name,
@@ -2778,11 +2778,11 @@ def create_smart_verification(req: CreateVerificationRequest, user: User = Depen
 def create_verification(req: CreateVerificationRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     # Validate input
     req.service_name = validate_service_name(req.service_name)
-    
+
     # Log security event
     log_security_event("verification_create", user.id, details=f"Service: {req.service_name}")
     """Create new SMS or voice verification
-    
+
     - **service_name**: Service identifier (e.g., 'whatsapp', 'telegram')
     - **capability**: 'sms' or 'voice'
     - **area_code**: Optional custom area code (+$4)
@@ -2794,7 +2794,7 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
         Subscription.status == "active"
     ).first()
     user_plan = subscription.plan if subscription else 'starter'
-    
+
     # Get monthly verification count for volume discount
     from datetime import timedelta
     month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0)
@@ -2802,24 +2802,24 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
         Verification.user_id == user.id,
         Verification.created_at >= month_start
     ).count()
-    
+
     # Calculate base cost using dynamic pricing
     cost = get_service_price(req.service_name, user_plan, monthly_count)
-    
+
     # Add voice premium if voice verification
     if req.capability == 'voice':
         cost += VOICE_PREMIUM
-    
+
     # Add premium add-on costs
     if req.area_code:
         cost += PREMIUM_ADDONS['custom_area_code']
     if req.carrier:
         cost += PREMIUM_ADDONS['guaranteed_carrier']
-    
+
     # Check if user has free verifications
     plan_data = SUBSCRIPTION_PLANS[user_plan]
     free_limit = plan_data.get('free_verifications', 0)
-    
+
     if free_limit == -1 or (user.free_verifications > 0 and free_limit > 0):
         # Use free verification
         if user.free_verifications > 0:
@@ -2827,13 +2827,13 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
         cost = 0
     elif user.credits < cost:
         raise HTTPException(status_code=402, detail=f"Insufficient credits. Need N{cost}, have N{user.credits}")
-    
+
     user_id = user.id
-    
+
     # Create verification with filters
     try:
         verification_id = tv_client.create_verification(
-            req.service_name, 
+            req.service_name,
             req.capability,
             area_code=req.area_code,
             carrier=req.carrier
@@ -2842,14 +2842,14 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
     except Exception as e:
         print(f"TextVerified API error: {e}")
         raise HTTPException(status_code=503, detail=f"Verification service unavailable: {str(e)}")
-    
+
     # Deduct credits if not free
     if cost > 0:
         user.credits -= cost
-    
+
     # Get service tier for tracking
     tier = get_service_tier(req.service_name)
-    
+
     verification = Verification(
         id=verification_id,
         user_id=user_id,
@@ -2861,12 +2861,12 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
         requested_carrier=req.carrier,
         requested_area_code=req.area_code
     )
-    
+
     # Get carrier and location info for display
     carrier_info = format_carrier_info(req.carrier, details.get("number"))
     location_info = get_location_info(details.get("number"))
     db.add(verification)
-    
+
     # Create transaction if cost > 0
     if cost > 0:
         db.add(Transaction(
@@ -2876,15 +2876,15 @@ def create_verification(req: CreateVerificationRequest, user: User = Depends(get
             type="debit",
             description=f"{req.service_name} verification ({tier})"
         ))
-    
+
     db.commit()
-    
+
     # Show first 3 digits if area code was requested
     phone_preview = None
     if req.area_code and verification.phone_number:
         area_code = extract_area_code(verification.phone_number)
         phone_preview = f"({area_code}) XXX-XXXX" if area_code else None
-    
+
     return {
         "id": verification.id,
         "service_name": verification.service_name,
@@ -2908,18 +2908,18 @@ def get_verification(verification_id: str, db: Session = Depends(get_db)):
     verification = db.query(Verification).filter(
         Verification.id == verification_id
     ).first()
-    
+
     if not verification:
         raise HTTPException(status_code=404, detail="Verification not found")
-    
+
     details = tv_client.get_verification(verification_id)
     new_status = "completed" if details.get("state") == "verificationCompleted" else "pending"
-    
+
     # Check if verification just completed
     if verification.status == "pending" and new_status == "completed":
         verification.status = "completed"
         verification.completed_at = datetime.now(timezone.utc)
-        
+
         # Send real-time status update
         asyncio.create_task(manager.send_personal_message({
             "type": "verification_status",
@@ -2929,13 +2929,13 @@ def get_verification(verification_id: str, db: Session = Depends(get_db)):
                 "phone_number": verification.phone_number
             }
         }, verification.user_id))
-        
+
         # Get user for receipt generation
         user = db.query(User).filter(User.id == verification.user_id).first()
         if user:
             # Get ISP/carrier info from TextVerified
             isp_carrier = details.get('carrier') or details.get('network') or "Unknown"
-            
+
             # Process successful verification and send receipt
             try:
                 process_successful_verification(
@@ -2950,13 +2950,13 @@ def get_verification(verification_id: str, db: Session = Depends(get_db)):
                 )
             except Exception as e:
                 print(f"Receipt generation failed: {e}")
-    
+
     db.commit()
-    
+
     # Add carrier and location info to response
     carrier_info = format_carrier_info(None, verification.phone_number)
     location_info = get_location_info(verification.phone_number)
-    
+
     return {
         "id": verification.id,
         "service_name": verification.service_name,
@@ -2974,12 +2974,12 @@ async def get_messages(verification_id: str, db: Session = Depends(get_db)):
     verification = db.query(Verification).filter(
         Verification.id == verification_id
     ).first()
-    
+
     if not verification:
         raise HTTPException(status_code=404, detail="Verification not found")
-    
+
     messages = tv_client.get_messages(verification_id)
-    
+
     # Send real-time SMS update if new messages found
     if messages:
         for message in messages:
@@ -2991,7 +2991,7 @@ async def get_messages(verification_id: str, db: Session = Depends(get_db)):
                     "phone_number": verification.phone_number
                 }
             }, verification.user_id))
-    
+
     return {"verification_id": verification_id, "messages": messages}
 
 @app.get("/verify/{verification_id}/voice", tags=["Verification"], summary="Get Voice Call Details")
@@ -3002,10 +3002,10 @@ def get_voice_call(verification_id: str, user: User = Depends(get_current_user),
         Verification.user_id == user.id,
         Verification.capability == "voice"
     ).first()
-    
+
     if not verification:
         raise HTTPException(status_code=404, detail="Voice verification not found")
-    
+
     # Get voice data from TextVerified (placeholder - would use actual API)
     # For now, return stored data or empty
     return {
@@ -3025,7 +3025,7 @@ class RetryRequest(BaseModel):
 @app.post("/verify/{verification_id}/retry", tags=["Verification"], summary="Retry Verification")
 def retry_verification(verification_id: str, req: RetryRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Retry verification with voice, same number, or new number
-    
+
     - **retry_type**: 'voice', 'same', 'new'
     """
     try:
@@ -3033,16 +3033,16 @@ def retry_verification(verification_id: str, req: RetryRequest, user: User = Dep
             Verification.id == verification_id,
             Verification.user_id == user.id
         ).first()
-        
+
         if not verification:
             raise HTTPException(status_code=404, detail="Verification not found")
-        
+
         if req.retry_type == "voice":
             # Convert to voice verification
             verification.capability = "voice"
             verification.status = "pending"
             db.commit()
-            
+
             return {
                 "id": verification.id,
                 "phone_number": verification.phone_number,
@@ -3050,30 +3050,30 @@ def retry_verification(verification_id: str, req: RetryRequest, user: User = Dep
                 "status": "pending",
                 "message": "Switched to voice verification"
             }
-        
+
         elif req.retry_type == "same":
             # Retry with same number
             verification.status = "pending"
             db.commit()
-            
+
             return {
                 "id": verification.id,
                 "phone_number": verification.phone_number,
                 "status": "pending",
                 "message": "Retrying with same number"
             }
-        
+
         elif req.retry_type == "new":
             # Cancel current and create new
             verification.status = "cancelled"
-            
+
             # Create new verification
             new_verification_id = tv_client.create_verification(
                 verification.service_name,
                 verification.capability
             )
             details = tv_client.get_verification(new_verification_id)
-            
+
             new_verification = Verification(
                 id=new_verification_id,
                 user_id=user.id,
@@ -3085,7 +3085,7 @@ def retry_verification(verification_id: str, req: RetryRequest, user: User = Dep
             )
             db.add(new_verification)
             db.commit()
-            
+
             return {
                 "id": new_verification.id,
                 "phone_number": new_verification.phone_number,
@@ -3093,10 +3093,10 @@ def retry_verification(verification_id: str, req: RetryRequest, user: User = Dep
                 "cost": 0,
                 "message": "New number assigned"
             }
-        
+
         else:
             raise HTTPException(status_code=400, detail="Invalid retry_type. Use 'voice', 'same', or 'new'")
-            
+
     except HTTPException:
         raise
     except Exception as e:
@@ -3112,24 +3112,24 @@ def cancel_verification(verification_id: str, user: User = Depends(get_current_u
         Verification.id == verification_id,
         Verification.user_id == user.id
     ).first()
-    
+
     if not verification:
         raise HTTPException(status_code=404, detail="Verification not found or not owned by you")
-    
+
     if verification.status == "cancelled":
         raise HTTPException(status_code=400, detail="Already cancelled")
-    
+
     try:
         # Cancel on TextVerified
         tv_client.cancel_verification(verification_id)
     except Exception as e:
         # If TextVerified cancel fails, still mark as cancelled locally
         pass
-    
+
     # Refund credits to the verification owner
     verification_owner = db.query(User).filter(User.id == verification.user_id).first()
     verification_owner.credits += verification.cost
-    
+
     # Create refund transaction
     transaction = Transaction(
         id=f"txn_{datetime.now(timezone.utc).timestamp()}",
@@ -3139,13 +3139,13 @@ def cancel_verification(verification_id: str, user: User = Depends(get_current_u
         description=f"Refund for cancelled {verification.service_name} verification"
     )
     db.add(transaction)
-    
+
     verification.status = "cancelled"
     db.commit()
-    
+
     # Refresh user to get updated credits
     db.refresh(user)
-    
+
     return {"message": "Verification cancelled and refunded", "refunded": verification.cost, "new_balance": user.credits}
 
 # Admin Endpoints
@@ -3159,22 +3159,22 @@ def get_all_users(
 ):
     """Get all registered users with plan info, search and pagination (admin only)"""
     from sqlalchemy import func
-    
+
     query = db.query(User)
-    
+
     # Search filter
     if search:
         query = query.filter(
             (User.email.contains(search)) | (User.id.contains(search))
         )
-    
+
     # Get total count
     total = query.count()
-    
+
     # Pagination
     offset = (page - 1) * limit
     users = query.order_by(User.created_at.desc()).offset(offset).limit(limit).all()
-    
+
     # Get verification counts and spending for each user
     user_data = []
     for u in users:
@@ -3182,20 +3182,20 @@ def get_all_users(
         verification_count = db.query(Verification).filter(
             Verification.user_id == u.id
         ).count()
-        
+
         # Get total spent
         total_spent = db.query(func.sum(Transaction.amount)).filter(
             Transaction.user_id == u.id,
             Transaction.type == "debit"
         ).scalar() or 0
         total_spent = abs(total_spent)
-        
+
         # Get total funded
         total_funded = db.query(func.sum(Transaction.amount)).filter(
             Transaction.user_id == u.id,
             Transaction.type == "credit"
         ).scalar() or 0
-        
+
         # Determine plan based on total funded
         if total_funded >= 100:
             plan = "enterprise"
@@ -3203,7 +3203,7 @@ def get_all_users(
             plan = "developer"
         else:
             plan = "free"
-        
+
         user_data.append({
             "id": u.id,
             "email": u.email,
@@ -3217,7 +3217,7 @@ def get_all_users(
             "total_spent": total_spent,
             "total_funded": total_funded
         })
-    
+
     return {
         "users": user_data,
         "pagination": {
@@ -3234,17 +3234,17 @@ def get_user_journey(user_id: str, admin: User = Depends(get_admin_user), db: Se
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     # Get all activities
     activities = db.query(ActivityLog).filter(
         ActivityLog.user_id == user_id
     ).order_by(ActivityLog.created_at.asc()).all()
-    
+
     # Get payment logs
     payments = db.query(PaymentLog).filter(
         PaymentLog.user_id == user_id
     ).order_by(PaymentLog.created_at.asc()).all()
-    
+
     return {
         "user": {
             "id": user.id,
@@ -3281,29 +3281,29 @@ def get_user_details(user_id: str, admin: User = Depends(get_admin_user), db: Se
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     # Get verification history
     verifications = db.query(Verification).filter(
         Verification.user_id == user_id
     ).order_by(Verification.created_at.desc()).limit(20).all()
-    
+
     # Get transaction history
     transactions = db.query(Transaction).filter(
         Transaction.user_id == user_id
     ).order_by(Transaction.created_at.desc()).limit(20).all()
-    
+
     # Calculate stats
     from sqlalchemy import func
     total_spent = db.query(func.sum(Transaction.amount)).filter(
         Transaction.user_id == user_id,
         Transaction.type == "debit"
     ).scalar() or 0
-    
+
     total_funded = db.query(func.sum(Transaction.amount)).filter(
         Transaction.user_id == user_id,
         Transaction.type == "credit"
     ).scalar() or 0
-    
+
     return {
         "user": {
             "id": user.id,
@@ -3348,15 +3348,15 @@ def export_users_csv(admin: User = Depends(get_admin_user), db: Session = Depend
     from fastapi.responses import StreamingResponse
     import io
     import csv
-    
+
     users = db.query(User).all()
-    
+
     output = io.StringIO()
     writer = csv.writer(output)
-    
+
     # Header
     writer.writerow(['ID', 'Email', 'Credits', 'Free Verifications', 'Is Admin', 'Email Verified', 'Created At'])
-    
+
     # Data
     for u in users:
         writer.writerow([
@@ -3368,7 +3368,7 @@ def export_users_csv(admin: User = Depends(get_admin_user), db: Session = Depend
             u.email_verified,
             u.created_at.isoformat()
         ])
-    
+
     output.seek(0)
     return StreamingResponse(
         iter([output.getvalue()]),
@@ -3382,15 +3382,15 @@ def export_transactions_csv(admin: User = Depends(get_admin_user), db: Session =
     from fastapi.responses import StreamingResponse
     import io
     import csv
-    
+
     transactions = db.query(Transaction).order_by(Transaction.created_at.desc()).all()
-    
+
     output = io.StringIO()
     writer = csv.writer(output)
-    
+
     # Header
     writer.writerow(['ID', 'User ID', 'Amount', 'Type', 'Description', 'Created At'])
-    
+
     # Data
     for t in transactions:
         writer.writerow([
@@ -3401,7 +3401,7 @@ def export_transactions_csv(admin: User = Depends(get_admin_user), db: Session =
             t.description,
             t.created_at.isoformat()
         ])
-    
+
     output.seek(0)
     return StreamingResponse(
         iter([output.getvalue()]),
@@ -3415,9 +3415,9 @@ def add_credits(req: AddCreditsRequest, admin: User = Depends(get_admin_user), d
     user = db.query(User).filter(User.id == req.user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     user.credits += req.amount
-    
+
     transaction = Transaction(
         id=f"txn_{datetime.now(timezone.utc).timestamp()}",
         user_id=user.id,
@@ -3427,7 +3427,7 @@ def add_credits(req: AddCreditsRequest, admin: User = Depends(get_admin_user), d
     )
     db.add(transaction)
     db.commit()
-    
+
     return {"message": f"Added N{req.amount} credits", "new_balance": user.credits}
 
 @app.post("/admin/credits/deduct", tags=["Admin"], summary="Deduct Credits from User")
@@ -3436,12 +3436,12 @@ def deduct_credits(req: AddCreditsRequest, admin: User = Depends(get_admin_user)
     user = db.query(User).filter(User.id == req.user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     if user.credits < req.amount:
         raise HTTPException(status_code=400, detail=f"Insufficient balance. User has N{user.credits}")
-    
+
     user.credits -= req.amount
-    
+
     transaction = Transaction(
         id=f"txn_{datetime.now(timezone.utc).timestamp()}",
         user_id=user.id,
@@ -3451,7 +3451,7 @@ def deduct_credits(req: AddCreditsRequest, admin: User = Depends(get_admin_user)
     )
     db.add(transaction)
     db.commit()
-    
+
     return {"message": f"Deducted N{req.amount} credits", "new_balance": user.credits}
 
 @app.post("/admin/users/{user_id}/suspend", tags=["Admin"], summary="Suspend User Account")
@@ -3460,12 +3460,12 @@ def suspend_user(user_id: str, admin: User = Depends(get_admin_user), db: Sessio
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     # Add suspended flag to user model (would need migration)
     # For now, set credits to negative to indicate suspension
     user.email_verified = False
     db.commit()
-    
+
     return {"message": f"User {user.email} suspended"}
 
 @app.post("/admin/users/{user_id}/activate", tags=["Admin"], summary="Activate User Account")
@@ -3474,10 +3474,10 @@ def activate_user(user_id: str, admin: User = Depends(get_admin_user), db: Sessi
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     user.email_verified = True
     db.commit()
-    
+
     return {"message": f"User {user.email} activated"}
 
 @app.delete("/admin/users/{user_id}", tags=["Admin"], summary="Delete User Account")
@@ -3486,10 +3486,10 @@ def delete_user(user_id: str, admin: User = Depends(get_admin_user), db: Session
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     if user.is_admin:
         raise HTTPException(status_code=403, detail="Cannot delete admin account")
-    
+
     # Delete related records
     db.query(Verification).filter(Verification.user_id == user_id).delete()
     db.query(Transaction).filter(Transaction.user_id == user_id).delete()
@@ -3497,10 +3497,10 @@ def delete_user(user_id: str, admin: User = Depends(get_admin_user), db: Session
     db.query(Webhook).filter(Webhook.user_id == user_id).delete()
     db.query(NumberRental).filter(NumberRental.user_id == user_id).delete()
     db.query(Subscription).filter(Subscription.user_id == user_id).delete()
-    
+
     db.delete(user)
     db.commit()
-    
+
     return {"message": f"User {user.email} deleted permanently"}
 
 @app.post("/admin/verifications/{verification_id}/cancel", tags=["Admin"], summary="Cancel Any Verification")
@@ -3509,18 +3509,18 @@ def admin_cancel_verification(verification_id: str, admin: User = Depends(get_ad
     verification = db.query(Verification).filter(Verification.id == verification_id).first()
     if not verification:
         raise HTTPException(status_code=404, detail="Verification not found")
-    
+
     if verification.status == "cancelled":
         raise HTTPException(status_code=400, detail="Already cancelled")
-    
+
     try:
         tv_client.cancel_verification(verification_id)
-    except:
+    except Exception:
         pass
-    
+
     user = db.query(User).filter(User.id == verification.user_id).first()
     user.credits += verification.cost
-    
+
     transaction = Transaction(
         id=f"txn_{datetime.now(timezone.utc).timestamp()}",
         user_id=user.id,
@@ -3529,10 +3529,10 @@ def admin_cancel_verification(verification_id: str, admin: User = Depends(get_ad
         description=f"Admin cancelled verification {verification_id}"
     )
     db.add(transaction)
-    
+
     verification.status = "cancelled"
     db.commit()
-    
+
     return {"message": "Verification cancelled and refunded", "refunded": verification.cost}
 
 @app.get("/admin/verifications/active", tags=["Admin"], summary="Get All Active Verifications")
@@ -3541,7 +3541,7 @@ def get_all_active_verifications(admin: User = Depends(get_admin_user), db: Sess
     verifications = db.query(Verification).filter(
         Verification.status == "pending"
     ).order_by(Verification.created_at.desc()).limit(100).all()
-    
+
     return {
         "verifications": [
             {
@@ -3562,7 +3562,7 @@ def get_all_active_rentals(admin: User = Depends(get_admin_user), db: Session = 
     rentals = db.query(NumberRental).filter(
         NumberRental.status == "active"
     ).order_by(NumberRental.expires_at).all()
-    
+
     return {
         "rentals": [
             {
@@ -3583,37 +3583,37 @@ def admin_release_rental(rental_id: str, admin: User = Depends(get_admin_user), 
     rental = db.query(NumberRental).filter(NumberRental.id == rental_id).first()
     if not rental:
         raise HTTPException(status_code=404, detail="Rental not found")
-    
+
     rental.status = "released"
     rental.released_at = datetime.now(timezone.utc)
     db.commit()
-    
+
     return {"message": "Rental released", "rental_id": rental_id}
 
 @app.get("/admin/affiliates/stats", tags=["Admin"], summary="Get Affiliate Statistics")
 def get_affiliate_stats(admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Get affiliate program statistics (admin only)"""
     from sqlalchemy import func
-    
+
     # Total affiliates (users with referrals)
     total_affiliates = db.query(func.count(func.distinct(Referral.referrer_id))).scalar() or 0
-    
+
     # Active affiliates (earned commissions)
     active_affiliates = db.query(func.count(func.distinct(User.id))).filter(
         User.referral_earnings > 0
     ).scalar() or 0
-    
+
     # Total commissions paid
     total_commissions = db.query(func.sum(User.referral_earnings)).scalar() or 0
-    
+
     # Top affiliates
     top_affiliates = db.query(User).filter(
         User.referral_earnings > 0
     ).order_by(User.referral_earnings.desc()).limit(10).all()
-    
+
     # Total referrals
     total_referrals = db.query(Referral).count()
-    
+
     return {
         "total_affiliates": total_affiliates,
         "active_affiliates": active_affiliates,
@@ -3634,7 +3634,7 @@ def get_affiliate_stats(admin: User = Depends(get_admin_user), db: Session = Dep
 def get_subscription_stats(admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Get subscription tier distribution (admin only)"""
     from sqlalchemy import func
-    
+
     # Get users with total funded amount
     users_with_funding = db.query(
         User.id,
@@ -3642,11 +3642,11 @@ def get_subscription_stats(admin: User = Depends(get_admin_user), db: Session = 
     ).join(Transaction, User.id == Transaction.user_id).filter(
         Transaction.type == "credit"
     ).group_by(User.id).all()
-    
+
     pay_as_you_go = 0
     developer = 0
     enterprise = 0
-    
+
     for user_funding in users_with_funding:
         if user_funding.total_funded >= 100:
             enterprise += 1
@@ -3654,11 +3654,11 @@ def get_subscription_stats(admin: User = Depends(get_admin_user), db: Session = 
             developer += 1
         else:
             pay_as_you_go += 1
-    
+
     # Users with no funding are pay-as-you-go
     total_users = db.query(User).count()
     pay_as_you_go += total_users - len(users_with_funding)
-    
+
     return {
         "pay_as_you_go": pay_as_you_go,
         "developer": developer,
@@ -3671,13 +3671,13 @@ def get_analytics_summary(email: str = None, days: int = 7, admin: User = Depend
     """Get analytics summary for user or all users"""
     from sqlalchemy import func
     from datetime import timedelta
-    
+
     start_date = datetime.now(timezone.utc) - timedelta(days=days)
-    
+
     query = db.query(ActivityLog).filter(ActivityLog.created_at >= start_date)
     if email:
         query = query.filter(ActivityLog.email == email)
-    
+
     # Page views
     page_views = db.query(
         ActivityLog.page,
@@ -3689,7 +3689,7 @@ def get_analytics_summary(email: str = None, days: int = 7, admin: User = Depend
     if email:
         page_views = page_views.filter(ActivityLog.email == email)
     page_views = page_views.group_by(ActivityLog.page).all()
-    
+
     # Button clicks
     button_clicks = db.query(
         ActivityLog.element,
@@ -3702,10 +3702,10 @@ def get_analytics_summary(email: str = None, days: int = 7, admin: User = Depend
     if email:
         button_clicks = button_clicks.filter(ActivityLog.email == email)
     button_clicks = button_clicks.group_by(ActivityLog.element, ActivityLog.page).all()
-    
+
     # Total activities
     total_activities = query.count()
-    
+
     # Unique users
     unique_users = db.query(func.count(func.distinct(ActivityLog.user_id))).filter(
         ActivityLog.created_at >= start_date,
@@ -3714,7 +3714,7 @@ def get_analytics_summary(email: str = None, days: int = 7, admin: User = Depend
     if email:
         unique_users = unique_users.filter(ActivityLog.email == email)
     unique_users = unique_users.scalar() or 0
-    
+
     return {
         "total_activities": total_activities,
         "unique_users": unique_users,
@@ -3732,14 +3732,14 @@ def get_analytics_summary(email: str = None, days: int = 7, admin: User = Depend
 def get_payment_logs(email: str = None, reference: str = None, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Get payment logs for troubleshooting (admin only)"""
     query = db.query(PaymentLog)
-    
+
     if email:
         query = query.filter(PaymentLog.email == email)
     if reference:
         query = query.filter(PaymentLog.reference == reference)
-    
+
     logs = query.order_by(PaymentLog.created_at.desc()).limit(50).all()
-    
+
     return {
         "logs": [
             {
@@ -3764,16 +3764,16 @@ def get_payment_logs(email: str = None, reference: str = None, admin: User = Dep
 def get_activity_logs(email: str = None, page: str = None, action: str = None, limit: int = 100, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Get activity logs for user tracking (admin only)"""
     query = db.query(ActivityLog)
-    
+
     if email:
         query = query.filter(ActivityLog.email == email)
     if page:
         query = query.filter(ActivityLog.page == page)
     if action:
         query = query.filter(ActivityLog.action == action)
-    
+
     logs = query.order_by(ActivityLog.created_at.desc()).limit(limit).all()
-    
+
     return {
         "logs": [
             {
@@ -3797,7 +3797,7 @@ async def track_activity(request: Request, db: Session = Depends(get_db)):
     """Track user activity from frontend"""
     try:
         data = await request.json()
-        
+
         # Get user info from token if present
         user_id = None
         email = None
@@ -3810,13 +3810,13 @@ async def track_activity(request: Request, db: Session = Depends(get_db)):
                 user = db.query(User).filter(User.id == user_id).first()
                 if user:
                     email = user.email
-            except:
+            except Exception:
                 pass
-        
+
         # Get IP and user agent
         ip = request.client.host if request.client else None
         user_agent = request.headers.get("user-agent")
-        
+
         log_activity(
             db,
             user_id=user_id,
@@ -3829,7 +3829,7 @@ async def track_activity(request: Request, db: Session = Depends(get_db)):
             ip=ip,
             user_agent=user_agent
         )
-        
+
         return {"status": "tracked"}
     except Exception as e:
         print(f"Track error: {e}")
@@ -3859,16 +3859,16 @@ def subscribe_to_plan(req: SubscribeRequest, user: User = Depends(get_current_us
     """Subscribe to Pro or Turbo plan"""
     if req.plan not in ['pro', 'turbo']:
         raise HTTPException(status_code=400, detail="Invalid plan. Choose 'pro' or 'turbo'")
-    
+
     plan = SUBSCRIPTION_PLANS[req.plan]
-    
+
     # Check if user has enough credits
     if user.credits < plan['price']:
         raise HTTPException(status_code=402, detail=f"Insufficient credits. Need N{plan['price']}, have N{user.credits}")
-    
+
     # Check existing subscription
     existing = db.query(Subscription).filter(Subscription.user_id == user.id).first()
-    
+
     if existing:
         # Upgrade/downgrade
         existing.plan = req.plan
@@ -3891,10 +3891,10 @@ def subscribe_to_plan(req: SubscribeRequest, user: User = Depends(get_current_us
             expires_at=None if plan['duration'] == 0 else datetime.now(timezone.utc) + timedelta(days=plan['duration'])
         )
         db.add(subscription)
-    
+
     # Deduct first month payment
     user.credits -= plan['price']
-    
+
     # Create transaction
     db.add(Transaction(
         id=f"txn_{datetime.now(timezone.utc).timestamp()}",
@@ -3903,11 +3903,11 @@ def subscribe_to_plan(req: SubscribeRequest, user: User = Depends(get_current_us
         type="debit",
         description=f"Subscription: {plan['name']} plan (monthly)"
     ))
-    
+
     db.commit()
-    
+
     expires_at = None if plan['duration'] == 0 else datetime.now(timezone.utc) + timedelta(days=plan['duration'])
-    
+
     return {
         "message": f"Successfully subscribed to {plan['name']} plan!",
         "plan": req.plan,
@@ -3921,7 +3921,7 @@ def get_current_subscription(user: User = Depends(get_current_user), db: Session
     """Get user's current subscription"""
     try:
         subscription = db.query(Subscription).filter(Subscription.user_id == user.id).first()
-        
+
         if not subscription:
             return {
                 "plan": "starter",
@@ -3929,7 +3929,7 @@ def get_current_subscription(user: User = Depends(get_current_user), db: Session
                 "status": "active",
                 "features": SUBSCRIPTION_PLANS.get('starter', {})
             }
-        
+
         return {
             "plan": subscription.plan,
             "name": SUBSCRIPTION_PLANS.get(subscription.plan, {}).get('name', subscription.plan),
@@ -3956,14 +3956,14 @@ def cancel_subscription(user: User = Depends(get_current_user), db: Session = De
         Subscription.user_id == user.id,
         Subscription.status == "active"
     ).first()
-    
+
     if not subscription:
         raise HTTPException(status_code=404, detail="No active subscription found")
-    
+
     subscription.status = "cancelled"
     subscription.cancelled_at = datetime.now(timezone.utc)
     db.commit()
-    
+
     return {
         "message": "Subscription cancelled. You'll be downgraded to Starter plan when it expires.",
         "plan": subscription.plan,
@@ -3981,7 +3981,7 @@ def get_banned_numbers(
     db: Session = Depends(get_db)
 ):
     """Get list of banned numbers with filtering (admin only)
-    
+
     - **service**: Filter by service name
     - **area_code**: Filter by area code
     - **carrier**: Filter by ISP/carrier
@@ -3989,7 +3989,7 @@ def get_banned_numbers(
     - **limit**: Max results (default 100)
     """
     query = db.query(BannedNumber)
-    
+
     if service:
         query = query.filter(BannedNumber.service_name == service)
     if area_code:
@@ -3998,9 +3998,9 @@ def get_banned_numbers(
         query = query.filter(BannedNumber.carrier.contains(carrier))
     if min_fails > 1:
         query = query.filter(BannedNumber.fail_count >= min_fails)
-    
+
     banned = query.order_by(BannedNumber.fail_count.desc()).limit(limit).all()
-    
+
     # Get statistics
     from sqlalchemy import func
     total_banned = db.query(func.count(BannedNumber.id)).scalar()
@@ -4008,12 +4008,12 @@ def get_banned_numbers(
         BannedNumber.service_name,
         func.count(BannedNumber.id).label('count')
     ).group_by(BannedNumber.service_name).order_by(func.count(BannedNumber.id).desc()).limit(10).all()
-    
+
     by_carrier = db.query(
         BannedNumber.carrier,
         func.count(BannedNumber.id).label('count')
     ).filter(BannedNumber.carrier.isnot(None)).group_by(BannedNumber.carrier).order_by(func.count(BannedNumber.id).desc()).limit(10).all()
-    
+
     return {
         "total_banned": total_banned,
         "stats": {
@@ -4039,10 +4039,10 @@ def get_banned_numbers(
 def get_pricing_analytics(period: str = "30", admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Get pricing tier performance and revenue analytics (admin only)"""
     from sqlalchemy import func
-    
+
     days = int(period)
     start_date = datetime.now(timezone.utc) - timedelta(days=days)
-    
+
     # Tier performance
     tier_stats = {}
     for tier_id, tier_data in SERVICE_TIERS.items():
@@ -4052,11 +4052,11 @@ def get_pricing_analytics(period: str = "30", admin: User = Depends(get_admin_us
                 Verification.service_name.in_(services),
                 Verification.created_at >= start_date
             ).all()
-            
+
             total_count = len(tier_verifications)
             total_revenue = sum(v.cost for v in tier_verifications)
             avg_price = total_revenue / total_count if total_count > 0 else 0
-            
+
             tier_stats[tier_id] = {
                 'name': tier_data['name'],
                 'base_price': tier_data['base_price'],
@@ -4065,7 +4065,7 @@ def get_pricing_analytics(period: str = "30", admin: User = Depends(get_admin_us
                 'avg_price': round(avg_price, 2),
                 'services': services[:5]  # Top 5 services
             }
-    
+
     # Plan distribution revenue
     plan_revenue = {}
     for plan_id, plan_data in SUBSCRIPTION_PLANS.items():
@@ -4080,7 +4080,7 @@ def get_pricing_analytics(period: str = "30", admin: User = Depends(get_admin_us
             'monthly_revenue': round(monthly_revenue, 2),
             'discount': plan_data['discount']
         }
-    
+
     return {
         'period_days': days,
         'tier_performance': tier_stats,
@@ -4093,15 +4093,15 @@ def get_pricing_analytics(period: str = "30", admin: User = Depends(get_admin_us
 def get_receipt_stats(period: str = "7", admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Get receipt generation statistics (admin only)"""
     from sqlalchemy import func
-    
+
     days = int(period)
     start_date = datetime.now(timezone.utc) - timedelta(days=days)
-    
+
     # Total receipts generated
     total_receipts = db.query(VerificationReceipt).filter(
         VerificationReceipt.created_at >= start_date
     ).count()
-    
+
     # Receipts by service
     receipts_by_service = db.query(
         VerificationReceipt.service_name,
@@ -4112,16 +4112,16 @@ def get_receipt_stats(period: str = "7", admin: User = Depends(get_admin_user), 
     ).group_by(VerificationReceipt.service_name).order_by(
         func.count(VerificationReceipt.id).desc()
     ).limit(10).all()
-    
+
     # Notification preferences stats
     total_users_with_prefs = db.query(NotificationPreferences).count()
     email_enabled = db.query(NotificationPreferences).filter(
-        NotificationPreferences.email_notifications == True
+        NotificationPreferences.email_notifications is True
     ).count()
     receipts_enabled = db.query(NotificationPreferences).filter(
-        NotificationPreferences.receipt_notifications == True
+        NotificationPreferences.receipt_notifications is True
     ).count()
-    
+
     return {
         "period_days": days,
         "total_receipts": total_receipts,
@@ -4155,15 +4155,15 @@ def get_pricing_analysis(
         try:
             pricing_engine = EnhancedPricingEngine()
             monthly_count = get_user_monthly_count(user.id, db) if monthly_usage == 0 else monthly_usage
-            
+
             result = pricing_engine.calculate_dynamic_price(
                 service_name=service_name,
                 user_plan=user_plan,
                 monthly_count=monthly_count
             )
-            
+
             timing_opt = pricing_engine.optimize_timing_for_cost(service_name)
-            
+
             response = {
                 "current_price": result.final_price,
                 "base_price": result.base_price,
@@ -4173,18 +4173,18 @@ def get_pricing_analysis(
                 "savings": result.savings,
                 "timing_optimization": timing_opt
             }
-            
+
             if include_forecast:
                 response["forecast"] = pricing_engine.get_pricing_forecast(service_name, 24)
-            
+
             return response
         except Exception as e:
             pass  # Fallback to basic pricing
-    
+
     # Basic pricing fallback
     tier = get_service_tier(service_name)
     base_price = get_service_price(service_name, user_plan, monthly_usage)
-    
+
     return {
         "current_price": base_price,
         "base_price": base_price,
@@ -4198,58 +4198,58 @@ def get_pricing_analysis(
 @app.get("/admin/stats", tags=["Admin"], summary="Get Platform Statistics")
 def get_stats(period: str = "7", admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Get platform-wide statistics with real-time data (admin only)
-    
+
     - **period**: Time period (7, 14, 30, 60, 90, or 'all')
     """
     from sqlalchemy import func
-    
+
     # Calculate date range
     if period == "all":
         start_date = datetime(2020, 1, 1, tzinfo=timezone.utc)
     else:
         days = int(period)
         start_date = datetime.now(timezone.utc) - timedelta(days=days)
-    
+
     # Total users (all time)
     total_users = db.query(User).count()
-    
+
     # New users in period
     new_users = db.query(User).filter(User.created_at >= start_date).count()
-    
+
     # Active users (created verification in period)
     active_users = db.query(Verification.user_id).filter(
         Verification.created_at >= start_date
     ).distinct().count()
-    
+
     # Verifications in period
     total_verifications = db.query(Verification).filter(
         Verification.created_at >= start_date
     ).count()
-    
+
     # Success/Failure stats
     completed_verifications = db.query(Verification).filter(
         Verification.created_at >= start_date,
         Verification.status == "completed"
     ).count()
-    
+
     cancelled_verifications = db.query(Verification).filter(
         Verification.created_at >= start_date,
         Verification.status == "cancelled"
     ).count()
-    
+
     pending_verifications = db.query(Verification).filter(
         Verification.status == "pending"
     ).count()
-    
+
     success_rate = (completed_verifications / total_verifications * 100) if total_verifications > 0 else 0
-    
+
     # Revenue in period (sum of all debit transactions)
     total_revenue = db.query(func.sum(Transaction.amount)).filter(
         Transaction.type == "debit",
         Transaction.created_at >= start_date
     ).scalar() or 0
     total_revenue = abs(total_revenue)
-    
+
     # Calculate revenue for previous period for comparison
     prev_start = start_date - timedelta(days=int(period))
     prev_revenue = db.query(func.sum(Transaction.amount)).filter(
@@ -4259,7 +4259,7 @@ def get_stats(period: str = "7", admin: User = Depends(get_admin_user), db: Sess
     ).scalar() or 0
     prev_revenue = abs(prev_revenue)
     revenue_change = total_revenue - prev_revenue
-    
+
     # Plan distribution (based on total funded amount)
     users_with_funding = db.query(
         User.id,
@@ -4267,11 +4267,11 @@ def get_stats(period: str = "7", admin: User = Depends(get_admin_user), db: Sess
     ).join(Transaction, User.id == Transaction.user_id).filter(
         Transaction.type == "credit"
     ).group_by(User.id).all()
-    
+
     pay_as_you_go = 0
     developer = 0
     enterprise = 0
-    
+
     for user_funding in users_with_funding:
         if user_funding.total_funded >= 100:
             enterprise += 1
@@ -4279,10 +4279,10 @@ def get_stats(period: str = "7", admin: User = Depends(get_admin_user), db: Sess
             developer += 1
         else:
             pay_as_you_go += 1
-    
+
     # Users with no funding are pay-as-you-go
     pay_as_you_go += total_users - len(users_with_funding)
-    
+
     # Popular services in period
     popular_services = db.query(
         Verification.service_name,
@@ -4295,30 +4295,30 @@ def get_stats(period: str = "7", admin: User = Depends(get_admin_user), db: Sess
     ).order_by(
         func.count(Verification.id).desc()
     ).limit(10).all()
-    
+
     # Daily breakdown for charts
     daily_stats = []
     for i in range(int(period)):
         day_start = start_date + timedelta(days=i)
         day_end = day_start + timedelta(days=1)
-        
+
         day_verifications = db.query(Verification).filter(
             Verification.created_at >= day_start,
             Verification.created_at < day_end
         ).count()
-        
+
         day_revenue = db.query(func.sum(Transaction.amount)).filter(
             Transaction.type == "debit",
             Transaction.created_at >= day_start,
             Transaction.created_at < day_end
         ).scalar() or 0
-        
+
         daily_stats.append({
             "date": day_start.strftime("%Y-%m-%d"),
             "verifications": day_verifications,
             "revenue": abs(day_revenue)
         })
-    
+
     return {
         "total_users": total_users,
         "new_users": new_users,
@@ -4375,13 +4375,13 @@ def system_health():
             "dynamic_pricing": True
         }
     }
-    
+
     # Check if any service is down
     for service_name, service_health in health_status["services"].items():
         if service_health["status"] == "open":
             health_status["status"] = "degraded"
             break
-    
+
     return health_status
 
 @app.post("/admin/system/reset-circuit-breaker", tags=["Admin"], summary="Reset Circuit Breaker")
@@ -4389,9 +4389,9 @@ def admin_reset_circuit_breaker(service_name: str, admin: User = Depends(get_adm
     """Manually reset a circuit breaker (admin only)"""
     if service_name not in ["textverified", "paystack", "database"]:
         raise HTTPException(status_code=400, detail="Invalid service name")
-    
+
     success = reset_circuit_breaker(service_name)
-    
+
     if success:
         return {"message": f"Circuit breaker reset for {service_name}", "status": "success"}
     else:
@@ -4402,25 +4402,25 @@ def initialize_paystack(req: FundWalletRequest, user: User = Depends(get_current
     """Initialize Paystack payment with detailed transaction info"""
     if req.amount < 2.5:
         raise HTTPException(status_code=400, detail="Minimum funding amount is N2.50 ($5 USD)")
-    
+
     if req.amount < 5:
         raise HTTPException(status_code=400, detail="Minimum funding amount is $5 USD")
-    
+
     # Only Paystack is supported
     if req.payment_method != 'paystack':
         raise HTTPException(status_code=400, detail="Only Paystack payment is supported. Crypto payments are not available.")
-    
+
     reference = f"namaskah_{user.id}_{int(datetime.now(timezone.utc).timestamp())}"
     amount_usd = req.amount  # User enters USD amount directly
-    
+
     # Get current USD to NGN exchange rate (cached, updates hourly)
     USD_TO_NGN_RATE = get_usd_to_ngn_rate()
     amount_ngn = amount_usd * USD_TO_NGN_RATE  # Exact NGN amount based on current rate
     namaskah_amount = amount_usd * USD_TO_NAMASKAH
-    
+
     if not PAYSTACK_SECRET_KEY or not PAYSTACK_SECRET_KEY.startswith('sk_'):
         raise HTTPException(status_code=503, detail="Payment system not configured. Please contact support.")
-    
+
     try:
         headers = {
             "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
@@ -4440,18 +4440,18 @@ def initialize_paystack(req: FundWalletRequest, user: User = Depends(get_current
             },
             "channels": ["card", "bank", "ussd", "qr", "mobile_money", "bank_transfer"]
         }
-        r = requests.post("https://api.paystack.co/transaction/initialize", 
+        r = requests.post("https://api.paystack.co/transaction/initialize",
                         json=payload, headers=headers)
         r.raise_for_status()
         data = r.json()
-        
+
         # Log payment initialization
-        log_payment(db, user_id=user.id, email=user.email, reference=reference, 
+        log_payment(db, user_id=user.id, email=user.email, reference=reference,
                    amount_ngn=amount_ngn, amount_usd=amount_usd, namaskah_amount=namaskah_amount,
                    status="initialized")
-        log_activity(db, user_id=user.id, email=user.email, action="payment_init", 
+        log_activity(db, user_id=user.id, email=user.email, action="payment_init",
                     status="success", details=f"Paystack payment initialized: {reference}")
-        
+
         return {
             "success": True,
             "authorization_url": data["data"]["authorization_url"],
@@ -4477,36 +4477,36 @@ async def paystack_webhook(request: Request, db: Session = Depends(get_db)):
     """Handle Paystack payment webhooks with signature verification"""
     import hmac
     import hashlib
-    
+
     # Get signature and body
     signature = request.headers.get('x-paystack-signature')
     body = await request.body()
-    
+
     # Verify webhook signature (CRITICAL SECURITY)
     if not PAYSTACK_SECRET_KEY or not PAYSTACK_SECRET_KEY.startswith('sk_'):
         # Log but don't process if no valid secret key
         print("⚠️ Paystack webhook received but no valid secret key configured")
         return {"status": "ignored", "reason": "no_secret_key"}
-    
+
     expected_signature = hmac.new(
         PAYSTACK_SECRET_KEY.encode('utf-8'),
         body,
         hashlib.sha512
     ).hexdigest()
-    
+
     if signature != expected_signature:
         print(f"❌ Invalid Paystack signature: {signature[:20]}...")
         raise HTTPException(status_code=400, detail="Invalid signature")
-    
+
     # Parse webhook data
     try:
         data = await request.json()
-    except:
+    except Exception:
         raise HTTPException(status_code=400, detail="Invalid JSON")
-    
+
     event = data.get('event')
     print(f"📥 Paystack webhook: {event}")
-    
+
     if event == 'charge.success':
         payment_data = data.get('data', {})
         reference = payment_data.get('reference')
@@ -4514,20 +4514,20 @@ async def paystack_webhook(request: Request, db: Session = Depends(get_db)):
         amount = amount_kobo / 100  # Convert from kobo to Naira
         user_id = payment_data.get('metadata', {}).get('user_id')
         user_email = payment_data.get('metadata', {}).get('user_email') or payment_data.get('customer', {}).get('email')
-        
+
         if not reference or not user_id:
             print(f"⚠️ Missing reference or user_id in webhook")
             # Log failed webhook
             if user_email:
-                log_activity(db, email=user_email, action="webhook_received", status="failed", 
+                log_activity(db, email=user_email, action="webhook_received", status="failed",
                            error="Missing reference or user_id")
             return {"status": "error", "reason": "missing_data"}
-        
+
         # Check for duplicate transaction
         existing = db.query(Transaction).filter(
             Transaction.description.contains(reference)
         ).first()
-        
+
         if existing:
             print(f"⚠️ Duplicate transaction: {reference}")
             # Update payment log
@@ -4537,22 +4537,22 @@ async def paystack_webhook(request: Request, db: Session = Depends(get_db)):
                 payment_log.status = "duplicate"
                 db.commit()
             return {"status": "duplicate", "reference": reference}
-        
+
         # Find user and add credits
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
             print(f"❌ User not found: {user_id}")
-            log_activity(db, user_id=user_id, email=user_email, action="webhook_received", 
+            log_activity(db, user_id=user_id, email=user_email, action="webhook_received",
                         status="failed", error=f"User not found: {user_id}")
             return {"status": "error", "reason": "user_not_found"}
-        
+
         # Convert NGN to Namaskah coins
         # Get USD amount from metadata or calculate from NGN
         usd_amount = payment_data.get('metadata', {}).get('usd_amount', amount / get_usd_to_ngn_rate())
         namaskah_amount = usd_amount * USD_TO_NAMASKAH
-        
+
         user.credits += namaskah_amount
-        
+
         # Create transaction
         transaction = Transaction(
             id=f"txn_{datetime.now(timezone.utc).timestamp()}",
@@ -4562,7 +4562,7 @@ async def paystack_webhook(request: Request, db: Session = Depends(get_db)):
             description=f"Paystack payment: {reference} (NGN {amount})"
         )
         db.add(transaction)
-        
+
         # Update payment log
         payment_log = db.query(PaymentLog).filter(PaymentLog.reference == reference).first()
         if payment_log:
@@ -4575,11 +4575,11 @@ async def paystack_webhook(request: Request, db: Session = Depends(get_db)):
             log_payment(db, user_id=user.id, email=user.email, reference=reference,
                        amount_ngn=amount, amount_usd=usd_amount, namaskah_amount=namaskah_amount,
                        status="completed", webhook_received=True, credited=True)
-        
+
         # Log activity
-        log_activity(db, user_id=user.id, email=user.email, action="payment_completed", 
+        log_activity(db, user_id=user.id, email=user.email, action="payment_completed",
                     status="success", details=f"Credited N{namaskah_amount:.2f} from {reference}")
-        
+
         # Process affiliate commission (10% of all spending)
         if user.referred_by:
             referrer = db.query(User).filter(User.id == user.referred_by).first()
@@ -4589,12 +4589,12 @@ async def paystack_webhook(request: Request, db: Session = Depends(get_db)):
                     Referral.referrer_id == referrer.id,
                     Referral.referred_id == user.id
                 ).first()
-                
+
                 if existing_referral and existing_referral.reward_amount == 0 and namaskah_amount >= 2.5:
                     # Give referrer 1 free verification (one-time bonus)
                     referrer.free_verifications += 1
                     existing_referral.reward_amount = 1.0
-                    
+
                     db.add(Transaction(
                         id=f"txn_{datetime.now(timezone.utc).timestamp()}",
                         user_id=referrer.id,
@@ -4602,7 +4602,7 @@ async def paystack_webhook(request: Request, db: Session = Depends(get_db)):
                         type="credit",
                         description=f"Referral signup bonus: {user.email}"
                     ))
-                    
+
                     send_email(
                         referrer.email,
                         "🎁 Referral Bonus - Namaskah SMS",
@@ -4611,11 +4611,11 @@ async def paystack_webhook(request: Request, db: Session = Depends(get_db)):
                         <p>You received: <strong>1 Free Verification</strong></p>
                         <p><a href="{BASE_URL}/app">Use Your Free Verification</a></p>"""
                     )
-        
+
         db.commit()
-        
+
         print(f"✅ Payment processed: {reference} - N{namaskah_amount} for {user.email}")
-        
+
         # Send confirmation email
         send_email(
             user.email,
@@ -4627,15 +4627,15 @@ async def paystack_webhook(request: Request, db: Session = Depends(get_db)):
             <p>Reference: {reference}</p>
             <p><a href="{BASE_URL}/app">Start Using Credits</a></p>"""
         )
-        
+
         return {"status": "success", "reference": reference, "amount": namaskah_amount}
-    
+
     elif event == 'charge.failed':
         payment_data = data.get('data', {})
         reference = payment_data.get('reference')
         print(f"❌ Payment failed: {reference}")
         return {"status": "failed", "reference": reference}
-    
+
     return {"status": "ignored", "event": event}
 
 @app.get("/wallet/paystack/verify/{reference}", tags=["Wallet"], summary="Verify Payment")
@@ -4643,28 +4643,28 @@ def verify_payment(reference: str, user: User = Depends(get_current_user), db: S
     """Verify Paystack payment status (manual verification)"""
     if not PAYSTACK_SECRET_KEY or not PAYSTACK_SECRET_KEY.startswith('sk_'):
         return {"status": "demo", "message": "Demo mode - payment not verified"}
-    
+
     try:
         headers = {"Authorization": f"Bearer {PAYSTACK_SECRET_KEY}"}
         r = requests.get(f"https://api.paystack.co/transaction/verify/{reference}", headers=headers)
         r.raise_for_status()
         response_data = r.json()
-        
+
         if not response_data.get('status'):
             return {"status": "error", "message": "Invalid response from Paystack"}
-        
+
         payment_data = response_data.get('data', {})
         payment_status = payment_data.get('status')
-        
+
         if payment_status == 'success':
             amount_kobo = payment_data.get('amount', 0)
             amount = amount_kobo / 100  # Convert from kobo
-            
+
             # Check if already credited
             existing = db.query(Transaction).filter(
                 Transaction.description.contains(reference)
             ).first()
-            
+
             if existing:
                 return {
                     "status": "already_credited",
@@ -4672,10 +4672,10 @@ def verify_payment(reference: str, user: User = Depends(get_current_user), db: S
                     "reference": reference,
                     "balance": user.credits
                 }
-            
+
             # Convert USD to Namaskah coins
             namaskah_amount = amount * USD_TO_NAMASKAH
-            
+
             user.credits += namaskah_amount
             transaction = Transaction(
                 id=f"txn_{datetime.now(timezone.utc).timestamp()}",
@@ -4686,7 +4686,7 @@ def verify_payment(reference: str, user: User = Depends(get_current_user), db: S
             )
             db.add(transaction)
             db.commit()
-            
+
             # Send confirmation email
             send_email(
                 user.email,
@@ -4697,7 +4697,7 @@ def verify_payment(reference: str, user: User = Depends(get_current_user), db: S
                 <p>New balance: <strong>N{user.credits:.2f}</strong></p>
                 <p>Reference: {reference}</p>"""
             )
-            
+
             return {
                 "status": "success",
                 "amount": namaskah_amount,
@@ -4724,7 +4724,7 @@ def create_api_key(req: CreateAPIKeyRequest, user: User = Depends(get_current_us
     """Generate new API key for programmatic access"""
     import secrets
     key = f"nsk_{secrets.token_urlsafe(32)}"
-    
+
     api_key = APIKey(
         id=f"key_{datetime.now(timezone.utc).timestamp()}",
         user_id=user.id,
@@ -4733,7 +4733,7 @@ def create_api_key(req: CreateAPIKeyRequest, user: User = Depends(get_current_us
     )
     db.add(api_key)
     db.commit()
-    
+
     return {"key": key, "name": req.name, "created_at": api_key.created_at}
 
 @app.get("/api-keys/list", tags=["API Keys"], summary="List API Keys")
@@ -4759,7 +4759,7 @@ def delete_api_key(key_id: str, user: User = Depends(get_current_user), db: Sess
     key = db.query(APIKey).filter(APIKey.id == key_id, APIKey.user_id == user.id).first()
     if not key:
         raise HTTPException(status_code=404, detail="API key not found")
-    
+
     db.delete(key)
     db.commit()
     return {"message": "API key deleted"}
@@ -4775,7 +4775,7 @@ def create_webhook(req: CreateWebhookRequest, user: User = Depends(get_current_u
     )
     db.add(webhook)
     db.commit()
-    
+
     return {"id": webhook.id, "url": webhook.url, "is_active": webhook.is_active}
 
 @app.get("/webhooks/list", tags=["Webhooks"], summary="List Webhooks")
@@ -4800,15 +4800,15 @@ def delete_webhook(webhook_id: str, user: User = Depends(get_current_user), db: 
     webhook = db.query(Webhook).filter(Webhook.id == webhook_id, Webhook.user_id == user.id).first()
     if not webhook:
         raise HTTPException(status_code=404, detail="Webhook not found")
-    
+
     db.delete(webhook)
     db.commit()
     return {"message": "Webhook deleted"}
 
 async def send_webhook(user_id: str, verification_id: str, messages: list, db: Session):
     """Send SMS to user webhooks"""
-    webhooks = db.query(Webhook).filter(Webhook.user_id == user_id, Webhook.is_active == True).all()
-    
+    webhooks = db.query(Webhook).filter(Webhook.user_id == user_id, Webhook.is_active is True).all()
+
     for webhook in webhooks:
         try:
             payload = {
@@ -4817,7 +4817,7 @@ async def send_webhook(user_id: str, verification_id: str, messages: list, db: S
                 "timestamp": datetime.now(timezone.utc).isoformat()
             }
             requests.post(webhook.url, json=payload, timeout=5)
-        except:
+        except Exception:
             pass
 
 # Analytics Endpoints
@@ -4825,13 +4825,13 @@ async def send_webhook(user_id: str, verification_id: str, messages: list, db: S
 def get_analytics(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Get usage analytics: total verifications, spending, success rate, popular services, daily usage"""
     from sqlalchemy import func
-    
+
     # Enhanced analytics if available
     if OPTIMIZATIONS_AVAILABLE:
         try:
             from advanced_analytics import AdvancedAnalytics
             analytics = AdvancedAnalytics(db)
-            
+
             if user.is_admin:
                 return analytics.generate_executive_dashboard()
             else:
@@ -4840,13 +4840,13 @@ def get_analytics(user: User = Depends(get_current_user), db: Session = Depends(
                 total_verifications = len(user_verifications)
                 successful = len([v for v in user_verifications if v.status == "completed"])
                 success_rate = (successful / total_verifications * 100) if total_verifications > 0 else 0
-                
+
                 transactions = db.query(Transaction).filter(
                     Transaction.user_id == user.id,
                     Transaction.type == "debit"
                 ).all()
                 total_spent = sum(abs(t.amount) for t in transactions)
-                
+
                 return {
                     "total_verifications": total_verifications,
                     "success_rate": round(success_rate, 1),
@@ -4856,51 +4856,51 @@ def get_analytics(user: User = Depends(get_current_user), db: Session = Depends(
                 }
         except Exception as e:
             pass  # Fallback to basic analytics
-    
+
     # Basic analytics fallback
     total_verifications = db.query(Verification).filter(Verification.user_id == user.id).count()
-    
+
     total_spent = db.query(func.sum(Transaction.amount)).filter(
         Transaction.user_id == user.id,
         Transaction.type == "debit"
     ).scalar() or 0
-    
+
     completed = db.query(Verification).filter(
         Verification.user_id == user.id,
         Verification.status == "completed"
     ).count()
     success_rate = (completed / total_verifications * 100) if total_verifications > 0 else 0
-    
+
     popular = db.query(
         Verification.service_name,
         func.count(Verification.id).label('count')
     ).filter(
         Verification.user_id == user.id
     ).group_by(Verification.service_name).order_by(func.count(Verification.id).desc()).limit(5).all()
-    
+
     seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
     recent_verifications = db.query(Verification).filter(
         Verification.user_id == user.id,
         Verification.created_at >= seven_days_ago
     ).count()
-    
+
     daily_usage = []
     for i in range(7):
         day = datetime.now(timezone.utc) - timedelta(days=i)
         day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
         day_end = day_start + timedelta(days=1)
-        
+
         count = db.query(Verification).filter(
             Verification.user_id == user.id,
             Verification.created_at >= day_start,
             Verification.created_at < day_end
         ).count()
-        
+
         daily_usage.append({
             "date": day_start.strftime("%Y-%m-%d"),
             "count": count
         })
-    
+
     return {
         "total_verifications": total_verifications,
         "total_spent": abs(total_spent),
@@ -4926,7 +4926,7 @@ def get_receipt_history(limit: int = 50, user: User = Depends(get_current_user),
     """Get user's verification receipts"""
     receipt_service = ReceiptService(db)
     receipts = receipt_service.get_user_receipts(user.id, limit)
-    
+
     return {
         "receipts": receipts,
         "total_count": len(receipts)
@@ -4939,13 +4939,13 @@ def get_receipt_details(receipt_id: str, user: User = Depends(get_current_user),
         VerificationReceipt.id == receipt_id,
         VerificationReceipt.user_id == user.id
     ).first()
-    
+
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
-    
+
     import json
     receipt_data = json.loads(receipt.receipt_data) if receipt.receipt_data else {}
-    
+
     return {
         "id": receipt.id,
         "receipt_number": f"NSK-{receipt.verification_id[-8:].upper()}",
@@ -4965,9 +4965,9 @@ def get_notifications(unread_only: bool = False, limit: int = 50, user: User = D
     """Get user's in-app notifications"""
     notification_service = NotificationService(db)
     notifications = notification_service.get_user_notifications(user.id, unread_only, limit)
-    
+
     unread_count = len([n for n in notifications if not n['is_read']])
-    
+
     return {
         "notifications": notifications,
         "unread_count": unread_count,
@@ -4979,10 +4979,10 @@ def mark_notification_read(notification_id: str, user: User = Depends(get_curren
     """Mark specific notification as read"""
     notification_service = NotificationService(db)
     success = notification_service.mark_notification_read(notification_id, user.id)
-    
+
     if not success:
         raise HTTPException(status_code=404, detail="Notification not found")
-    
+
     return {"message": "Notification marked as read"}
 
 @app.post("/notifications/mark-all-read", tags=["Notifications"], summary="Mark All Notifications as Read")
@@ -4990,7 +4990,7 @@ def mark_all_notifications_read(user: User = Depends(get_current_user), db: Sess
     """Mark all notifications as read for user"""
     notification_service = NotificationService(db)
     notification_service.mark_all_read(user.id)
-    
+
     return {"message": "All notifications marked as read"}
 
 @app.get("/notifications/settings", tags=["Notifications"], summary="Get Notification Settings")
@@ -4998,10 +4998,10 @@ def get_notification_settings(user: User = Depends(get_current_user), db: Sessio
     """Get notification preferences including receipt notifications"""
     notification_service = NotificationService(db)
     preferences = notification_service.get_notification_preferences(user.id)
-    
+
     # Also get legacy settings for backward compatibility
     legacy_settings = db.query(NotificationSettings).filter(NotificationSettings.user_id == user.id).first()
-    
+
     return {
         "in_app_notifications": preferences["in_app_notifications"],
         "email_notifications": preferences["email_notifications"],
@@ -5025,7 +5025,7 @@ def update_notification_settings(
 ):
     """Update notification preferences"""
     notification_service = NotificationService(db)
-    
+
     # Update new notification preferences
     preferences = notification_service.update_notification_preferences(
         user_id=user.id,
@@ -5033,27 +5033,27 @@ def update_notification_settings(
         email_notifications=email_notifications,
         receipt_notifications=receipt_notifications
     )
-    
+
     # Update legacy settings if provided
     if any([email_on_sms is not None, email_on_low_balance is not None, low_balance_threshold is not None]):
         legacy_settings = db.query(NotificationSettings).filter(NotificationSettings.user_id == user.id).first()
-        
+
         if not legacy_settings:
             legacy_settings = NotificationSettings(
                 id=f"notif_{datetime.now(timezone.utc).timestamp()}",
                 user_id=user.id
             )
             db.add(legacy_settings)
-        
+
         if email_on_sms is not None:
             legacy_settings.email_on_sms = email_on_sms
         if email_on_low_balance is not None:
             legacy_settings.email_on_low_balance = email_on_low_balance
         if low_balance_threshold is not None:
             legacy_settings.low_balance_threshold = low_balance_threshold
-        
+
         db.commit()
-    
+
     return {"message": "Notification settings updated", "preferences": preferences}
 
 # Referral Endpoints
@@ -5061,7 +5061,7 @@ def update_notification_settings(
 def get_referral_stats(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Get referral code, earnings, and referred users list"""
     referrals = db.query(Referral).filter(Referral.referrer_id == user.id).all()
-    
+
     referred_users = []
     for ref in referrals:
         referred_user = db.query(User).filter(User.id == ref.referred_id).first()
@@ -5071,7 +5071,7 @@ def get_referral_stats(user: User = Depends(get_current_user), db: Session = Dep
                 "joined_at": ref.created_at,
                 "reward": ref.reward_amount
             })
-    
+
     return {
         "referral_code": user.referral_code,
         "total_referrals": len(referrals),
@@ -5094,7 +5094,7 @@ def submit_support(req: SupportRequest, db: Session = Depends(get_db)):
     )
     db.add(ticket)
     db.commit()
-    
+
     # Send confirmation email to user
     send_email(
         req.email,
@@ -5107,7 +5107,7 @@ def submit_support(req: SupportRequest, db: Session = Depends(get_db)):
         <p>{req.message}</p>
         <p>You'll receive a response at this email address.</p>"""
     )
-    
+
     return {
         "success": True,
         "ticket_id": ticket.id,
@@ -5120,9 +5120,9 @@ def get_support_tickets(status: str = None, admin: User = Depends(get_admin_user
     query = db.query(SupportTicket)
     if status:
         query = query.filter(SupportTicket.status == status)
-    
+
     tickets = query.order_by(SupportTicket.created_at.desc()).all()
-    
+
     return {
         "tickets": [
             {
@@ -5146,12 +5146,12 @@ def respond_to_ticket(ticket_id: str, req: AdminResponseRequest, admin: User = D
     ticket = db.query(SupportTicket).filter(SupportTicket.id == ticket_id).first()
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
-    
+
     ticket.admin_response = req.response
     ticket.status = "resolved"
     ticket.updated_at = datetime.now(timezone.utc)
     db.commit()
-    
+
     # Send response email to user
     send_email(
         ticket.email,
@@ -5166,7 +5166,7 @@ def respond_to_ticket(ticket_id: str, req: AdminResponseRequest, admin: User = D
         <p>If you need further assistance, please reply to this email.</p>
         <p>Best regards,<br>Namaskah Support Team</p>"""
     )
-    
+
     return {"message": "Response sent successfully", "ticket_id": ticket.id}
 
 @app.patch("/admin/support/{ticket_id}/status", tags=["Admin"], summary="Update Ticket Status")
@@ -5175,15 +5175,15 @@ def update_ticket_status(ticket_id: str, status: str, admin: User = Depends(get_
     valid_statuses = ["open", "in_progress", "resolved", "closed"]
     if status not in valid_statuses:
         raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}")
-    
+
     ticket = db.query(SupportTicket).filter(SupportTicket.id == ticket_id).first()
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
-    
+
     ticket.status = status
     ticket.updated_at = datetime.now(timezone.utc)
     db.commit()
-    
+
     return {"message": "Status updated", "ticket_id": ticket.id, "new_status": status}
 
 # Service Pricing Management (Dynamic)
@@ -5244,9 +5244,9 @@ def set_service_price(service_name: str, price: float, is_popular: bool = False,
     """Set custom price for specific service (admin only)"""
     if price < 0.5:
         raise HTTPException(status_code=400, detail="Minimum price is N0.50")
-    
+
     pricing = db.query(ServicePricing).filter(ServicePricing.service_name == service_name).first()
-    
+
     if pricing:
         pricing.price = price
         pricing.is_popular = is_popular
@@ -5259,7 +5259,7 @@ def set_service_price(service_name: str, price: float, is_popular: bool = False,
             is_popular=is_popular
         )
         db.add(pricing)
-    
+
     db.commit()
     return {"message": f"Price set for {service_name}", "price": price}
 
@@ -5270,7 +5270,7 @@ def bulk_update_pricing(services: dict, admin: User = Depends(get_admin_user), d
     for service_name, price in services.items():
         if price < 0.5:
             continue
-        
+
         pricing = db.query(ServicePricing).filter(ServicePricing.service_name == service_name).first()
         if pricing:
             pricing.price = price
@@ -5283,7 +5283,7 @@ def bulk_update_pricing(services: dict, admin: User = Depends(get_admin_user), d
             )
             db.add(pricing)
         updated.append(service_name)
-    
+
     db.commit()
     return {"message": f"Updated {len(updated)} services", "services": updated}
 
@@ -5312,7 +5312,7 @@ def get_system_config(admin: User = Depends(get_admin_user), db: Session = Depen
 def set_system_config(key: str, value: str, description: str = None, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Set system configuration value (admin only)"""
     config = db.query(SystemConfig).filter(SystemConfig.key == key).first()
-    
+
     if config:
         config.value = value
         if description:
@@ -5326,7 +5326,7 @@ def set_system_config(key: str, value: str, description: str = None, admin: User
             description=description
         )
         db.add(config)
-    
+
     db.commit()
     return {"message": f"Configuration {key} updated", "value": value}
 
@@ -5342,7 +5342,7 @@ def get_rental_pricing(
     db: Session = Depends(get_db)
 ):
     """Get dynamic pricing for rental with breakdown
-    
+
     - **hours**: Duration in hours (1-8760)
     - **service_name**: Service type (affects pricing tier)
     - **mode**: 'always_ready' or 'manual' (30% discount)
@@ -5355,10 +5355,10 @@ def get_rental_pricing(
             NumberRental.user_id == user.id,
             NumberRental.status == "active"
         ).count()
-        
+
         # Use higher of current active count or requested bulk count
         effective_bulk_count = max(active_count + 1, bulk_count)
-        
+
         # Get detailed pricing breakdown
         breakdown = get_rental_price_breakdown(
             hours=hours,
@@ -5367,16 +5367,16 @@ def get_rental_pricing(
             auto_renew=auto_renew,
             bulk_count=effective_bulk_count
         )
-        
+
         # Add rental type info
         breakdown['is_hourly_rental'] = hours <= 24
         breakdown['rental_type'] = 'Hourly' if hours <= 24 else 'Extended'
         breakdown['mode'] = mode
         breakdown['auto_renew'] = auto_renew
         breakdown['bulk_count'] = effective_bulk_count
-        
+
         return breakdown
-        
+
     except Exception as e:
         logger.error(f"Pricing calculation error: {e}")
         raise HTTPException(status_code=500, detail=f"Pricing calculation failed: {str(e)}")
@@ -5384,28 +5384,28 @@ def get_rental_pricing(
 @app.post("/rentals/create", tags=["Rentals"], summary="Create Number Rental")
 def create_rental(req: CreateRentalRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Rent a phone number for specified duration
-    
+
     Supports hourly (1-24h) and extended rentals. Pricing varies by service and mode.
     """
     # Validate rental duration
     if req.duration_hours < 1:
         raise HTTPException(status_code=400, detail="Minimum rental duration is 1 hour")
-    
+
     if req.duration_hours > 8760:  # 365 days
         raise HTTPException(status_code=400, detail="Maximum rental duration is 8760 hours (1 year)")
-    
+
     # Email verification bypassed for development
-    
+
     # Default to always_ready mode if not specified
     mode = getattr(req, 'mode', 'always_ready')
     auto_renew = getattr(req, 'auto_extend', False)
-    
+
     # Get active rental count for bulk discount
     active_count = db.query(NumberRental).filter(
         NumberRental.user_id == user.id,
         NumberRental.status == "active"
     ).count()
-    
+
     # Calculate cost with new pricing (including bulk discount)
     cost = get_hourly_rental_price(
         hours=req.duration_hours,
@@ -5414,10 +5414,10 @@ def create_rental(req: CreateRentalRequest, user: User = Depends(get_current_use
         auto_renew=auto_renew,
         bulk_count=active_count + 1  # +1 for the new rental
     )
-    
+
     if user.credits < cost:
         raise HTTPException(status_code=402, detail=f"Insufficient credits. Need N{cost}, have N{user.credits}")
-    
+
     # Check active rental limit (max 5)
     active_count = db.query(NumberRental).filter(
         NumberRental.user_id == user.id,
@@ -5425,24 +5425,24 @@ def create_rental(req: CreateRentalRequest, user: User = Depends(get_current_use
     ).count()
     if active_count >= 5:
         raise HTTPException(status_code=400, detail="Maximum 5 active rentals allowed")
-    
+
     # Deduct credits
     user.credits -= cost
-    
+
     # Create verification for rental
     try:
         verification_id = tv_client.create_verification(
-            req.service_name, 
+            req.service_name,
             "sms"
         )
         details = tv_client.get_verification(verification_id)
         phone_number = details.get("number")
-        
+
         if not phone_number:
             raise HTTPException(status_code=503, detail="Failed to get phone number from provider")
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Rental service unavailable: {str(e)}")
-    
+
     now = datetime.now(timezone.utc)
     rental = NumberRental(
         id=f"rental_{int(now.timestamp() * 1000)}",
@@ -5458,7 +5458,7 @@ def create_rental(req: CreateRentalRequest, user: User = Depends(get_current_use
         auto_extend=req.auto_extend
     )
     db.add(rental)
-    
+
     # Create transaction
     db.add(Transaction(
         id=f"txn_{now.timestamp()}",
@@ -5468,7 +5468,7 @@ def create_rental(req: CreateRentalRequest, user: User = Depends(get_current_use
         description=f"Rental: {req.service_name} for {req.duration_hours}h"
     ))
     db.commit()
-    
+
     return {
         "id": rental.id,
         "phone_number": rental.phone_number,
@@ -5492,7 +5492,7 @@ def list_active_rentals(user: User = Depends(get_current_user), db: Session = De
             NumberRental.user_id == user.id,
             NumberRental.status == "active"
         ).order_by(NumberRental.expires_at).all()
-        
+
         now = datetime.now(timezone.utc)
         return {
             "rentals": [
@@ -5518,10 +5518,10 @@ def get_rental(rental_id: str, user: User = Depends(get_current_user), db: Sessi
         NumberRental.id == rental_id,
         NumberRental.user_id == user.id
     ).first()
-    
+
     if not rental:
         raise HTTPException(status_code=404, detail="Rental not found")
-    
+
     now = datetime.now(timezone.utc)
     return {
         "id": rental.id,
@@ -5544,20 +5544,20 @@ def extend_rental(rental_id: str, req: ExtendRentalRequest, user: User = Depends
         NumberRental.user_id == user.id,
         NumberRental.status == "active"
     ).first()
-    
+
     if not rental:
         raise HTTPException(status_code=404, detail="Active rental not found")
-    
+
     # Get current rental mode and auto-extend setting
     mode = getattr(rental, 'mode', 'always_ready')
     auto_renew = getattr(rental, 'auto_extend', False)
-    
+
     # Get active rental count for bulk discount
     active_count = db.query(NumberRental).filter(
         NumberRental.user_id == user.id,
         NumberRental.status == "active"
     ).count()
-    
+
     # Calculate extension cost with pricing breakdown
     pricing_breakdown = get_rental_price_breakdown(
         hours=req.additional_hours,
@@ -5566,18 +5566,18 @@ def extend_rental(rental_id: str, req: ExtendRentalRequest, user: User = Depends
         auto_renew=auto_renew,
         bulk_count=active_count
     )
-    
+
     cost = pricing_breakdown['final_price']
-    
+
     if user.credits < cost:
         raise HTTPException(status_code=402, detail=f"Insufficient credits. Need N{cost}, have N{user.credits}")
-    
+
     # Update rental
     user.credits -= cost
     rental.expires_at += timedelta(hours=req.additional_hours)
     rental.duration_hours += req.additional_hours
     rental.cost += cost
-    
+
     # Create transaction
     db.add(Transaction(
         id=f"txn_{datetime.now(timezone.utc).timestamp()}",
@@ -5587,7 +5587,7 @@ def extend_rental(rental_id: str, req: ExtendRentalRequest, user: User = Depends
         description=f"Extended rental {rental_id} by {req.additional_hours}h"
     ))
     db.commit()
-    
+
     return {
         "id": rental.id,
         "extension_hours": req.additional_hours,
@@ -5607,15 +5607,15 @@ def release_rental(rental_id: str, user: User = Depends(get_current_user), db: S
             NumberRental.user_id == user.id,
             NumberRental.status == "active"
         ).first()
-        
+
         if not rental:
             raise HTTPException(status_code=404, detail="Active rental not found")
-        
+
         refund = calculate_refund(rental)
         user.credits += refund
         rental.status = "released"
         rental.released_at = datetime.now(timezone.utc)
-        
+
         if refund > 0:
             db.add(Transaction(
                 id=f"txn_{datetime.now(timezone.utc).timestamp()}",
@@ -5624,9 +5624,9 @@ def release_rental(rental_id: str, user: User = Depends(get_current_user), db: S
                 type="credit",
                 description=f"Refund for early release of rental {rental_id}"
             ))
-        
+
         db.commit()
-        
+
         return {
             "id": rental.id,
             "status": "released",
@@ -5648,19 +5648,19 @@ def get_rental_messages(rental_id: str, user: User = Depends(get_current_user), 
         NumberRental.id == rental_id,
         NumberRental.user_id == user.id
     ).first()
-    
+
     if not rental:
         raise HTTPException(status_code=404, detail="Rental not found")
-    
+
     if rental.status != "active":
         raise HTTPException(status_code=400, detail="Rental is not active")
-    
+
     # Get messages from TextVerified
     try:
         # TextVerified uses verification ID to track rentals
         # We need to extract the verification ID from the rental
         messages = tv_client.get_messages(rental.id)
-        
+
         return {
             "rental_id": rental.id,
             "phone_number": rental.phone_number,
@@ -5687,32 +5687,32 @@ def get_rental_messages(rental_id: str, user: User = Depends(get_current_user), 
 class ConnectionManager:
     def __init__(self):
         self.active_connections: dict = {}
-    
+
     async def connect(self, websocket: WebSocket, user_id: str):
         await websocket.accept()
         self.active_connections[user_id] = websocket
         print(f"WebSocket connected: {user_id}")
-    
+
     def disconnect(self, user_id: str):
         if user_id in self.active_connections:
             del self.active_connections[user_id]
             print(f"WebSocket disconnected: {user_id}")
-    
+
     async def send_personal_message(self, message: dict, user_id: str):
         if user_id in self.active_connections:
             try:
                 await self.active_connections[user_id].send_json(message)
-            except:
+            except Exception:
                 self.disconnect(user_id)
-    
+
     async def broadcast_message(self, message: dict):
         disconnected = []
         for user_id, connection in self.active_connections.items():
             try:
                 await connection.send_json(message)
-            except:
+            except Exception:
                 disconnected.append(user_id)
-        
+
         for user_id in disconnected:
             self.disconnect(user_id)
 
@@ -5753,7 +5753,7 @@ if REDIS_MODULE_AVAILABLE:
         redis_client = redis.from_url(REDIS_URL, decode_responses=True)
         redis_client.ping()
         REDIS_AVAILABLE = True
-    except:
+    except Exception:
         redis_client = None
         REDIS_AVAILABLE = False
         print("Redis not available, using in-memory rate limiting")
@@ -5766,26 +5766,26 @@ def check_rate_limit(user_id: str, limit: int = 100, window: int = 60):
     """Check if user exceeded rate limit (100 req/min)"""
     if not REDIS_AVAILABLE:
         return True  # Skip rate limiting if Redis unavailable
-    
+
     try:
         key = f"rate_limit:{user_id}"
         now = time_module.time()
-        
+
         # Remove old requests outside window
         redis_client.zremrangebyscore(key, 0, now - window)
-        
+
         # Count requests in current window
         request_count = redis_client.zcard(key)
-        
+
         if request_count >= limit:
             return False
-        
+
         # Add current request
         redis_client.zadd(key, {str(now): now})
         redis_client.expire(key, window)
-        
+
         return True
-    except:
+    except Exception:
         return True  # Allow request if Redis fails
 
 @app.middleware("http")
@@ -5803,13 +5803,13 @@ async def security_headers_middleware(request: Request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    
+
     # Performance headers
     if request.url.path.startswith("/static/"):
         response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
     elif request.url.path in ["/", "/app", "/api-docs"]:
         response.headers["Cache-Control"] = "public, max-age=3600"
-    
+
     return response
 
 @app.middleware("http")
@@ -5822,7 +5822,7 @@ async def request_id_middleware(request: Request, call_next):
 @app.middleware("http")
 async def request_logging_middleware(request: Request, call_next):
     start_time = time_module.time()
-    
+
     # Extract user ID from token if present
     user_id = "anonymous"
     auth_header = request.headers.get("authorization")
@@ -5831,15 +5831,15 @@ async def request_logging_middleware(request: Request, call_next):
             token = auth_header.split(" ")[1]
             payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
             user_id = payload.get("user_id", "unknown")
-        except:
+        except Exception:
             pass
-    
+
     # Process request
     response = await call_next(request)
-    
+
     # Calculate duration
     duration = time_module.time() - start_time
-    
+
     # Log request
     logger.info(
         f"{request.method} {request.url.path} - "
@@ -5847,7 +5847,7 @@ async def request_logging_middleware(request: Request, call_next):
         f"Duration: {duration:.3f}s - "
         f"User: {user_id}"
     )
-    
+
     return response
 
 @app.middleware("http")
@@ -5855,7 +5855,7 @@ async def rate_limit_middleware(request: Request, call_next):
     # Skip rate limiting for static files and docs
     if request.url.path.startswith("/static") or request.url.path in ["/", "/app", "/admin", "/api-docs", "/health"]:
         return await call_next(request)
-    
+
     # Extract user from token
     auth_header = request.headers.get("authorization")
     if auth_header and auth_header.startswith("Bearer "):
@@ -5863,12 +5863,12 @@ async def rate_limit_middleware(request: Request, call_next):
             token = auth_header.split(" ")[1]
             payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
             user_id = payload.get("user_id")
-            
+
             if not check_rate_limit(user_id):
                 return {"detail": "Rate limit exceeded. Max 100 requests per minute."}
-        except:
+        except Exception:
             pass
-    
+
     return await call_next(request)
 
 if __name__ == "__main__":
