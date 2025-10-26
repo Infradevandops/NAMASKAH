@@ -1,5 +1,6 @@
 """Verification API router for SMS/voice verification and number rentals."""
 from typing import List, Optional
+from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
@@ -306,7 +307,6 @@ async def create_number_rental(
     user.credits -= total_cost
     
     # Create rental (simplified - would integrate with TextVerified)
-    from datetime import datetime, timezone, timedelta
     
     rental = NumberRental(
         user_id=user_id,

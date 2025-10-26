@@ -1,7 +1,7 @@
 """Async processing implementation for task 12.3."""
 import asyncio
 from typing import Dict, Any, List
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from app.services.notification_service import NotificationService
 from app.services.payment_service import PaymentService
 
