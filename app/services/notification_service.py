@@ -1,5 +1,6 @@
 """Notification service for email, SMS, and webhook delivery."""
 import asyncio
+import logging
 import smtplib
 from datetime import datetime, timezone
 from email.mime.text import MIMEText
@@ -14,6 +15,8 @@ from app.models.verification import VerificationReceipt
 from app.core.config import settings
 from app.core.exceptions import ExternalServiceError
 from .base import BaseService
+
+logger = logging.getLogger(__name__)
 
 
 class NotificationService(BaseService[InAppNotification]):
