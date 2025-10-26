@@ -5,9 +5,7 @@ Tests Redis connectivity, performance, and production configurations.
 import pytest
 import asyncio
 import time
-import json
 from app.core.caching import cache, CacheManager
-from app.core.config import settings
 
 
 class TestProductionRedis:

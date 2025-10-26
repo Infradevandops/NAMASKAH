@@ -12,8 +12,8 @@ from app.models.verification import Verification, NumberRental
 from app.schemas import (
     VerificationCreate, VerificationResponse, MessageResponse,
     NumberRentalRequest, NumberRentalResponse, ExtendRentalRequest,
-    RetryVerificationRequest, ServicePriceResponse, VerificationHistoryResponse,
-    SuccessResponse, PaginationResponse
+    RetryVerificationRequest, VerificationHistoryResponse,
+    SuccessResponse, 
 )
 from app.core.exceptions import InsufficientCreditsError, ExternalServiceError
 

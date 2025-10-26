@@ -2,11 +2,9 @@
 import time
 from collections import defaultdict, deque
 from typing import Dict, Optional, Tuple
-from fastapi import Request, HTTPException, status
+from fastapi import Request, status
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
-
-from app.core.config import settings
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):

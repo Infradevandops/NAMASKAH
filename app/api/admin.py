@@ -1,7 +1,7 @@
 """Admin API router for user management and system monitoring."""
 from typing import List, Optional
 from datetime import datetime, timezone, timedelta
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
+from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 

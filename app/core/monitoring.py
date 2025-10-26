@@ -1,5 +1,4 @@
 """Comprehensive monitoring system for task 14.3."""
-import time
 import asyncio
 from datetime import datetime, timezone
 from typing import Dict, Any, List

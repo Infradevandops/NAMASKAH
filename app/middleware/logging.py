@@ -5,8 +5,6 @@ from typing import Dict, Any, Optional
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
-
-from app.core.config import settings
 from app.core.logging import get_logger, log_performance
 
 # Get structured logger

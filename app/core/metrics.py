@@ -6,9 +6,7 @@ import time
 import psutil
 from typing import Dict, Any, Optional
 from collections import defaultdict, Counter
-from datetime import datetime, timedelta
 from prometheus_client import Counter as PrometheusCounter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
-from fastapi import Request, Response
 from app.core.config import settings
 from app.core.logging import get_logger
 

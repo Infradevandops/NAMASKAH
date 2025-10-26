@@ -1,6 +1,5 @@
 """Production readiness checklist for task 15.3."""
 import asyncio
-import time
 from typing import Dict, List, Any, Tuple
 from dataclasses import dataclass
 from enum import Enum

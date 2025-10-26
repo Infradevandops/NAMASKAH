@@ -9,9 +9,8 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.pool import QueuePool
 from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
-from app.core.database import get_db, engine
+from app.core.database import get_db
 from app.models.user import User
-from app.models.verification import Verification
 
 
 class TestProductionDatabase:

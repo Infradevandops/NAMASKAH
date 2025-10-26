@@ -1,8 +1,6 @@
 """Caching layer implementation for task 12.2."""
 import json
-import asyncio
 from typing import Any, Optional, Dict
-from datetime import timedelta
 import redis.asyncio as redis
 from app.core.config import settings
 

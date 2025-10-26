@@ -7,7 +7,7 @@ from app.core.database import get_db
 from app.core.config import settings
 from app.core.health_checks import HealthChecker, readiness_probe, liveness_probe
 from app.core.monitoring import dashboard_metrics
-from app.schemas import HealthCheck, ServiceStatusSummary, ServiceStatus
+from app.schemas import ServiceStatusSummary, ServiceStatus
 
 router = APIRouter(prefix="/system", tags=["System"])
 

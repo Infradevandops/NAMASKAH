@@ -2,7 +2,6 @@
 import asyncio
 from datetime import datetime, timezone
 from typing import Dict, Any
-from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.caching import cache
 

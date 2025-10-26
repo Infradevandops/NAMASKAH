@@ -1,6 +1,6 @@
 """Monitoring middleware for request tracking."""
 import time
-from fastapi import Request, Response
+from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.core.monitoring import performance_monitor, error_tracker
 

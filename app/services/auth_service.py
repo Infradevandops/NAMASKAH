@@ -1,6 +1,6 @@
 """Authentication service for user management and JWT operations."""
 from typing import Optional, Dict, Any
-from datetime import datetime, timezone, timedelta
+from datetime import timedelta
 from sqlalchemy.orm import Session
 from app.models.user import User, APIKey
 from app.services.base import BaseService
@@ -8,7 +8,7 @@ from app.utils.security import (
     hash_password, verify_password, create_access_token, 
     verify_token, generate_api_key, generate_secure_id
 )
-from app.core.exceptions import AuthenticationError, ValidationError
+from app.core.exceptions import ValidationError
 
 
 class AuthService(BaseService[User]):
