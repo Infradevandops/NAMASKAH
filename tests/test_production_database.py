@@ -45,13 +45,15 @@ class TestProductionDatabase:
         finally:
             session.close()
     
-    def test_database_connection(self, db_engine):
+    @staticmethod
+    def test_database_connection(db_engine):
         """Test basic database connectivity."""
         with db_engine.connect() as conn:
             result = conn.execute(text("SELECT 1"))
             assert result.scalar() == 1
     
-    def test_connection_pool_configuration(self, db_engine):
+    @staticmethod
+    def test_connection_pool_configuration(db_engine):
         """Test connection pool is properly configured."""
         pool = db_engine.pool
         assert pool.size() == 20  # pool_size
@@ -59,7 +61,8 @@ class TestProductionDatabase:
         assert pool._pre_ping is True
         assert pool._recycle == 3600
     
-    def test_concurrent_connections(self, db_engine):
+    @staticmethod
+    def test_concurrent_connections(db_engine):
         """Test handling of concurrent database connections."""
         def create_connection():
             with db_engine.connect() as conn:
@@ -75,7 +78,8 @@ class TestProductionDatabase:
         assert len(results) == 10
         assert all(result == 1 for result in results)
     
-    def test_connection_pool_exhaustion_handling(self, db_engine):
+    @staticmethod
+    def test_connection_pool_exhaustion_handling(db_engine):
         """Test behavior when connection pool is exhausted."""
         connections = []
         
@@ -95,7 +99,8 @@ class TestProductionDatabase:
             for conn in connections:
                 conn.close()
     
-    def test_database_performance_simple_query(self, db_session):
+    @staticmethod
+    def test_database_performance_simple_query(db_session):
         """Test simple query performance."""
         start_time = time.time()
         
@@ -105,7 +110,8 @@ class TestProductionDatabase:
         duration = time.time() - start_time
         assert duration < 0.1  # Should complete in less than 100ms
     
-    def test_database_performance_complex_query(self, db_session):
+    @staticmethod
+    def test_database_performance_complex_query(db_session):
         """Test complex query performance."""
         start_time = time.time()
         
@@ -125,7 +131,8 @@ class TestProductionDatabase:
         assert duration < 1.0  # Should complete in less than 1 second
         assert row is not None
     
-    def test_transaction_handling(self, db_session):
+    @staticmethod
+    def test_transaction_handling(db_session):
         """Test transaction handling and rollback."""
         # Start transaction
         db_session.begin()
@@ -154,7 +161,8 @@ class TestProductionDatabase:
             db_session.rollback()
             raise
     
-    def test_connection_recovery_after_failure(self, db_engine):
+    @staticmethod
+    def test_connection_recovery_after_failure(db_engine):
         """Test connection recovery after database failure simulation."""
         # First, establish that connection works
         with db_engine.connect() as conn:
@@ -173,7 +181,8 @@ class TestProductionDatabase:
             result = conn.execute(text("SELECT 1"))
             assert result.scalar() == 1
     
-    def test_database_schema_validation(self, db_session):
+    @staticmethod
+    def test_database_schema_validation(db_session):
         """Test that required database schema exists."""
         # Check that main tables exist
         tables_to_check = ['users', 'verifications', 'transactions', 'api_keys']
@@ -189,7 +198,8 @@ class TestProductionDatabase:
             exists = result.scalar()
             assert exists, f"Table {table_name} does not exist"
     
-    def test_database_indexes_exist(self, db_session):
+    @staticmethod
+    def test_database_indexes_exist(db_session):
         """Test that important database indexes exist."""
         # Check for important indexes
         index_queries = [
@@ -202,7 +212,8 @@ class TestProductionDatabase:
             indexes = result.fetchall()
             assert len(indexes) > 0, f"No indexes found for query: {query}"
     
-    def test_database_constraints(self, db_session):
+    @staticmethod
+    def test_database_constraints(db_session):
         """Test database constraints are properly enforced."""
         # Test unique constraint on email
         user1 = User(
@@ -230,7 +241,8 @@ class TestProductionDatabase:
         db_session.delete(user1)
         db_session.commit()
     
-    def test_connection_timeout_handling(self, db_engine):
+    @staticmethod
+    def test_connection_timeout_handling(db_engine):
         """Test connection timeout handling."""
         start_time = time.time()
         
@@ -268,7 +280,8 @@ class TestProductionDatabase:
         assert len(results) == 5
         assert all(result == 1 for result in results)
     
-    def test_database_migration_state(self, db_session):
+    @staticmethod
+    def test_database_migration_state(db_session):
         """Test that database is in expected migration state."""
         # Check alembic version table exists
         query = text("""
@@ -300,7 +313,8 @@ class TestDatabasePerformance:
         finally:
             db.close()
     
-    def test_bulk_insert_performance(self, db_session):
+    @staticmethod
+    def test_bulk_insert_performance(db_session):
         """Test bulk insert performance."""
         start_time = time.time()
         
@@ -325,7 +339,8 @@ class TestDatabasePerformance:
             db_session.delete(user)
         db_session.commit()
     
-    def test_query_with_joins_performance(self, db_session):
+    @staticmethod
+    def test_query_with_joins_performance(db_session):
         """Test performance of queries with joins."""
         start_time = time.time()
         
@@ -344,7 +359,8 @@ class TestDatabasePerformance:
         duration = time.time() - start_time
         assert duration < 2.0  # Should complete in less than 2 seconds
     
-    def test_concurrent_read_performance(self, db_session):
+    @staticmethod
+    def test_concurrent_read_performance(db_session):
         """Test concurrent read performance."""
         def read_operation():
             db = next(get_db())

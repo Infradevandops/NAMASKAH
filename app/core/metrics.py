@@ -108,7 +108,8 @@ class MetricsCollector:
         
         logger.info("Business event recorded", event_type=event_type, status=status)
     
-    def update_system_metrics(self):
+    @staticmethod
+    def update_system_metrics():
         """Update system resource metrics."""
         try:
             # CPU usage

@@ -20,7 +20,8 @@ class ServiceFactory:
             self._services['auth'] = AuthService(self.db)
         return self._services['auth']
     
-    def get_textverified_service(self):
+    @staticmethod
+    def get_textverified_service():
         """Get or create TextVerifiedService instance."""
         # Placeholder - TextVerifiedService not implemented yet
         return None

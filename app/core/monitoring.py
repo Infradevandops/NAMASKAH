@@ -102,7 +102,8 @@ class PerformanceMonitor:
         
         return compliance
     
-    def _calculate_percentile(self, values: List[float], percentile: int) -> float:
+    @staticmethod
+    def _calculate_percentile(values: List[float], percentile: int) -> float:
         """Calculate percentile value."""
         if not values:
             return 0
@@ -138,7 +139,8 @@ class ErrorTracker:
         if self._should_alert(error_data):
             asyncio.create_task(self._send_alert(error_data))
     
-    def _determine_severity(self, error: Exception) -> str:
+    @staticmethod
+    def _determine_severity(error: Exception) -> str:
         """Determine error severity."""
         critical_errors = ["DatabaseError", "PaymentError", "ExternalServiceError"]
         
@@ -163,7 +165,8 @@ class ErrorTracker:
         
         return len(recent_errors) >= self.alert_thresholds["error_rate_5min"]
     
-    async def _send_alert(self, error_data: Dict):
+    @staticmethod
+    async def _send_alert(error_data: Dict):
         """Send error alert."""
         # In production, integrate with alerting system (PagerDuty, Slack, etc.)
         print(f"ALERT: {error_data['severity'].upper()} error - {error_data['message']}")
@@ -196,7 +199,8 @@ class DashboardMetrics:
             ) else "degraded"
         }
     
-    async def get_business_metrics(self) -> Dict[str, Any]:
+    @staticmethod
+    async def get_business_metrics() -> Dict[str, Any]:
         """Get business metrics."""
         # In production, fetch from database
         return {

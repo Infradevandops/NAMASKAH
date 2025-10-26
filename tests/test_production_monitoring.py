@@ -15,7 +15,8 @@ from app.core.config import settings
 class TestMetricsCollection:
     """Test metrics collection functionality."""
     
-    def test_request_metrics_recording(self):
+    @staticmethod
+    def test_request_metrics_recording():
         """Test recording of HTTP request metrics."""
         collector = MetricsCollector()
         
@@ -33,7 +34,8 @@ class TestMetricsCollection:
         assert metrics["requests_per_second"] > 0
         assert metrics["average_response_time"] > 0
     
-    def test_error_metrics_recording(self):
+    @staticmethod
+    def test_error_metrics_recording():
         """Test recording of error metrics."""
         collector = MetricsCollector()
         
@@ -45,7 +47,8 @@ class TestMetricsCollection:
         metrics = collector.get_application_metrics()
         assert metrics["error_count"] == 3
     
-    def test_business_event_metrics(self):
+    @staticmethod
+    def test_business_event_metrics():
         """Test recording of business event metrics."""
         collector = MetricsCollector()
         
@@ -57,7 +60,8 @@ class TestMetricsCollection:
         metrics = collector.get_application_metrics()
         assert metrics["business_events"] == 3
     
-    def test_health_score_calculation(self):
+    @staticmethod
+    def test_health_score_calculation():
         """Test health score calculation."""
         collector = MetricsCollector()
         
@@ -78,7 +82,8 @@ class TestMetricsCollection:
             assert health["health_score"] <= 100
             assert health["status"] in ["healthy", "degraded", "unhealthy"]
     
-    def test_system_metrics_collection(self):
+    @staticmethod
+    def test_system_metrics_collection():
         """Test system metrics collection."""
         collector = MetricsCollector()
         
@@ -88,7 +93,8 @@ class TestMetricsCollection:
         # This should not raise any exceptions
         # The actual values depend on the system state
     
-    def test_prometheus_metrics_format(self):
+    @staticmethod
+    def test_prometheus_metrics_format():
         """Test Prometheus metrics format."""
         from app.core.metrics import get_prometheus_metrics
         
@@ -111,7 +117,8 @@ class TestMetricsCollection:
 class TestLoggingSystem:
     """Test production logging system."""
     
-    def test_structured_logging_format(self):
+    @staticmethod
+    def test_structured_logging_format():
         """Test structured logging produces correct format."""
         logger = get_logger("test")
         
@@ -122,7 +129,8 @@ class TestLoggingSystem:
             # In production, this should produce JSON output
             # In test environment, it might be different
     
-    def test_correlation_id_tracking(self):
+    @staticmethod
+    def test_correlation_id_tracking():
         """Test correlation ID tracking in logs."""
         from app.core.logging import correlation_id_var
         
@@ -133,7 +141,8 @@ class TestLoggingSystem:
         # Verify it's set in context
         assert correlation_id_var.get() == "test-correlation-123"
     
-    def test_business_event_logging(self):
+    @staticmethod
+    def test_business_event_logging():
         """Test business event logging."""
         logger = get_logger("business_test")
         
@@ -148,7 +157,8 @@ class TestLoggingSystem:
             assert call_args[1]["event_type"] == "user_signup"
             assert call_args[1]["metric_type"] == "business"
     
-    def test_security_event_logging(self):
+    @staticmethod
+    def test_security_event_logging():
         """Test security event logging."""
         logger = get_logger("security_test")
         
@@ -166,7 +176,8 @@ class TestLoggingSystem:
             assert call_args[1]["event_type"] == "failed_login_attempt"
             assert call_args[1]["severity"] == "high"
     
-    def test_performance_logging(self):
+    @staticmethod
+    def test_performance_logging():
         """Test performance logging."""
         from app.core.logging import log_performance
         
@@ -182,7 +193,8 @@ class TestLoggingSystem:
             assert call_args[1]["duration_ms"] == 2500
             assert call_args[1]["performance_category"] == "slow"
     
-    def test_error_logging_with_context(self):
+    @staticmethod
+    def test_error_logging_with_context():
         """Test error logging with context."""
         from app.core.logging import log_error
         
@@ -204,7 +216,8 @@ class TestLoggingSystem:
 class TestCacheMetrics:
     """Test cache-specific metrics."""
     
-    def test_cache_hit_miss_tracking(self):
+    @staticmethod
+    def test_cache_hit_miss_tracking():
         """Test cache hit/miss metrics tracking."""
         # Record cache operations
         cache_metrics.record_hit()
@@ -215,7 +228,8 @@ class TestCacheMetrics:
         # We can't easily test the actual values without accessing internal state
         # But we can verify the methods don't raise exceptions
     
-    def test_cache_operation_timing(self):
+    @staticmethod
+    def test_cache_operation_timing():
         """Test cache operation timing metrics."""
         # Record cache operations with timing
         cache_metrics.record_operation("get", 0.001)  # 1ms
@@ -241,7 +255,8 @@ class TestMonitoringIntegration:
         assert len(metrics_data) > 0
         assert content_type == "text/plain; version=0.0.4; charset=utf-8"
     
-    def test_application_info_collection(self):
+    @staticmethod
+    def test_application_info_collection():
         """Test application information collection."""
         from app.core.metrics import get_application_info
         
@@ -257,7 +272,8 @@ class TestMonitoringIntegration:
         assert app_info["version"] == settings.app_version
         assert app_info["environment"] == settings.environment
     
-    def test_database_metrics_integration(self):
+    @staticmethod
+    def test_database_metrics_integration():
         """Test database metrics integration."""
         from app.core.metrics import DatabaseMetrics
         
@@ -296,7 +312,8 @@ class TestMonitoringIntegration:
 class TestMonitoringPerformance:
     """Test monitoring system performance impact."""
     
-    def test_metrics_collection_overhead(self):
+    @staticmethod
+    def test_metrics_collection_overhead():
         """Test that metrics collection has minimal overhead."""
         collector = MetricsCollector()
         
@@ -313,7 +330,8 @@ class TestMonitoringPerformance:
         # Should complete quickly (less than 1 second for 3000 operations)
         assert duration < 1.0
     
-    def test_logging_performance_impact(self):
+    @staticmethod
+    def test_logging_performance_impact():
         """Test logging performance impact."""
         logger = get_logger("performance_test")
         
@@ -328,7 +346,8 @@ class TestMonitoringPerformance:
         # Should complete quickly
         assert duration < 2.0  # 100 log messages in less than 2 seconds
     
-    def test_concurrent_metrics_collection(self):
+    @staticmethod
+    def test_concurrent_metrics_collection():
         """Test concurrent metrics collection performance."""
         import threading
         
@@ -363,7 +382,8 @@ class TestMonitoringPerformance:
 class TestMonitoringAlerts:
     """Test monitoring alert conditions."""
     
-    def test_high_error_rate_detection(self):
+    @staticmethod
+    def test_high_error_rate_detection():
         """Test detection of high error rates."""
         collector = MetricsCollector()
         
@@ -381,7 +401,8 @@ class TestMonitoringAlerts:
         assert health["health_score"] < 90  # Should be degraded
         assert health["factors"]["error_rate"] > 0.1  # 10%+ error rate
     
-    def test_slow_response_time_detection(self):
+    @staticmethod
+    def test_slow_response_time_detection():
         """Test detection of slow response times."""
         collector = MetricsCollector()
         
