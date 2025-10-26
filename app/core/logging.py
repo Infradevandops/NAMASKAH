@@ -133,12 +133,15 @@ def setup_log_rotation():
     """Setup log rotation for production."""
     from logging.handlers import RotatingFileHandler
     
+    # Use /tmp or current directory for logs in containerized environments
+    log_dir = os.environ.get("LOG_DIR", "/tmp/namaskah")
+    
     # Create logs directory
-    os.makedirs("/var/log/namaskah", exist_ok=True)
+    os.makedirs(log_dir, exist_ok=True)
     
     # Setup rotating file handler
     file_handler = RotatingFileHandler(
-        "/var/log/namaskah/app.log",
+        f"{log_dir}/app.log",
         maxBytes=100 * 1024 * 1024,  # 100MB
         backupCount=10
     )
