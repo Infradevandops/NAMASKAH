@@ -25,8 +25,8 @@ class NotificationService(BaseService[InAppNotification]):
     def __init__(self, db: Session):
         super().__init__(InAppNotification, db)
     
+    @staticmethod
     async def send_email(
-        self, 
         to_email: str, 
         subject: str, 
         body: str,

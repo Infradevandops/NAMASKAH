@@ -109,7 +109,8 @@ class ProductionReadinessChecker:
                 current_metrics
             )
     
-    async def _check_zero_downtime_deployment(self) -> ReadinessCheck:
+    @staticmethod
+    async def _check_zero_downtime_deployment() -> ReadinessCheck:
         """Check zero-downtime deployment capabilities."""
         # Simulate deployment capability check
         capabilities = {
@@ -137,7 +138,8 @@ class ProductionReadinessChecker:
                 capabilities
             )
     
-    async def _check_disaster_recovery(self) -> ReadinessCheck:
+    @staticmethod
+    async def _check_disaster_recovery() -> ReadinessCheck:
         """Check disaster recovery procedures."""
         # Simulate disaster recovery check
         dr_components = {
@@ -167,7 +169,8 @@ class ProductionReadinessChecker:
                 dr_components
             )
     
-    async def _check_monitoring_alerting(self) -> ReadinessCheck:
+    @staticmethod
+    async def _check_monitoring_alerting() -> ReadinessCheck:
         """Check monitoring and alerting systems."""
         monitoring_components = {
             "health_monitoring": True,
@@ -196,7 +199,8 @@ class ProductionReadinessChecker:
                 monitoring_components
             )
     
-    async def _check_security_compliance(self) -> ReadinessCheck:
+    @staticmethod
+    async def _check_security_compliance() -> ReadinessCheck:
         """Check security compliance."""
         security_checks = {
             "https_enforcement": True,
@@ -226,7 +230,8 @@ class ProductionReadinessChecker:
                 security_checks
             )
     
-    async def _check_performance_benchmarks(self) -> ReadinessCheck:
+    @staticmethod
+    async def _check_performance_benchmarks() -> ReadinessCheck:
         """Check performance benchmarks."""
         # Simulate performance benchmark results
         benchmarks = {
@@ -255,7 +260,8 @@ class ProductionReadinessChecker:
                 benchmarks
             )
     
-    async def _check_data_backup_recovery(self) -> ReadinessCheck:
+    @staticmethod
+    async def _check_data_backup_recovery() -> ReadinessCheck:
         """Check data backup and recovery."""
         backup_checks = {
             "automated_daily_backups": True,
@@ -283,7 +289,8 @@ class ProductionReadinessChecker:
                 backup_checks
             )
     
-    async def _check_load_balancing(self) -> ReadinessCheck:
+    @staticmethod
+    async def _check_load_balancing() -> ReadinessCheck:
         """Check load balancing configuration."""
         lb_config = {
             "multiple_instances": True,
@@ -312,7 +319,8 @@ class ProductionReadinessChecker:
                 lb_config
             )
     
-    async def _check_auto_scaling(self) -> ReadinessCheck:
+    @staticmethod
+    async def _check_auto_scaling() -> ReadinessCheck:
         """Check auto-scaling configuration."""
         scaling_config = {
             "horizontal_scaling": True,
@@ -340,7 +348,8 @@ class ProductionReadinessChecker:
                 scaling_config
             )
     
-    async def _check_documentation(self) -> ReadinessCheck:
+    @staticmethod
+    async def _check_documentation() -> ReadinessCheck:
         """Check documentation completeness."""
         docs_checklist = {
             "api_documentation": True,

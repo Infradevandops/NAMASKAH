@@ -80,7 +80,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         
         return response
     
-    def _get_client_ip(self, request: Request) -> str:
+    @staticmethod
+    def _get_client_ip(request: Request) -> str:
         """Get client IP address from request."""
         # Check for forwarded headers (for reverse proxies)
         forwarded_for = request.headers.get("X-Forwarded-For")
@@ -108,7 +109,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # Return default limit
         return self.default_requests, self.default_window
     
-    def _check_rate_limit(self, request_times: deque, limit: int, window: int, current_time: float) -> bool:
+    @staticmethod
+    def _check_rate_limit(request_times: deque, limit: int, window: int, current_time: float) -> bool:
         """Check if request is within rate limit."""
         # Remove old requests outside the window
         while request_times and request_times[0] <= current_time - window:

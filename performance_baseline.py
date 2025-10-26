@@ -73,7 +73,8 @@ class PerformanceBaseline:
         
         return metrics
     
-    def _percentile(self, data: List[float], percentile: int) -> float:
+    @staticmethod
+    def _percentile(data: List[float], percentile: int) -> float:
         """Calculate percentile."""
         sorted_data = sorted(data)
         index = int(len(sorted_data) * percentile / 100)
@@ -135,7 +136,8 @@ class ContinuousPerformanceMonitor:
         
         return self.performance_history
     
-    async def _collect_current_metrics(self) -> Dict[str, Any]:
+    @staticmethod
+    async def _collect_current_metrics() -> Dict[str, Any]:
         """Collect current performance metrics."""
         # Simulate metrics collection
         return {
@@ -154,7 +156,8 @@ class ContinuousPerformanceMonitor:
             metrics["throughput"] < self.alert_thresholds["throughput_min"]
         )
     
-    async def _send_performance_alert(self, metrics: Dict[str, Any]):
+    @staticmethod
+    async def _send_performance_alert(metrics: Dict[str, Any]):
         """Send performance alert."""
         print(f"PERFORMANCE ALERT: {metrics}")
 

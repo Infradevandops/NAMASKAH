@@ -82,8 +82,8 @@ class GradualRolloutValidator:
             issues=issues
         )
     
+    @staticmethod
     async def run_ab_test_validation(
-        self, 
         control_metrics: Dict[str, float],
         treatment_metrics: Dict[str, float],
         duration_minutes: int = 30
@@ -143,7 +143,8 @@ class BusinessMetricsTracker:
         
         return self.metrics_history
     
-    async def _collect_business_metrics(self) -> Dict[str, Any]:
+    @staticmethod
+    async def _collect_business_metrics() -> Dict[str, Any]:
         """Collect current business metrics."""
         # Simulate business metrics collection
         return {

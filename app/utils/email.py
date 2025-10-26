@@ -19,7 +19,8 @@ class EmailTemplate:
         self.html_body = html_body
         self.text_body = text_body or self._html_to_text(html_body)
     
-    def _html_to_text(self, html: str) -> str:
+    @staticmethod
+    def _html_to_text(html: str) -> str:
         """Convert HTML to plain text (basic implementation)."""
         import re
         # Remove HTML tags

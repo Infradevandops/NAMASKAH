@@ -47,13 +47,15 @@ class AuthService(BaseService[User]):
             return None
         return user
     
-    def create_user_token(self, user: User, expires_hours: int = 24 * 30) -> str:
+    @staticmethod
+    def create_user_token(user: User, expires_hours: int = 24 * 30) -> str:
         """Create JWT token for user."""
         data = {"user_id": user.id, "email": user.email}
         expires_delta = timedelta(hours=expires_hours)
         return create_access_token(data, expires_delta)
     
-    def verify_user_token(self, token: str) -> Optional[Dict[str, Any]]:
+    @staticmethod
+    def verify_user_token(token: str) -> Optional[Dict[str, Any]]:
         """Verify JWT token and return payload."""
         return verify_token(token)
     
