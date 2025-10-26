@@ -137,12 +137,25 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
     """Handle unexpected exceptions."""
     logger.error("Unexpected error: %s", str(exc), exc_info=True)
     
+    # In development, show more details
+    from app.core.config import get_settings
+    settings = get_settings()
+    
+    error_details = {}
+    if settings.environment != "production":
+        error_details = {
+            "exception_type": type(exc).__name__,
+            "exception_message": str(exc),
+            "request_url": str(request.url),
+            "request_method": request.method
+        }
+    
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
             "error": "INTERNAL_ERROR",
             "message": "An unexpected error occurred",
-            "details": {}
+            "details": error_details
         }
     )
 

@@ -41,7 +41,8 @@ def create_app() -> FastAPI:
     )
     
     # Run database migrations
-    run_startup_migrations()
+    # Temporarily disabled to debug startup issues
+    # run_startup_migrations()
     
     # Setup exception handlers
     setup_exception_handlers(fastapi_app)

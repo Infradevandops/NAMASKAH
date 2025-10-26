@@ -174,17 +174,24 @@ async def get_application_metrics():
 @root_router.get("/")
 async def landing_page():
     """Landing page with service information."""
-    return {
-        "service": "Namaskah SMS",
-        "version": "2.4.0",
-        "description": "SMS Verification Service API",
-        "status": "operational",
-        "endpoints": {
-            "health": "/system/health",
-            "auth": "/auth",
-            "verification": "/verify",
-            "docs": "/docs",
-            "redoc": "/redoc"
-        },
-        "message": "Welcome to Namaskah SMS API"
-    }
+    try:
+        return {
+            "service": "Namaskah SMS",
+            "version": "2.4.0",
+            "description": "SMS Verification Service API",
+            "status": "operational",
+            "endpoints": {
+                "health": "/system/health",
+                "auth": "/auth",
+                "verification": "/verify",
+                "docs": "/docs",
+                "redoc": "/redoc"
+            },
+            "message": "Welcome to Namaskah SMS API"
+        }
+    except Exception as e:
+        # Log the specific error for debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error("Landing page error: %s", str(e), exc_info=True)
+        raise
