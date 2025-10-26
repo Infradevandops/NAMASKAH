@@ -80,7 +80,7 @@ class VerificationError(NamaskahException):
 # Exception handlers
 async def namaskah_exception_handler(request: Request, exc: NamaskahException) -> JSONResponse:
     """Handle custom Namaskah exceptions."""
-    logger.error(f"NamaskahException: {exc.error_code} - {exc.message}", extra={"details": exc.details})
+    logger.error("NamaskahException: %s - %s", exc.error_code, exc.message, extra={"details": exc.details})
     
     # Map exception types to HTTP status codes
     status_map = {
@@ -107,7 +107,7 @@ async def namaskah_exception_handler(request: Request, exc: NamaskahException) -
 
 async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
     """Handle HTTP exceptions."""
-    logger.warning(f"HTTPException: {exc.status_code} - {exc.detail}")
+    logger.warning("HTTPException: %s - %s", exc.status_code, exc.detail)
     
     return JSONResponse(
         status_code=exc.status_code,
@@ -121,7 +121,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException) 
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     """Handle request validation errors."""
-    logger.warning(f"ValidationError: {exc.errors()}")
+    logger.warning("ValidationError: %s", exc.errors())
     
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -135,7 +135,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Handle unexpected exceptions."""
-    logger.error(f"Unexpected error: {str(exc)}", exc_info=True)
+    logger.error("Unexpected error: %s", str(exc), exc_info=True)
     
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
