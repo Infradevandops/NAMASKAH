@@ -1,5 +1,4 @@
 """Enhanced structured logging configuration for production."""
-import structlog
 import logging
 import sys
 import os
@@ -147,7 +146,7 @@ def log_error(logger, error: Exception, context: dict = None):
     if context:
         error_context.update(context)
     
-    logger.error("Exception occurred", **error_context, exc_info=True)
+    logger.error("Exception occurred: %s", error_context, exc_info=True)
 
 
 def log_performance(logger, operation: str, duration: float, context: dict = None):

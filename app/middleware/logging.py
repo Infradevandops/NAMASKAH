@@ -127,11 +127,11 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         
         # Log level based on status code
         if response.status_code >= 500:
-            logger.error("HTTP response - server error", **log_data)
+            logger.error("HTTP response - server error: %s", log_data)
         elif response.status_code >= 400:
-            logger.warning("HTTP response - client error", **log_data)
+            logger.warning("HTTP response - client error: %s", log_data)
         else:
-            logger.info("HTTP response - success", **log_data)
+            logger.info("HTTP response - success: %s", log_data)
             
         # Log performance metrics
         log_performance(
@@ -311,7 +311,7 @@ class AuditTrailMiddleware(BaseHTTPMiddleware):
             except Exception:
                 audit_data["body"] = "[COULD_NOT_READ]"
         
-        logger.info("Audit trail - before", **audit_data)
+        logger.info("Audit trail - before: %s", audit_data)
     
     def _log_audit_event_after(self, request: Request, response: Response):
         """Log audit event after processing."""
@@ -329,9 +329,9 @@ class AuditTrailMiddleware(BaseHTTPMiddleware):
         
         # Log with appropriate level based on outcome
         if response.status_code >= 400:
-            logger.warning("Audit trail - after (error)", **audit_data)
+            logger.warning("Audit trail - after (error): %s", audit_data)
         else:
-            logger.info("Audit trail - after (success)", **audit_data)
+            logger.info("Audit trail - after (success): %s", audit_data)
     
     def _get_client_ip(self, request: Request) -> str:
         """Get client IP address."""
