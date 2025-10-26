@@ -143,7 +143,7 @@ def setup_log_rotation():
             app_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             log_dir = os.path.join(app_dir, "logs")
             os.makedirs(log_dir, mode=0o750, exist_ok=True)
-        except (OSError, PermissionError):
+        except OSError:
             # Fallback to secure temp directory
             log_dir = tempfile.mkdtemp(prefix="namaskah_logs_")
     else:
