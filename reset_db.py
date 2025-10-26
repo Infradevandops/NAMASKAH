@@ -1,6 +1,10 @@
 """Reset database with new schema"""
 import os
-os.remove("sms.db") if os.path.exists("sms.db") else None
+
+# Remove existing database if it exists
+if os.path.exists("sms.db"):
+    os.remove("sms.db")
+    print("🗑️ Removed existing database")
 
 from main import Base, engine, User, Verification, Transaction, SessionLocal
 from passlib.hash import bcrypt
