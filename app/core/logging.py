@@ -121,8 +121,8 @@ def setup_logging():
     logger = get_logger("startup")
     logger.info(
         "Enhanced logging configured",
-        environment=settings.environment,
-        log_level=logging.getLevelName(log_level),
+        env=settings.environment,
+        level=logging.getLevelName(log_level),
         json_output=settings.environment == "production",
         correlation_tracking=True,
         log_rotation=settings.environment == "production"
