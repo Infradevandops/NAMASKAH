@@ -132,16 +132,27 @@ def setup_logging():
 def setup_log_rotation():
     """Setup log rotation for production."""
     from logging.handlers import RotatingFileHandler
+    import tempfile
     
-    # Use /tmp or current directory for logs in containerized environments
-    log_dir = os.environ.get("LOG_DIR", "/tmp/namaskah")
+    # Use secure log directory - prefer app directory or secure temp
+    log_dir = os.environ.get("LOG_DIR")
     
-    # Create logs directory
-    os.makedirs(log_dir, exist_ok=True)
+    if not log_dir:
+        # Try app directory first
+        try:
+            app_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            log_dir = os.path.join(app_dir, "logs")
+            os.makedirs(log_dir, mode=0o750, exist_ok=True)
+        except (OSError, PermissionError):
+            # Fallback to secure temp directory
+            log_dir = tempfile.mkdtemp(prefix="namaskah_logs_")
+    else:
+        # Create logs directory with secure permissions
+        os.makedirs(log_dir, mode=0o750, exist_ok=True)
     
     # Setup rotating file handler
     file_handler = RotatingFileHandler(
-        f"{log_dir}/app.log",
+        os.path.join(log_dir, "app.log"),
         maxBytes=100 * 1024 * 1024,  # 100MB
         backupCount=10
     )
