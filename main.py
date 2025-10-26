@@ -34,7 +34,7 @@ def create_app() -> FastAPI:
     
     settings = get_settings()
     
-    app = FastAPI(
+    fastapi_app = FastAPI(
         title="Namaskah SMS API",
         version="2.4.0",
         description="Modular SMS Verification Service"
@@ -44,34 +44,34 @@ def create_app() -> FastAPI:
     run_startup_migrations()
     
     # Setup exception handlers
-    setup_exception_handlers(app)
+    setup_exception_handlers(fastapi_app)
     
     # Add middleware
-    app.add_middleware(SecurityHeadersMiddleware)
-    app.add_middleware(CORSMiddleware)
-    app.add_middleware(JWTAuthMiddleware)
-    app.add_middleware(RateLimitMiddleware)
-    app.add_middleware(RequestLoggingMiddleware)
+    fastapi_app.add_middleware(SecurityHeadersMiddleware)
+    fastapi_app.add_middleware(CORSMiddleware)
+    fastapi_app.add_middleware(JWTAuthMiddleware)
+    fastapi_app.add_middleware(RateLimitMiddleware)
+    fastapi_app.add_middleware(RequestLoggingMiddleware)
     
     # Include all routers
-    app.include_router(root_router)  # Root routes (landing page)
-    app.include_router(auth_router)
-    app.include_router(verification_router)
-    app.include_router(wallet_router)
-    app.include_router(admin_router)
-    app.include_router(analytics_router)
-    app.include_router(system_router)
+    fastapi_app.include_router(root_router)  # Root routes (landing page)
+    fastapi_app.include_router(auth_router)
+    fastapi_app.include_router(verification_router)
+    fastapi_app.include_router(wallet_router)
+    fastapi_app.include_router(admin_router)
+    fastapi_app.include_router(analytics_router)
+    fastapi_app.include_router(system_router)
     
     # Static files and templates
-    app.mount("/static", StaticFiles(directory="static"), name="static")
+    fastapi_app.mount("/static", StaticFiles(directory="static"), name="static")
     
     # Startup and shutdown events
-    @app.on_event("startup")
+    @fastapi_app.on_event("startup")
     async def startup_event():
         """Initialize connections on startup."""
         await cache.connect()
     
-    @app.on_event("shutdown")
+    @fastapi_app.on_event("shutdown")
     async def shutdown_event():
         """Graceful cleanup on shutdown."""
         logger = get_logger("shutdown")
@@ -90,7 +90,7 @@ def create_app() -> FastAPI:
         except Exception as e:
             logger.error("Error during shutdown", error=str(e))
     
-    return app
+    return fastapi_app
 
 
 app = create_app()

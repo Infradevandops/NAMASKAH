@@ -146,10 +146,10 @@ async def get_business_metrics():
 @router.get("/metrics/prometheus")
 async def get_prometheus_metrics():
     """Get Prometheus-formatted metrics."""
-    from app.core.metrics import get_prometheus_metrics, get_metrics_content_type
+    from app.core.metrics import get_prometheus_metrics as get_prom_metrics, get_metrics_content_type
     from fastapi.responses import Response
     
-    metrics_data = get_prometheus_metrics()
+    metrics_data = get_prom_metrics()
     return Response(
         content=metrics_data,
         media_type=get_metrics_content_type()
