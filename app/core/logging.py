@@ -238,7 +238,9 @@ def log_business_event(logger, event_type: str, event_data: Dict[str, Any]):
         "metric_type": "business",
         "timestamp": structlog.processors.TimeStamper(fmt="iso")(None, None, {})["timestamp"]
     }
-    business_context.update(event_data)
+    # Avoid 'event' key conflicts by filtering it out
+    safe_event_data = {k: v for k, v in event_data.items() if k != 'event'}
+    business_context.update(safe_event_data)
     
     logger.info("Business event", **business_context)
 
@@ -251,7 +253,9 @@ def log_security_event(logger, event_type: str, severity: str, details: Dict[str
         "metric_type": "security",
         "requires_attention": severity in ["high", "critical"]
     }
-    security_context.update(details)
+    # Avoid 'event' key conflicts by filtering it out
+    safe_details = {k: v for k, v in details.items() if k != 'event'}
+    security_context.update(safe_details)
     
     if severity in ["high", "critical"]:
         logger.error("Security event", **security_context)
