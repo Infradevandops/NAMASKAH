@@ -16,7 +16,7 @@ from app.models.base import Base
 # Import all routers
 from app.api.admin import router as admin_router
 from app.api.analytics import router as analytics_router
-from app.api.system import router as system_router
+from app.api.system import router as system_router, root_router
 from app.api.auth import router as auth_router
 from app.api.verification import router as verification_router
 from app.api.wallet import router as wallet_router
@@ -54,6 +54,7 @@ def create_app() -> FastAPI:
     app.add_middleware(RequestLoggingMiddleware)
     
     # Include all routers
+    app.include_router(root_router)  # Root routes (landing page)
     app.include_router(auth_router)
     app.include_router(verification_router)
     app.include_router(wallet_router)

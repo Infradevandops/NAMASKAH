@@ -11,6 +11,9 @@ from app.schemas import HealthCheck, ServiceStatusSummary, ServiceStatus
 
 router = APIRouter(prefix="/system", tags=["System"])
 
+# Add a root router for landing page
+root_router = APIRouter()
+
 
 @router.get("/health")
 async def health_check():
@@ -165,4 +168,23 @@ async def get_application_metrics():
         "application": app_metrics,
         "health": health_score,
         "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+
+@root_router.get("/")
+async def landing_page():
+    """Landing page with service information."""
+    return {
+        "service": "Namaskah SMS",
+        "version": "2.4.0",
+        "description": "SMS Verification Service API",
+        "status": "operational",
+        "endpoints": {
+            "health": "/system/health",
+            "auth": "/auth",
+            "verification": "/verify",
+            "docs": "/docs",
+            "redoc": "/redoc"
+        },
+        "message": "Welcome to Namaskah SMS API"
     }
