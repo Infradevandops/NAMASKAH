@@ -258,7 +258,7 @@ async def cancel_verification(
 def get_verification_history(
     user_id: str = Depends(get_current_user_id),
     service: Optional[str] = Query(None, description="Filter by service name"),
-    status: Optional[str] = Query(None, description="Filter by status"),
+    verification_status: Optional[str] = Query(None, description="Filter by status"),
     limit: int = Query(50, le=100, description="Number of results"),
     skip: int = Query(0, description="Number of results to skip"),
     db: Session = Depends(get_db)
@@ -268,8 +268,8 @@ def get_verification_history(
     
     if service:
         query = query.filter(Verification.service_name == service)
-    if status:
-        query = query.filter(Verification.status == status)
+    if verification_status:
+        query = query.filter(Verification.status == verification_status)
     
     total = query.count()
     verifications = query.order_by(Verification.created_at.desc()).offset(skip).limit(limit).all()
@@ -331,14 +331,14 @@ async def create_number_rental(
 @router.get("/rentals", response_model=List[NumberRentalResponse])
 def get_user_rentals(
     user_id: str = Depends(get_current_user_id),
-    status: Optional[str] = Query(None, description="Filter by status"),
+    rental_status: Optional[str] = Query(None, description="Filter by status"),
     db: Session = Depends(get_db)
 ):
     """Get user's number rentals."""
     query = db.query(NumberRental).filter(NumberRental.user_id == user_id)
     
-    if status:
-        query = query.filter(NumberRental.status == status)
+    if rental_status:
+        query = query.filter(NumberRental.status == rental_status)
     
     rentals = query.order_by(NumberRental.created_at.desc()).all()
     
