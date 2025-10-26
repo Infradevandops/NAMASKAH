@@ -5,7 +5,6 @@ Tests core functionality that should be working
 """
 
 import requests
-import json
 import sys
 
 def test_endpoint(url, description, expected_status=200):

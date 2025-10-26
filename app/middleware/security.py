@@ -1,16 +1,13 @@
 """Security middleware for authentication and authorization."""
-import time
 from typing import Optional, List
-from fastapi import Request, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Request, status
+from fastapi.security import HTTPBearer
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
-from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.database import SessionLocal
 from app.services.auth_service import AuthService
-from app.models.user import User
 
 
 class JWTAuthMiddleware(BaseHTTPMiddleware):

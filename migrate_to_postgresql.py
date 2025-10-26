@@ -7,7 +7,6 @@ import os
 import sys
 import asyncio
 from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
 
 # Add app to path
 sys.path.insert(0, os.path.dirname(__file__))

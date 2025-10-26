@@ -1,6 +1,6 @@
 """Custom exception classes and handlers for the application."""
 from typing import Any, Dict, Optional
-from fastapi import HTTPException, Request, status
+from fastapi import Request, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException

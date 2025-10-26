@@ -3,8 +3,6 @@
 Simple dashboard startup script
 Handles database initialization and starts the server
 """
-
-import os
 import sys
 import subprocess
 from pathlib import Path

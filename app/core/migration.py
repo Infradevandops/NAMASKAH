@@ -4,7 +4,7 @@ import subprocess
 import logging
 from typing import Optional
 from sqlalchemy import text
-from app.core.database import engine, get_db
+from app.core.database import engine
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)

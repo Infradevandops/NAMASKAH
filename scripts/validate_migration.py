@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """Migration validation and rollback testing script."""
 import sys
-import os
 from pathlib import Path
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from sqlalchemy import inspect, text
+from sqlalchemy import inspect
 from app.core.database import engine, SessionLocal
 from app.models import User, Verification, Transaction, APIKey
 

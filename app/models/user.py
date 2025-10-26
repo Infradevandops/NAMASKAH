@@ -1,6 +1,5 @@
 """User-related database models."""
 from sqlalchemy import Column, String, Boolean, Float, DateTime
-from sqlalchemy.orm import relationship
 from app.models.base import BaseModel
 
 

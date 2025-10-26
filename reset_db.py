@@ -6,7 +6,7 @@ if os.path.exists("sms.db"):
     os.remove("sms.db")
     print("🗑️ Removed existing database")
 
-from main import Base, engine, User, Verification, Transaction, SessionLocal
+from main import Base, engine, User, SessionLocal
 from passlib.hash import bcrypt
 from datetime import datetime, timezone
 

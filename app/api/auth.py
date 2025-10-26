@@ -10,7 +10,7 @@ from app.schemas import (
     UserCreate, UserResponse, LoginRequest, TokenResponse,
     APIKeyCreate, APIKeyResponse, APIKeyListResponse,
     PasswordResetRequest, PasswordResetConfirm, GoogleAuthRequest,
-    SuccessResponse, ErrorResponse
+    SuccessResponse, 
 )
 from app.core.exceptions import AuthenticationError, ValidationError
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Security validation script to check for common vulnerabilities."""
-import os
 import sys
 import re
 from pathlib import Path

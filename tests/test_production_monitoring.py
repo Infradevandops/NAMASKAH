@@ -4,9 +4,7 @@ Tests metrics collection, logging, and monitoring functionality.
 """
 import pytest
 import time
-import json
-import asyncio
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from app.core.metrics import metrics_collector, MetricsCollector, cache_metrics
 from app.core.logging import get_logger, set_correlation_id, log_business_event, log_security_event
 from app.core.config import settings

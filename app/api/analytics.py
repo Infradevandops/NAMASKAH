@@ -3,11 +3,10 @@ from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_
+from sqlalchemy import func
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user_id
-from app.models.user import User
 from app.models.verification import Verification
 from app.models.transaction import Transaction
 from app.schemas import AnalyticsResponse

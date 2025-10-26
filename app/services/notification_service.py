@@ -1,5 +1,4 @@
 """Notification service for email, SMS, and webhook delivery."""
-import asyncio
 import logging
 import smtplib
 from datetime import datetime, timezone
@@ -11,9 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.models.user import User, Webhook, NotificationPreferences
 from app.models.system import InAppNotification
-from app.models.verification import VerificationReceipt
 from app.core.config import settings
-from app.core.exceptions import ExternalServiceError
 from .base import BaseService
 
 logger = logging.getLogger(__name__)

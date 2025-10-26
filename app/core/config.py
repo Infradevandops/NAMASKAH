@@ -5,7 +5,6 @@ try:
 except ImportError:
     from pydantic import BaseSettings
 from pydantic import validator
-import os
 
 
 class Settings(BaseSettings):

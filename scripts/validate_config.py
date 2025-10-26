@@ -13,7 +13,6 @@ from urllib.parse import urlparse
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from app.core.config import Settings
-from app.core.secrets import SecretsManager
 
 
 class ConfigValidator:

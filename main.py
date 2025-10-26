@@ -3,7 +3,6 @@ Namaskah SMS - Modular Application Factory
 """
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 
 from app.core.config import get_settings
 from app.core.database import engine
@@ -11,7 +10,6 @@ from app.core.exceptions import setup_exception_handlers
 
 from app.core.caching import cache
 from app.core.logging import setup_logging, get_logger
-from app.models.base import Base
 
 # Import all routers
 from app.api.admin import router as admin_router
