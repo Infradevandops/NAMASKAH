@@ -32,10 +32,14 @@ class MigrationManager:
             )
             return result.returncode == 0
         except subprocess.TimeoutExpired:
-            print("Migration timed out")
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error("Migration timed out")
             return False
         except Exception as e:
-            print(f"Migration failed: {e}")
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error("Migration failed: %s", e)
             return False
     
     def create_migration(self, message: str) -> bool:
@@ -60,10 +64,14 @@ class MigrationManager:
             )
             return result.returncode == 0
         except subprocess.TimeoutExpired:
-            print("Migration creation timed out")
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error("Migration creation timed out")
             return False
         except Exception as e:
-            print(f"Migration creation failed: {e}")
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error("Migration creation failed: %s", e)
             return False
     
     def rollback_migration(self, revision: Optional[str] = None) -> bool:
@@ -91,10 +99,14 @@ class MigrationManager:
             )
             return result.returncode == 0
         except subprocess.TimeoutExpired:
-            print("Rollback timed out")
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error("Rollback timed out")
             return False
         except Exception as e:
-            print(f"Rollback failed: {e}")
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error("Rollback failed: %s", e)
             return False
     
     def get_current_revision(self) -> Optional[str]:

@@ -31,7 +31,7 @@ class NotificationService(BaseService[InAppNotification]):
     ) -> bool:
         """Send email notification."""
         if not all([settings.smtp_host, settings.smtp_user, settings.smtp_password]):
-            print(f"⚠️ Email not configured, skipping: {subject}")
+            logger.warning("Email not configured, skipping: %s", subject)
             return False
         
         try:
@@ -51,7 +51,7 @@ class NotificationService(BaseService[InAppNotification]):
             return True
             
         except Exception as e:
-            print(f"Email error: {e}")
+            logger.error("Email error: %s", e)
             return False
     
     async def send_webhook(self, user_id: str, event_type: str, payload: Dict[str, Any]) -> List[bool]:
@@ -80,7 +80,7 @@ class NotificationService(BaseService[InAppNotification]):
                     results.append(response.status_code < 400)
                     
             except Exception as e:
-                print(f"Webhook delivery failed for {webhook.url}: {e}")
+                logger.error("Webhook delivery failed for %s: %s", webhook.url, e)
                 results.append(False)
         
         return results

@@ -45,51 +45,51 @@ class SecurityConfig:
         "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
     }
     
-    @classmethod
-    def is_sensitive_key(cls, key: str) -> bool:
+    @staticmethod
+    def is_sensitive_key(key: str) -> bool:
         """Check if a key contains sensitive information."""
         key_lower = key.lower()
-        return any(pattern in key_lower for pattern in cls.SENSITIVE_PATTERNS)
+        return any(pattern in key_lower for pattern in SecurityConfig.SENSITIVE_PATTERNS)
     
-    @classmethod
-    def sanitize_data(cls, data: Any) -> Any:
+    @staticmethod
+    def sanitize_data(data: Any) -> Any:
         """Recursively sanitize sensitive data."""
         if isinstance(data, dict):
             sanitized = {}
             for key, value in data.items():
-                if cls.is_sensitive_key(key):
+                if SecurityConfig.is_sensitive_key(key):
                     sanitized[key] = "[REDACTED]"
                 elif isinstance(value, (dict, list)):
-                    sanitized[key] = cls.sanitize_data(value)
+                    sanitized[key] = SecurityConfig.sanitize_data(value)
                 else:
                     sanitized[key] = value
             return sanitized
         elif isinstance(data, list):
-            return [cls.sanitize_data(item) for item in data]
+            return [SecurityConfig.sanitize_data(item) for item in data]
         else:
             return data
     
-    @classmethod
-    def validate_host(cls, host: str) -> bool:
+    @staticmethod
+    def validate_host(host: str) -> bool:
         """Validate if host is allowed."""
         settings = get_settings()
         if settings.environment == "development":
             return True  # Allow all hosts in development
         
-        return host in cls.ALLOWED_HOSTS
+        return host in SecurityConfig.ALLOWED_HOSTS
     
-    @classmethod
-    def generate_secure_token(cls, length: int = 32) -> str:
+    @staticmethod
+    def generate_secure_token(length: int = 32) -> str:
         """Generate a cryptographically secure token."""
         return secrets.token_urlsafe(length)
     
-    @classmethod
-    def validate_input_length(cls, value: str, max_length: int = 1000) -> bool:
+    @staticmethod
+    def validate_input_length(value: str, max_length: int = 1000) -> bool:
         """Validate input length to prevent DoS attacks."""
         return len(value) <= max_length
     
-    @classmethod
-    def get_safe_filename(cls, filename: str) -> str:
+    @staticmethod
+    def get_safe_filename(filename: str) -> str:
         """Get a safe filename by removing dangerous characters."""
         import re
         # Remove path traversal attempts and dangerous characters
@@ -97,8 +97,8 @@ class SecurityConfig:
         # Limit length
         return safe_name[:100]
     
-    @classmethod
-    def validate_sql_identifier(cls, identifier: str) -> bool:
+    @staticmethod
+    def validate_sql_identifier(identifier: str) -> bool:
         """Validate SQL identifier to prevent injection."""
         import re
         # Only allow alphanumeric characters and underscores
@@ -150,12 +150,12 @@ class AuditConfig:
         "api_key_regenerate", "webhook_secret_change"
     ]
     
-    @classmethod
-    def should_audit(cls, operation: str) -> bool:
+    @staticmethod
+    def should_audit(operation: str) -> bool:
         """Check if operation should be audited."""
-        return operation in cls.AUDIT_EVENTS
+        return operation in AuditConfig.AUDIT_EVENTS
     
-    @classmethod
-    def is_sensitive_operation(cls, operation: str) -> bool:
+    @staticmethod
+    def is_sensitive_operation(operation: str) -> bool:
         """Check if operation is sensitive and needs enhanced logging."""
-        return operation in cls.SENSITIVE_OPERATIONS
+        return operation in AuditConfig.SENSITIVE_OPERATIONS

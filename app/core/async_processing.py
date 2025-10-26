@@ -52,7 +52,9 @@ async def async_send_email(
     try:
         await notification_service.send_email(to_email, subject, body)
     except Exception as e:
-        print(f"Email sending failed: {e}")
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error("Email sending failed: %s", e)
 
 
 async def async_send_webhook(
@@ -65,7 +67,9 @@ async def async_send_webhook(
     try:
         await notification_service.send_webhook(user_id, event_type, payload)
     except Exception as e:
-        print(f"Webhook delivery failed: {e}")
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error("Webhook delivery failed: %s", e)
 
 
 async def async_process_payment_webhook(
@@ -77,7 +81,9 @@ async def async_process_payment_webhook(
         result = payment_service.process_webhook_payment(webhook_data)
         return result
     except Exception as e:
-        print(f"Payment webhook processing failed: {e}")
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error("Payment webhook processing failed: %s", e)
         return False
 
 
@@ -134,7 +140,9 @@ class AsyncDatabaseOperations:
             return True
         except Exception as e:
             db_session.rollback()
-            print(f"Bulk credit update failed: {e}")
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error("Bulk credit update failed: %s", e)
             return False
     
     @staticmethod
@@ -153,7 +161,9 @@ class AsyncDatabaseOperations:
             return result.rowcount
         except Exception as e:
             db_session.rollback()
-            print(f"Verification cleanup failed: {e}")
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error("Verification cleanup failed: %s", e)
             return 0
 
 
