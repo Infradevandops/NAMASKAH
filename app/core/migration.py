@@ -16,7 +16,8 @@ class MigrationManager:
     def __init__(self):
         self.settings = get_settings()
     
-    def run_migrations(self) -> bool:
+    @staticmethod
+    def run_migrations() -> bool:
         """Run pending migrations."""
         try:
             import shutil
@@ -45,7 +46,8 @@ class MigrationManager:
             logger.error("Migration failed: %s", e)
             return False
     
-    def create_migration(self, message: str) -> bool:
+    @staticmethod
+    def create_migration(message: str) -> bool:
         """Create new migration."""
         try:
             import shutil
@@ -77,7 +79,8 @@ class MigrationManager:
             logger.error("Migration creation failed: %s", e)
             return False
     
-    def rollback_migration(self, revision: Optional[str] = None) -> bool:
+    @staticmethod
+    def rollback_migration(revision: Optional[str] = None) -> bool:
         """Rollback to specific revision or previous."""
         try:
             import shutil
@@ -112,7 +115,8 @@ class MigrationManager:
             logger.error("Rollback failed: %s", e)
             return False
     
-    def get_current_revision(self) -> Optional[str]:
+    @staticmethod
+    def get_current_revision() -> Optional[str]:
         """Get current database revision."""
         try:
             import shutil
@@ -155,7 +159,8 @@ class MigrationManager:
             logger.error("Backup failed: %s", e)
             return False
     
-    def validate_schema(self) -> bool:
+    @staticmethod
+    def validate_schema() -> bool:
         """Validate database schema integrity."""
         try:
             with engine.connect() as conn:

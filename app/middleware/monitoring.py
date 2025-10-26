@@ -8,7 +8,8 @@ from app.core.monitoring import performance_monitor, error_tracker
 class MonitoringMiddleware(BaseHTTPMiddleware):
     """Middleware to track request metrics and errors."""
     
-    async def dispatch(self, request: Request, call_next):
+    @staticmethod
+    async def dispatch(request: Request, call_next):
         """Process request and track metrics."""
         start_time = time.time()
         

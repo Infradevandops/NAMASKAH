@@ -220,7 +220,8 @@ class PaymentService(BaseService[Transaction]):
         except httpx.RequestError as e:
             raise PaymentError(f"Refund processing failed: {str(e)}")
     
-    async def _get_exchange_rate(self) -> float:
+    @staticmethod
+    async def _get_exchange_rate() -> float:
         """Get current USD to NGN exchange rate."""
         try:
             async with httpx.AsyncClient() as client:

@@ -22,11 +22,11 @@ logger = logging.getLogger(__name__)
 class NotificationService(BaseService[InAppNotification]):
     """Service for managing notifications and communications."""
     
+    @staticmethod
     def __init__(self, db: Session):
         super().__init__(InAppNotification, db)
     
     async def send_email(
-        self, 
         to_email: str, 
         subject: str, 
         body: str,

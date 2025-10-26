@@ -113,7 +113,8 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         
         logger.info("HTTP request received: %s", log_data)
     
-    def _log_response(self, request: Request, response: Response, process_time: float):
+    @staticmethod
+    def _log_response(request: Request, response: Response, process_time: float):
         """Log response details and performance metrics."""
         # Get user info if available
         user_id = getattr(request.state, 'user_id', None)
@@ -144,7 +145,8 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             {"status_code": response.status_code, "user_id": user_id}
         )
     
-    def _get_client_ip(self, request: Request) -> str:
+    @staticmethod
+    def _get_client_ip(request: Request) -> str:
         """Get client IP address."""
         forwarded_for = request.headers.get("x-forwarded-for")
         if forwarded_for:
@@ -331,7 +333,8 @@ class AuditTrailMiddleware(BaseHTTPMiddleware):
         
         logger.info("Audit trail - before: %s", audit_data)
     
-    def _log_audit_event_after(self, request: Request, response: Response):
+    @staticmethod
+    def _log_audit_event_after(request: Request, response: Response):
         """Log audit event after processing."""
         user_id = getattr(request.state, 'user_id', None)
         
@@ -351,7 +354,8 @@ class AuditTrailMiddleware(BaseHTTPMiddleware):
         else:
             logger.info("Audit trail - after (success): %s", audit_data)
     
-    def _get_client_ip(self, request: Request) -> str:
+    @staticmethod
+    def _get_client_ip(request: Request) -> str:
         """Get client IP address."""
         forwarded_for = request.headers.get("x-forwarded-for")
         if forwarded_for:
