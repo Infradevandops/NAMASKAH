@@ -73,7 +73,7 @@ def start_server():
             '--reload', 
             '--host', '0.0.0.0', 
             '--port', '8000'
-        ])
+        ], check=True)
     except KeyboardInterrupt:
         print("\n👋 Dashboard stopped")
     except Exception as e:

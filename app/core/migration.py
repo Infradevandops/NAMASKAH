@@ -32,8 +32,8 @@ class MigrationManager:
                 capture_output=True,
                 text=True,
                 cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                timeout=300  # 5 minute timeout
-            )
+                timeout=300,   # 5 minute timeout
+            check=True)
             return result.returncode == 0
         except subprocess.TimeoutExpired:
             logger = logging.getLogger(__name__)
@@ -63,8 +63,8 @@ class MigrationManager:
                 capture_output=True,
                 text=True,
                 cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                timeout=60
-            )
+                timeout=60, 
+            check=True)
             return result.returncode == 0
         except subprocess.TimeoutExpired:
             logger = logging.getLogger(__name__)
@@ -97,8 +97,8 @@ class MigrationManager:
                 capture_output=True,
                 text=True,
                 cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                timeout=300
-            )
+                timeout=300, 
+            check=True)
             return result.returncode == 0
         except subprocess.TimeoutExpired:
             logger = logging.getLogger(__name__)
@@ -124,8 +124,8 @@ class MigrationManager:
                 capture_output=True,
                 text=True,
                 cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                timeout=30
-            )
+                timeout=30, 
+            check=True)
             if result.returncode == 0:
                 return result.stdout.strip()
             return None
