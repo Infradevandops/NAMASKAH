@@ -8,7 +8,7 @@ from fastapi.templating import Jinja2Templates
 from app.core.config import get_settings
 from app.core.database import engine
 from app.core.exceptions import setup_exception_handlers
-# from app.core.migration import run_startup_migrations  # Temporarily disabled
+
 from app.core.caching import cache
 from app.core.logging import setup_logging, get_logger
 from app.models.base import Base
