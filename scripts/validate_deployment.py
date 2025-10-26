@@ -78,8 +78,8 @@ class DeploymentValidator:
             # Check if docker-compose is running
             result = subprocess.run(
                 ["docker-compose", "-f", "docker-compose.prod.yml", "ps"],
-                capture_output=True, text=True, timeout=30
-            )
+                capture_output=True, text=True, timeout=30, 
+            check=True)
             
             if result.returncode == 0:
                 # Parse service status
@@ -651,8 +651,8 @@ class DeploymentValidator:
             try:
                 result = subprocess.run(
                     ["docker", "stats", "--no-stream", "--format", "json"],
-                    capture_output=True, text=True, timeout=10
-                )
+                    capture_output=True, text=True, timeout=10, 
+                check=True)
                 
                 if result.returncode == 0:
                     for line in result.stdout.strip().split('\n'):
@@ -734,8 +734,8 @@ class DeploymentValidator:
             try:
                 result = subprocess.run(
                     ["docker-compose", "-f", "docker-compose.prod.yml", "logs", "--tail=1"],
-                    capture_output=True, text=True, timeout=10
-                )
+                    capture_output=True, text=True, timeout=10, 
+                check=True)
                 docker_logs_available = result.returncode == 0
             except Exception:
                 docker_logs_available = False
