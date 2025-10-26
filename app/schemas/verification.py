@@ -1,4 +1,5 @@
 """Verification request/response schemas."""
+
 from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, validator, Field
@@ -6,37 +7,43 @@ from pydantic import BaseModel, validator, Field
 
 class VerificationCreate(BaseModel):
     """Schema for creating SMS/voice verification."""
-    service_name: str = Field(..., min_length=1, description="Service name (e.g., telegram, whatsapp)")
-    capability: str = Field(default="sms", description="Verification type: sms or voice")
+
+    service_name: str = Field(
+        ..., min_length=1, description="Service name (e.g., telegram, whatsapp)"
+    )
+    capability: str = Field(
+        default="sms", description="Verification type: sms or voice"
+    )
     area_code: Optional[str] = Field(None, description="Preferred area code (+$4)")
     carrier: Optional[str] = Field(None, description="Preferred carrier (+$6)")
-    
-    @validator('capability')
+
+    @validator("capability")
     def validate_capability(cls, v):
-        if v not in ['sms', 'voice']:
-            raise ValueError('Capability must be sms or voice')
+        if v not in ["sms", "voice"]:
+            raise ValueError("Capability must be sms or voice")
         return v
-    
-    @validator('service_name')
+
+    @validator("service_name")
     def validate_service_name(cls, v):
         # Basic service name validation
         if not v or len(v.strip()) == 0:
-            raise ValueError('Service name cannot be empty')
+            raise ValueError("Service name cannot be empty")
         return v.lower().strip()
-    
+
     class Config:
         schema_extra = {
             "example": {
                 "service_name": "telegram",
                 "capability": "sms",
                 "area_code": "212",
-                "carrier": "verizon"
+                "carrier": "verizon",
             }
         }
 
 
 class VerificationResponse(BaseModel):
     """Schema for verification response."""
+
     id: str
     service_name: str
     phone_number: Optional[str]
@@ -47,7 +54,7 @@ class VerificationResponse(BaseModel):
     requested_area_code: Optional[str]
     created_at: datetime
     completed_at: Optional[datetime]
-    
+
     class Config:
         orm_mode = True
         schema_extra = {
@@ -61,51 +68,57 @@ class VerificationResponse(BaseModel):
                 "requested_carrier": "verizon",
                 "requested_area_code": "212",
                 "created_at": "2024-01-20T10:00:00Z",
-                "completed_at": None
+                "completed_at": None,
             }
         }
 
 
 class MessageResponse(BaseModel):
     """Schema for SMS messages response."""
+
     verification_id: str
     messages: List[str] = Field(..., description="List of SMS messages received")
-    
+
     class Config:
         schema_extra = {
             "example": {
                 "verification_id": "verification_1642680000000",
                 "messages": [
                     "Your verification code is: 123456",
-                    "Code expires in 10 minutes"
-                ]
+                    "Code expires in 10 minutes",
+                ],
             }
         }
 
 
 class NumberRentalRequest(BaseModel):
     """Schema for number rental request."""
-    service_name: Optional[str] = Field(None, description="Service for rental (optional)")
+
+    service_name: Optional[str] = Field(
+        None, description="Service for rental (optional)"
+    )
     duration_hours: float = Field(..., gt=0, description="Rental duration in hours")
-    mode: str = Field(default="always_ready", description="Rental mode: always_ready or manual")
+    mode: str = Field(
+        default="always_ready", description="Rental mode: always_ready or manual"
+    )
     auto_extend: bool = Field(default=False, description="Auto-extend rental")
     area_code: Optional[str] = Field(None, description="Preferred area code")
     carrier: Optional[str] = Field(None, description="Preferred carrier")
-    
-    @validator('mode')
+
+    @validator("mode")
     def validate_mode(cls, v):
-        if v not in ['always_ready', 'manual']:
-            raise ValueError('Mode must be always_ready or manual')
+        if v not in ["always_ready", "manual"]:
+            raise ValueError("Mode must be always_ready or manual")
         return v
-    
-    @validator('duration_hours')
+
+    @validator("duration_hours")
     def validate_duration(cls, v):
         if v <= 0:
-            raise ValueError('Duration must be positive')
+            raise ValueError("Duration must be positive")
         if v > 8760:  # 1 year
-            raise ValueError('Maximum rental duration is 1 year')
+            raise ValueError("Maximum rental duration is 1 year")
         return v
-    
+
     class Config:
         schema_extra = {
             "example": {
@@ -114,13 +127,14 @@ class NumberRentalRequest(BaseModel):
                 "mode": "always_ready",
                 "auto_extend": False,
                 "area_code": "212",
-                "carrier": "verizon"
+                "carrier": "verizon",
             }
         }
 
 
 class NumberRentalResponse(BaseModel):
     """Schema for number rental response."""
+
     id: str
     phone_number: str
     service_name: Optional[str]
@@ -131,7 +145,7 @@ class NumberRentalResponse(BaseModel):
     started_at: datetime
     expires_at: datetime
     auto_extend: bool
-    
+
     class Config:
         orm_mode = True
         schema_extra = {
@@ -145,51 +159,46 @@ class NumberRentalResponse(BaseModel):
                 "status": "active",
                 "started_at": "2024-01-20T10:00:00Z",
                 "expires_at": "2024-01-21T10:00:00Z",
-                "auto_extend": False
+                "auto_extend": False,
             }
         }
 
 
 class ExtendRentalRequest(BaseModel):
     """Schema for extending rental duration."""
+
     additional_hours: float = Field(..., gt=0, description="Additional hours to extend")
-    
-    @validator('additional_hours')
+
+    @validator("additional_hours")
     def validate_additional_hours(cls, v):
         if v <= 0:
-            raise ValueError('Additional hours must be positive')
+            raise ValueError("Additional hours must be positive")
         if v > 8760:  # 1 year
-            raise ValueError('Maximum extension is 1 year')
+            raise ValueError("Maximum extension is 1 year")
         return v
-    
+
     class Config:
-        schema_extra = {
-            "example": {
-                "additional_hours": 12.0
-            }
-        }
+        schema_extra = {"example": {"additional_hours": 12.0}}
 
 
 class RetryVerificationRequest(BaseModel):
     """Schema for retrying verification."""
+
     retry_type: str = Field(..., description="Retry type: voice, same, or new")
-    
-    @validator('retry_type')
+
+    @validator("retry_type")
     def validate_retry_type(cls, v):
-        if v not in ['voice', 'same', 'new']:
-            raise ValueError('Retry type must be voice, same, or new')
+        if v not in ["voice", "same", "new"]:
+            raise ValueError("Retry type must be voice, same, or new")
         return v
-    
+
     class Config:
-        schema_extra = {
-            "example": {
-                "retry_type": "voice"
-            }
-        }
+        schema_extra = {"example": {"retry_type": "voice"}}
 
 
 class ServicePriceResponse(BaseModel):
     """Schema for service pricing information."""
+
     service_name: str
     tier: str
     base_price: float
@@ -198,7 +207,7 @@ class ServicePriceResponse(BaseModel):
     user_plan: str
     monthly_verifications: int
     addons: dict
-    
+
     class Config:
         schema_extra = {
             "example": {
@@ -212,17 +221,18 @@ class ServicePriceResponse(BaseModel):
                 "addons": {
                     "custom_area_code": 4.0,
                     "guaranteed_carrier": 6.0,
-                    "priority_queue": 2.0
-                }
+                    "priority_queue": 2.0,
+                },
             }
         }
 
 
 class VerificationHistoryResponse(BaseModel):
     """Schema for verification history."""
+
     verifications: List[VerificationResponse]
     total_count: int
-    
+
     class Config:
         schema_extra = {
             "example": {
@@ -235,9 +245,9 @@ class VerificationHistoryResponse(BaseModel):
                         "status": "completed",
                         "cost": 1.0,
                         "created_at": "2024-01-20T10:00:00Z",
-                        "completed_at": "2024-01-20T10:05:00Z"
+                        "completed_at": "2024-01-20T10:05:00Z",
                     }
                 ],
-                "total_count": 1
+                "total_count": 1,
             }
         }

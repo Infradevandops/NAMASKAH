@@ -1,12 +1,14 @@
 """Verification-related database models."""
+
 from sqlalchemy import Column, String, Float, DateTime, Boolean
 from app.models.base import BaseModel
 
 
 class Verification(BaseModel):
     """SMS/Voice verification model."""
+
     __tablename__ = "verifications"
-    
+
     user_id = Column(String, nullable=False, index=True)
     service_name = Column(String, nullable=False, index=True)
     phone_number = Column(String)
@@ -24,8 +26,9 @@ class Verification(BaseModel):
 
 class NumberRental(BaseModel):
     """Number rental for extended use."""
+
     __tablename__ = "number_rentals"
-    
+
     user_id = Column(String, nullable=False, index=True)
     phone_number = Column(String, nullable=False)
     service_name = Column(String)
@@ -42,8 +45,9 @@ class NumberRental(BaseModel):
 
 class VerificationReceipt(BaseModel):
     """Receipt for completed verifications."""
+
     __tablename__ = "verification_receipts"
-    
+
     user_id = Column(String, nullable=False, index=True)
     verification_id = Column(String, nullable=False, index=True)
     service_name = Column(String, nullable=False)

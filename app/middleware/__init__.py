@@ -3,39 +3,34 @@
 # Security middleware
 from .security import (
     JWTAuthMiddleware,
-    APIKeyAuthMiddleware, 
+    APIKeyAuthMiddleware,
     AdminRoleMiddleware,
     CORSMiddleware,
-    SecurityHeadersMiddleware
+    SecurityHeadersMiddleware,
 )
 
 # Rate limiting middleware
-from .rate_limiting import (
-    RateLimitMiddleware,
-    AdaptiveRateLimitMiddleware
-)
+from .rate_limiting import RateLimitMiddleware, AdaptiveRateLimitMiddleware
 
 # Logging middleware
 from .logging import (
     RequestLoggingMiddleware,
     PerformanceMetricsMiddleware,
-    AuditTrailMiddleware
+    AuditTrailMiddleware,
 )
 
 __all__ = [
     # Security
     "JWTAuthMiddleware",
     "APIKeyAuthMiddleware",
-    "AdminRoleMiddleware", 
+    "AdminRoleMiddleware",
     "CORSMiddleware",
     "SecurityHeadersMiddleware",
-    
     # Rate Limiting
     "RateLimitMiddleware",
     "AdaptiveRateLimitMiddleware",
-    
     # Logging
     "RequestLoggingMiddleware",
     "PerformanceMetricsMiddleware",
-    "AuditTrailMiddleware"
+    "AuditTrailMiddleware",
 ]
