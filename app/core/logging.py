@@ -55,13 +55,13 @@ class ProductionMetadataProcessor:
 
 
 def setup_logging():
-    """Configure enhanced structured logging for production."""
+    """Configure basic logging temporarily for debugging."""
     # Set log level based on environment
     log_level = logging.INFO if settings.environment == "production" else logging.DEBUG
     
-    # Configure root logger
+    # Configure basic root logger only
     logging.basicConfig(
-        format="%(message)s",
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         stream=sys.stdout,
         level=log_level,
         force=True
@@ -73,60 +73,8 @@ def setup_logging():
         logging.getLogger("httpx").setLevel(logging.WARNING)
         logging.getLogger("httpcore").setLevel(logging.WARNING)
     
-    # Production processors with enhanced metadata
-    production_processors = [
-        structlog.stdlib.filter_by_level,
-        CorrelationIDProcessor(),
-        ProductionMetadataProcessor(),
-        structlog.stdlib.add_logger_name,
-        structlog.stdlib.add_log_level,
-        structlog.stdlib.PositionalArgumentsFormatter(),
-        structlog.processors.TimeStamper(fmt="iso"),
-        structlog.processors.StackInfoRenderer(),
-        structlog.processors.format_exc_info,
-        structlog.processors.UnicodeDecoder(),
-        structlog.processors.JSONRenderer(sort_keys=True)
-    ]
-    
-    # Development processors with console output
-    development_processors = [
-        structlog.stdlib.filter_by_level,
-        CorrelationIDProcessor(),
-        structlog.stdlib.add_logger_name,
-        structlog.stdlib.add_log_level,
-        structlog.stdlib.PositionalArgumentsFormatter(),
-        structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M:%S"),
-        structlog.processors.StackInfoRenderer(),
-        structlog.processors.format_exc_info,
-        structlog.dev.ConsoleRenderer(colors=True)
-    ]
-    
-    # Choose processors based on environment
-    processors = production_processors if settings.environment == "production" else development_processors
-    
-    # Configure structlog
-    structlog.configure(
-        processors=processors,
-        context_class=dict,
-        logger_factory=structlog.stdlib.LoggerFactory(),
-        wrapper_class=structlog.stdlib.BoundLogger,
-        cache_logger_on_first_use=True,
-    )
-    
-    # Setup log rotation for production
-    if settings.environment == "production":
-        setup_log_rotation()
-    
-    # Log startup message
-    logger = get_logger("startup")
-    logger.info(
-        "Enhanced logging configured",
-        env=settings.environment,
-        level=logging.getLevelName(log_level),
-        json_output=settings.environment == "production",
-        correlation_tracking=True,
-        log_rotation=settings.environment == "production"
-    )
+    # Skip structlog configuration temporarily
+    print("Basic logging configured (structlog disabled for debugging)")
 
 
 def setup_log_rotation():
@@ -164,8 +112,8 @@ def setup_log_rotation():
 
 
 def get_logger(name: str = None):
-    """Get structured logger instance."""
-    return structlog.get_logger(name)
+    """Get basic logger instance."""
+    return logging.getLogger(name or __name__)
 
 
 def set_correlation_id(correlation_id: str = None):
@@ -233,16 +181,17 @@ def log_performance(logger, operation: str, duration: float, context: dict = Non
 
 def log_business_event(logger, event_type: str, event_data: Dict[str, Any]):
     """Log business events for analytics."""
+    from datetime import datetime, timezone
     business_context = {
         "event_type": event_type,
         "metric_type": "business",
-        "timestamp": structlog.processors.TimeStamper(fmt="iso")(None, None, {})["timestamp"]
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
     # Avoid 'event' key conflicts by filtering it out
     safe_event_data = {k: v for k, v in event_data.items() if k != 'event'}
     business_context.update(safe_event_data)
     
-    logger.info("Business event", **business_context)
+    logger.info("Business event: %s", business_context)
 
 
 def log_security_event(logger, event_type: str, severity: str, details: Dict[str, Any]):
