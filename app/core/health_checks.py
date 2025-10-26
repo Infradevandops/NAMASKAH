@@ -14,9 +14,13 @@ class HealthChecker:
     async def check_database() -> Dict[str, Any]:
         """Check database connectivity."""
         try:
-            db = next(get_db())
-            db.execute("SELECT 1")
-            return {"status": "healthy", "response_time": 0.01}
+            db_gen = get_db()
+            db = next(db_gen)
+            try:
+                db.execute("SELECT 1")
+                return {"status": "healthy", "response_time": 0.01}
+            finally:
+                db.close()
         except Exception as e:
             return {"status": "unhealthy", "error": str(e)}
     

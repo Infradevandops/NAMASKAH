@@ -240,7 +240,7 @@ class MetricsMiddleware:
         path = scope["path"]
         
         # Normalize endpoint for metrics (remove IDs, etc.)
-        normalized_path = self._normalize_path(path)
+        normalized_path = MetricsMiddleware._normalize_path(path)
         
         async def send_wrapper(message):
             if message["type"] == "http.response.start":
@@ -265,7 +265,8 @@ class MetricsMiddleware:
             # Decrease active connections
             ACTIVE_CONNECTIONS.dec()
     
-    def _normalize_path(self, path: str) -> str:
+    @staticmethod
+    def _normalize_path(path: str) -> str:
         """Normalize path for metrics grouping."""
         # Replace UUIDs and IDs with placeholders
         import re
