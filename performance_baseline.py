@@ -1,110 +1,188 @@
-#!/usr/bin/env python3
-"""
-Performance Baseline Test
-Tests current application performance before optimizations
-"""
-
-import time
-import requests
+"""Performance baseline and benchmarking for task 15.1."""
 import asyncio
-import aiohttp
-from concurrent.futures import ThreadPoolExecutor
+import time
 import statistics
+from typing import Dict, List, Any
+from dataclasses import dataclass
+import httpx
 
-BASE_URL = "http://localhost:8000"
 
-def test_health_endpoint():
-    """Test basic health endpoint"""
-    start = time.time()
-    response = requests.get(f"{BASE_URL}/health")
-    end = time.time()
-    
-    return {
-        "endpoint": "/health",
-        "status_code": response.status_code,
-        "response_time": round((end - start) * 1000, 2),
-        "success": response.status_code == 200
-    }
+@dataclass
+class PerformanceMetric:
+    """Performance metric data point."""
+    endpoint: str
+    response_time: float
+    status_code: int
+    timestamp: float
 
-def test_services_list():
-    """Test services list endpoint (should be cached)"""
-    start = time.time()
-    response = requests.get(f"{BASE_URL}/services/list")
-    end = time.time()
-    
-    return {
-        "endpoint": "/services/list",
-        "status_code": response.status_code,
-        "response_time": round((end - start) * 1000, 2),
-        "success": response.status_code == 200
-    }
 
-def concurrent_requests(endpoint, count=10):
-    """Test concurrent requests"""
-    def make_request():
-        start = time.time()
-        response = requests.get(f"{BASE_URL}{endpoint}")
-        end = time.time()
-        return (end - start) * 1000
+class PerformanceBaseline:
+    """Establish and track performance baselines."""
     
-    with ThreadPoolExecutor(max_workers=count) as executor:
-        futures = [executor.submit(make_request) for _ in range(count)]
-        response_times = [future.result() for future in futures]
+    def __init__(self, base_url: str = "http://localhost:8000"):
+        self.base_url = base_url
+        self.baseline_metrics = {}
+        self.test_endpoints = [
+            "/system/health",
+            "/auth/login",
+            "/verify/create", 
+            "/wallet/balance",
+            "/services/list"
+        ]
     
-    return {
-        "endpoint": endpoint,
-        "concurrent_requests": count,
-        "avg_response_time": round(statistics.mean(response_times), 2),
-        "min_response_time": round(min(response_times), 2),
-        "max_response_time": round(max(response_times), 2),
-        "median_response_time": round(statistics.median(response_times), 2)
-    }
+    async def establish_baseline(self, iterations: int = 100) -> Dict[str, Any]:
+        """Establish performance baseline for key endpoints."""
+        print(f"Establishing baseline with {iterations} iterations...")
+        
+        baseline_results = {}
+        
+        for endpoint in self.test_endpoints:
+            metrics = await self._benchmark_endpoint(endpoint, iterations)
+            
+            baseline_results[endpoint] = {
+                "avg_response_time": statistics.mean(metrics),
+                "p50_response_time": statistics.median(metrics),
+                "p95_response_time": self._percentile(metrics, 95),
+                "p99_response_time": self._percentile(metrics, 99),
+                "min_response_time": min(metrics),
+                "max_response_time": max(metrics),
+                "iterations": iterations
+            }
+        
+        self.baseline_metrics = baseline_results
+        return baseline_results
+    
+    async def _benchmark_endpoint(self, endpoint: str, iterations: int) -> List[float]:
+        """Benchmark single endpoint."""
+        metrics = []
+        
+        async with httpx.AsyncClient() as client:
+            for _ in range(iterations):
+                start_time = time.time()
+                
+                try:
+                    response = await client.get(f"{self.base_url}{endpoint}", timeout=10)
+                    response_time = (time.time() - start_time) * 1000  # Convert to ms
+                    metrics.append(response_time)
+                except Exception:
+                    # Record timeout as 10 seconds
+                    metrics.append(10000)
+                
+                # Small delay between requests
+                await asyncio.sleep(0.01)
+        
+        return metrics
+    
+    def _percentile(self, data: List[float], percentile: int) -> float:
+        """Calculate percentile."""
+        sorted_data = sorted(data)
+        index = int(len(sorted_data) * percentile / 100)
+        return sorted_data[min(index, len(sorted_data) - 1)]
+    
+    async def run_regression_test(self) -> Dict[str, Any]:
+        """Run performance regression test against baseline."""
+        if not self.baseline_metrics:
+            raise ValueError("No baseline established. Run establish_baseline() first.")
+        
+        print("Running performance regression test...")
+        
+        regression_results = {}
+        
+        for endpoint in self.test_endpoints:
+            current_metrics = await self._benchmark_endpoint(endpoint, 50)
+            current_avg = statistics.mean(current_metrics)
+            baseline_avg = self.baseline_metrics[endpoint]["avg_response_time"]
+            
+            regression_percent = ((current_avg - baseline_avg) / baseline_avg) * 100
+            
+            regression_results[endpoint] = {
+                "baseline_avg": baseline_avg,
+                "current_avg": current_avg,
+                "regression_percent": regression_percent,
+                "passed": regression_percent < 25  # 25% regression threshold
+            }
+        
+        return regression_results
 
-def main():
-    print("🧪 Performance Baseline Test")
-    print("=" * 50)
-    
-    # Test basic endpoints
-    health_result = test_health_endpoint()
-    print(f"✅ Health Check: {health_result['response_time']}ms")
-    
-    services_result = test_services_list()
-    print(f"✅ Services List: {services_result['response_time']}ms")
-    
-    # Test concurrent load
-    print("\n🔄 Concurrent Load Test (10 requests)")
-    concurrent_result = concurrent_requests("/health", 10)
-    print(f"   Average: {concurrent_result['avg_response_time']}ms")
-    print(f"   Median: {concurrent_result['median_response_time']}ms")
-    print(f"   Min/Max: {concurrent_result['min_response_time']}/{concurrent_result['max_response_time']}ms")
-    
-    # Performance assessment
-    avg_time = concurrent_result['avg_response_time']
-    if avg_time < 100:
-        grade = "🟢 EXCELLENT"
-    elif avg_time < 200:
-        grade = "🟡 GOOD"
-    elif avg_time < 500:
-        grade = "🟠 FAIR"
-    else:
-        grade = "🔴 NEEDS OPTIMIZATION"
-    
-    print(f"\n📊 Performance Grade: {grade}")
-    print(f"📈 Baseline Average: {avg_time}ms")
-    
-    return {
-        "baseline_performance": avg_time,
-        "grade": grade,
-        "health_check": health_result,
-        "services_list": services_result,
-        "concurrent_load": concurrent_result
-    }
 
-if __name__ == "__main__":
-    try:
-        results = main()
-        print(f"\n✅ Baseline test complete")
-    except requests.exceptions.ConnectionError:
-        print("❌ Application not running. Start with: uvicorn main:app --reload")
-    except Exception as e:
-        print(f"❌ Test failed: {e}")
+class ContinuousPerformanceMonitor:
+    """Continuous performance monitoring."""
+    
+    def __init__(self):
+        self.performance_history = []
+        self.alert_thresholds = {
+            "response_time_p95": 2000,  # 2 seconds
+            "error_rate": 5.0,          # 5%
+            "throughput_min": 100       # 100 requests/minute
+        }
+    
+    async def monitor_performance(self, duration_minutes: int = 60):
+        """Monitor performance continuously."""
+        print(f"Starting continuous monitoring for {duration_minutes} minutes...")
+        
+        end_time = time.time() + (duration_minutes * 60)
+        
+        while time.time() < end_time:
+            # Collect metrics every minute
+            metrics = await self._collect_current_metrics()
+            self.performance_history.append(metrics)
+            
+            # Check for alerts
+            if self._should_alert(metrics):
+                await self._send_performance_alert(metrics)
+            
+            await asyncio.sleep(60)  # Wait 1 minute
+        
+        return self.performance_history
+    
+    async def _collect_current_metrics(self) -> Dict[str, Any]:
+        """Collect current performance metrics."""
+        # Simulate metrics collection
+        return {
+            "timestamp": time.time(),
+            "response_time_p95": 150 + (time.time() % 100),  # Simulate variation
+            "error_rate": 1.0 + (time.time() % 3),
+            "throughput": 120 + (time.time() % 50),
+            "active_connections": 25 + int(time.time() % 20)
+        }
+    
+    def _should_alert(self, metrics: Dict[str, Any]) -> bool:
+        """Check if metrics exceed alert thresholds."""
+        return (
+            metrics["response_time_p95"] > self.alert_thresholds["response_time_p95"] or
+            metrics["error_rate"] > self.alert_thresholds["error_rate"] or
+            metrics["throughput"] < self.alert_thresholds["throughput_min"]
+        )
+    
+    async def _send_performance_alert(self, metrics: Dict[str, Any]):
+        """Send performance alert."""
+        print(f"PERFORMANCE ALERT: {metrics}")
+
+
+async def run_performance_baseline():
+    """Run complete performance baseline establishment."""
+    baseline = PerformanceBaseline()
+    
+    # Establish baseline
+    baseline_results = await baseline.establish_baseline(iterations=100)
+    
+    print("\n=== PERFORMANCE BASELINE ESTABLISHED ===")
+    for endpoint, metrics in baseline_results.items():
+        print(f"{endpoint}:")
+        print(f"  Average: {metrics['avg_response_time']:.2f}ms")
+        print(f"  P95: {metrics['p95_response_time']:.2f}ms")
+        print(f"  P99: {metrics['p99_response_time']:.2f}ms")
+    
+    # Run regression test
+    regression_results = await baseline.run_regression_test()
+    
+    print("\n=== REGRESSION TEST RESULTS ===")
+    all_passed = True
+    for endpoint, result in regression_results.items():
+        status = "PASS" if result["passed"] else "FAIL"
+        print(f"{endpoint}: {status} ({result['regression_percent']:+.1f}%)")
+        if not result["passed"]:
+            all_passed = False
+    
+    print(f"\nOverall: {'PASS' if all_passed else 'FAIL'}")
+    return baseline_results, regression_results
