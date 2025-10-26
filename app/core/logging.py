@@ -175,7 +175,7 @@ def log_performance(logger, operation: str, duration: float, context: dict = Non
         perf_context.update(context)
     
     # Log at appropriate level
-    getattr(logger, log_level)("Operation performance", **perf_context)
+    getattr(logger, log_level)("Operation performance: %s", perf_context)
 
 
 def log_business_event(logger, event_type: str, event_data: Dict[str, Any]):

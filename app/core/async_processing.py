@@ -123,9 +123,10 @@ class AsyncDatabaseOperations:
                 user_id = update["user_id"]
                 amount = update["amount"]
                 
-                # Update user credits
+                # Update user credits using SQLAlchemy text() for parameterized queries
+                from sqlalchemy import text
                 db_session.execute(
-                    "UPDATE users SET credits = credits + :amount WHERE id = :user_id",
+                    text("UPDATE users SET credits = credits + :amount WHERE id = :user_id"),
                     {"amount": amount, "user_id": user_id}
                 )
             
@@ -142,8 +143,9 @@ class AsyncDatabaseOperations:
         try:
             cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
             
+            from sqlalchemy import text
             result = db_session.execute(
-                "DELETE FROM verifications WHERE created_at < :cutoff AND status IN ('completed', 'failed')",
+                text("DELETE FROM verifications WHERE created_at < :cutoff AND status IN ('completed', 'failed')"),
                 {"cutoff": cutoff_date}
             )
             

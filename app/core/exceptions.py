@@ -137,13 +137,22 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
     """Handle unexpected exceptions."""
     logger.error("Unexpected error: %s", str(exc), exc_info=True)
     
-    # Always show details for debugging (temporarily)
-    error_details = {
-        "exception_type": type(exc).__name__,
-        "exception_message": str(exc),
-        "request_url": str(request.url),
-        "request_method": request.method
-    }
+    from app.core.config import get_settings
+    settings = get_settings()
+    
+    # Only show detailed error info in development
+    if settings.environment == "development":
+        error_details = {
+            "exception_type": type(exc).__name__,
+            "exception_message": str(exc),
+            "request_url": str(request.url),
+            "request_method": request.method
+        }
+    else:
+        # In production, only show generic error
+        error_details = {
+            "timestamp": str(exc.__class__.__name__),  # Safe identifier for tracking
+        }
     
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

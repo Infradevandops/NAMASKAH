@@ -96,12 +96,18 @@ def validate_relationships():
         db.flush()
         
         # Validate relationships
-        assert len(user.api_keys) == 1
-        assert len(user.verifications) == 1
-        assert len(user.transactions) == 1
-        assert api_key.user.email == "test@validation.com"
-        assert verification.user.email == "test@validation.com"
-        assert transaction.user.email == "test@validation.com"
+        if len(user.api_keys) != 1:
+            raise ValueError(f"Expected 1 API key, got {len(user.api_keys)}")
+        if len(user.verifications) != 1:
+            raise ValueError(f"Expected 1 verification, got {len(user.verifications)}")
+        if len(user.transactions) != 1:
+            raise ValueError(f"Expected 1 transaction, got {len(user.transactions)}")
+        if api_key.user.email != "test@validation.com":
+            raise ValueError(f"API key user email mismatch: {api_key.user.email}")
+        if verification.user.email != "test@validation.com":
+            raise ValueError(f"Verification user email mismatch: {verification.user.email}")
+        if transaction.user.email != "test@validation.com":
+            raise ValueError(f"Transaction user email mismatch: {transaction.user.email}")
         
         print("✅ All relationships working correctly!")
         

@@ -16,13 +16,24 @@ class MigrationManager:
     def run_migrations(self) -> bool:
         """Run pending migrations."""
         try:
+            import shutil
+            # Verify alembic is available
+            alembic_path = shutil.which("alembic")
+            if not alembic_path:
+                print("Alembic not found in PATH")
+                return False
+            
             result = subprocess.run(
-                ["alembic", "upgrade", "head"],
+                [alembic_path, "upgrade", "head"],
                 capture_output=True,
                 text=True,
-                cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                timeout=300  # 5 minute timeout
             )
             return result.returncode == 0
+        except subprocess.TimeoutExpired:
+            print("Migration timed out")
+            return False
         except Exception as e:
             print(f"Migration failed: {e}")
             return False
@@ -30,13 +41,27 @@ class MigrationManager:
     def create_migration(self, message: str) -> bool:
         """Create new migration."""
         try:
+            import shutil
+            # Verify alembic is available
+            alembic_path = shutil.which("alembic")
+            if not alembic_path:
+                print("Alembic not found in PATH")
+                return False
+            
+            # Sanitize message to prevent injection
+            safe_message = "".join(c for c in message if c.isalnum() or c in " _-")[:100]
+            
             result = subprocess.run(
-                ["alembic", "revision", "--autogenerate", "-m", message],
+                [alembic_path, "revision", "--autogenerate", "-m", safe_message],
                 capture_output=True,
                 text=True,
-                cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                timeout=60
             )
             return result.returncode == 0
+        except subprocess.TimeoutExpired:
+            print("Migration creation timed out")
+            return False
         except Exception as e:
             print(f"Migration creation failed: {e}")
             return False
@@ -44,14 +69,30 @@ class MigrationManager:
     def rollback_migration(self, revision: Optional[str] = None) -> bool:
         """Rollback to specific revision or previous."""
         try:
+            import shutil
+            # Verify alembic is available
+            alembic_path = shutil.which("alembic")
+            if not alembic_path:
+                print("Alembic not found in PATH")
+                return False
+            
+            # Sanitize revision input
             target = revision or "-1"
+            if revision and not revision.replace("-", "").replace("_", "").isalnum():
+                print("Invalid revision format")
+                return False
+            
             result = subprocess.run(
-                ["alembic", "downgrade", target],
+                [alembic_path, "downgrade", target],
                 capture_output=True,
                 text=True,
-                cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                timeout=300
             )
             return result.returncode == 0
+        except subprocess.TimeoutExpired:
+            print("Rollback timed out")
+            return False
         except Exception as e:
             print(f"Rollback failed: {e}")
             return False
@@ -59,14 +100,23 @@ class MigrationManager:
     def get_current_revision(self) -> Optional[str]:
         """Get current database revision."""
         try:
+            import shutil
+            # Verify alembic is available
+            alembic_path = shutil.which("alembic")
+            if not alembic_path:
+                return None
+            
             result = subprocess.run(
-                ["alembic", "current"],
+                [alembic_path, "current"],
                 capture_output=True,
                 text=True,
-                cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                timeout=30
             )
             if result.returncode == 0:
                 return result.stdout.strip()
+            return None
+        except subprocess.TimeoutExpired:
             return None
         except Exception:
             return None

@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 43200  # 30 days
     
+    # Server Configuration
+    host: str = "127.0.0.1"  # Default to localhost for security
+    port: int = 8000
+    workers: int = 1
+    
     # Database
     database_url: str = "sqlite:///./sms.db"
     database_pool_size: int = 10
@@ -138,6 +143,10 @@ class Settings(BaseSettings):
         # Validate database is PostgreSQL
         if not self.database_url.startswith('postgresql://'):
             raise ValueError("Production environment requires PostgreSQL database")
+        
+        # Validate secure host binding in production
+        if self.host == "0.0.0.0":
+            raise ValueError("Production environment should not bind to 0.0.0.0. Use specific interface or configure reverse proxy.")
     
     model_config = {
         "env_file": ".env",

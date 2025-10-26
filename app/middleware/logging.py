@@ -99,16 +99,19 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             except Exception:
                 log_data["body"] = "Could not read body"
         
-        # Remove sensitive headers
-        sensitive_headers = ["authorization", "x-api-key", "cookie"]
+        # Remove sensitive headers and data
+        sensitive_headers = ["authorization", "x-api-key", "cookie", "x-auth-token", "bearer"]
         for header in sensitive_headers:
             if header in log_data["headers"]:
                 log_data["headers"][header] = "[REDACTED]"
         
-        logger.info(
-            "HTTP request received",
-            **log_data
-        )
+        # Remove sensitive query parameters
+        sensitive_params = ["password", "token", "key", "secret", "api_key"]
+        for param in sensitive_params:
+            if param in log_data["query_params"]:
+                log_data["query_params"][param] = "[REDACTED]"
+        
+        logger.info("HTTP request received: %s", log_data)
     
     def _log_response(self, request: Request, response: Response, process_time: float):
         """Log response details and performance metrics."""
@@ -152,6 +155,27 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             return real_ip
         
         return request.client.host if request.client else "unknown"
+    
+    def _sanitize_sensitive_data(self, data):
+        """Recursively sanitize sensitive data from dictionaries."""
+        if isinstance(data, dict):
+            sanitized = {}
+            sensitive_keys = [
+                "password", "token", "secret", "key", "api_key", "auth_token",
+                "bearer", "authorization", "credit_card", "ssn", "social_security"
+            ]
+            for key, value in data.items():
+                if any(sensitive_key in key.lower() for sensitive_key in sensitive_keys):
+                    sanitized[key] = "[REDACTED]"
+                elif isinstance(value, (dict, list)):
+                    sanitized[key] = self._sanitize_sensitive_data(value)
+                else:
+                    sanitized[key] = value
+            return sanitized
+        elif isinstance(data, list):
+            return [self._sanitize_sensitive_data(item) for item in data]
+        else:
+            return data
 
 
 class PerformanceMetricsMiddleware(BaseHTTPMiddleware):
@@ -225,10 +249,8 @@ class PerformanceMetricsMiddleware(BaseHTTPMiddleware):
         # Log slow requests
         if process_time > 2.0:
             logger.warning(
-                "Slow request detected",
-                endpoint=endpoint,
-                duration_seconds=round(process_time, 3),
-                threshold_seconds=2.0
+                "Slow request detected: endpoint=%s, duration=%.3fs, threshold=2.0s",
+                endpoint, process_time
             )
         
         return response
@@ -300,12 +322,8 @@ class AuditTrailMiddleware(BaseHTTPMiddleware):
                 if body:
                     try:
                         body_data = json.loads(body.decode())
-                        # Remove sensitive fields
-                        sensitive_fields = ["password", "token", "secret", "key"]
-                        for field in sensitive_fields:
-                            if field in body_data:
-                                body_data[field] = "[REDACTED]"
-                        audit_data["body"] = body_data
+                        # Remove sensitive fields recursively
+                        audit_data["body"] = self._sanitize_sensitive_data(body_data)
                     except (json.JSONDecodeError, UnicodeDecodeError):
                         audit_data["body"] = "[BINARY_DATA]"
             except Exception:

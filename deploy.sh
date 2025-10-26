@@ -94,7 +94,7 @@ module.exports = {
   apps: [{
     name: 'namaskah-sms',
     script: 'uvicorn',
-    args: 'main:app --host 0.0.0.0 --port 8000 --workers 4',
+    args: 'main:app --host ${HOST:-127.0.0.1} --port ${PORT:-8000} --workers ${WORKERS:-4}',
     interpreter: 'python3',
     env: {
       ENVIRONMENT: 'production'
@@ -123,7 +123,7 @@ else
     echo "🔄 Starting with uvicorn (install PM2 for production)"
     
     # Start in background
-    nohup uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4 > app.log 2>&1 &
+    nohup uvicorn main:app --host ${HOST:-127.0.0.1} --port ${PORT:-8000} --workers ${WORKERS:-4} > app.log 2>&1 &
     
     echo "✅ Application started in background"
     echo "📋 Logs: tail -f app.log"
@@ -179,7 +179,7 @@ User=$USER
 WorkingDirectory=$(pwd)
 Environment=PATH=$(pwd)/venv/bin:/usr/local/bin:/usr/bin:/bin
 Environment=ENVIRONMENT=production
-ExecStart=$(which uvicorn) main:app --host 0.0.0.0 --port 8000 --workers 4
+ExecStart=$(which uvicorn) main:app --host ${HOST:-127.0.0.1} --port ${PORT:-8000} --workers ${WORKERS:-4}
 Restart=always
 RestartSec=3
 
