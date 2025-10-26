@@ -207,11 +207,11 @@ def log_security_event(logger, event_type: str, severity: str, details: Dict[str
     security_context.update(safe_details)
     
     if severity in ["high", "critical"]:
-        logger.error("Security event", **security_context)
+        logger.error("Security event: %s", security_context)
     elif severity == "medium":
-        logger.warning("Security event", **security_context)
+        logger.warning("Security event: %s", security_context)
     else:
-        logger.info("Security event", **security_context)
+        logger.info("Security event: %s", security_context)
 
 
 def log_api_request(logger, method: str, path: str, status_code: int, duration: float, 
@@ -238,4 +238,4 @@ def log_api_request(logger, method: str, path: str, status_code: int, duration: 
     else:
         log_level = "info"
     
-    getattr(logger, log_level)("API request", **request_context)
+    getattr(logger, log_level)("API request: %s", request_context)
