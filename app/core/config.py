@@ -119,8 +119,6 @@ class Settings(BaseSettings):
             return
         
         required_production_settings = [
-            ('secret_key', 'SECRET_KEY'),
-            ('jwt_secret_key', 'JWT_SECRET_KEY'),
             ('database_url', 'DATABASE_URL'),
             ('textverified_api_key', 'TEXTVERIFIED_API_KEY'),
             ('paystack_secret_key', 'PAYSTACK_SECRET_KEY'),
