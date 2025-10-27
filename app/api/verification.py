@@ -173,11 +173,15 @@ async def retry_verification(
             verification.capability = "voice"
             verification.status = "pending"
             db.commit()
+            db.refresh(verification)
+            return VerificationResponse.from_orm(verification)
             
         elif retry_data.retry_type == "same":
             # Retry with same number
             verification.status = "pending"
             db.commit()
+            db.refresh(verification)
+            return VerificationResponse.from_orm(verification)
             
         elif retry_data.retry_type == "new":
             # Cancel current and create new
