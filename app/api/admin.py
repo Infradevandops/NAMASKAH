@@ -96,7 +96,7 @@ def manage_user_credits(
         description = "Admin added credits"
     else:
         user.credits -= amount
-        transaction_amount = -amount
+        transaction_amount = -float(amount)
         description = "Admin deducted credits"
     
     # Create transaction record
