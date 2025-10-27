@@ -76,7 +76,6 @@ def get_notification_service(db: Session) -> NotificationService:
 __all__ = [
     "BaseService",
     "AuthService", 
-    "TextVerifiedService",
     "PaymentService",
     "NotificationService",
     "ServiceFactory",
