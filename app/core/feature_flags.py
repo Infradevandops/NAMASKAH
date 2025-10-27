@@ -86,7 +86,7 @@ class FeatureFlagManager:
         """Get all feature flags for a specific user."""
         return {
             flag_name: self.is_enabled(flag_name, user_id, is_admin)
-            for flag_name in self.flags.keys()
+            for flag_name in self.flags
         }
     
     def export_config(self) -> str:
