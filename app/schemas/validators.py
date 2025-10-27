@@ -197,8 +197,7 @@ def sanitize_input(text: str) -> str:
 
 def validate_pagination_params(page: int, size: int) -> tuple:
     """Validate pagination parameters."""
-    if page < 1:
-        page = 1
+    page = max(page, 1)
     
     if size < 1:
         size = 10
