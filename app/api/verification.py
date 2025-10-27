@@ -75,7 +75,8 @@ async def create_verification(
             status="pending",
             cost=cost,
             requested_carrier=verification_data.carrier,
-            requested_area_code=verification_data.area_code
+            requested_area_code=verification_data.area_code,
+            available=True
         )
         
         db.add(verification)
@@ -324,7 +325,8 @@ async def create_number_rental(
         status="active",
         started_at=datetime.now(timezone.utc),
         expires_at=datetime.now(timezone.utc) + timedelta(hours=rental_data.duration_hours),
-        auto_extend=rental_data.auto_extend
+        auto_extend=rental_data.auto_extend,
+        available=False
     )
     
     db.add(rental)
@@ -377,7 +379,7 @@ def extend_rental(
     # Check user credits
     user = db.query(User).filter(User.id == user_id).first()
     if user.credits < extension_cost:
-        raise InsufficientCreditsError(f"Insufficient credits. Need {extension_cost}, have {user.credits}")
+        raise InsufficientCreditsError(extension_cost, user.credits)
     
     # Extend rental
     user.credits -= extension_cost
