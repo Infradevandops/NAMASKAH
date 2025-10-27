@@ -240,7 +240,7 @@ async def cancel_verification(
     # Cancel with TextVerified
     textverified_service = get_textverified_service(db)
     try:
-        await textverified_service.cancel_verification(verification_id)
+        return await textverified_service.cancel_verification(verification_id)
     except Exception:
         pass  # Continue with local cancellation even if API call fails
     
