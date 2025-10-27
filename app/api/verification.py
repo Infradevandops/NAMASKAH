@@ -59,7 +59,8 @@ async def create_verification(
             service_name=verification_data.service_name,
             capability=verification_data.capability,
             area_code=verification_data.area_code,
-            carrier=verification_data.carrier
+            carrier=verification_data.carrier,
+            available=True
         )
         
         # Get verification details
