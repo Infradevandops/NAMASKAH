@@ -288,7 +288,7 @@ async def run_gradual_rollout_validation():
     
     ab_result = await validator.run_ab_test_validation(control_metrics, treatment_metrics)
     
-    print(f"\n=== A/B TEST RESULTS ===")
+    print("\n=== A/B TEST RESULTS ===")
     print(f"Winner: {ab_result['winner']}")
     print(f"Confidence: {ab_result['confidence']:.2f}")
     print(f"Recommendation: {ab_result['recommendation']}")

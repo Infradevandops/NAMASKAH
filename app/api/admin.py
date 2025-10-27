@@ -93,11 +93,11 @@ def manage_user_credits(
     if operation == "add":
         user.credits += amount
         transaction_amount = amount
-        description = f"Admin added credits"
+        description = "Admin added credits"
     else:
         user.credits -= amount
         transaction_amount = -amount
-        description = f"Admin deducted credits"
+        description = "Admin deducted credits"
     
     # Create transaction record
     transaction = Transaction(

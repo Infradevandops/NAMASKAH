@@ -780,14 +780,14 @@ class DeploymentValidator:
         failed = len([r for r in self.results if r.status == 'fail'])
         
         # Print summary
-        print(f"\n📊 SUMMARY:")
+        print("\n📊 SUMMARY:")
         print(f"   ✅ Passed: {passed}")
         print(f"   ⚠️  Warnings: {warned}")
         print(f"   ❌ Failed: {failed}")
         print(f"   ⏱️  Total time: {total_time:.1f}ms")
         
         # Print detailed results
-        print(f"\n📋 DETAILED RESULTS:")
+        print("\n📋 DETAILED RESULTS:")
         for result in self.results:
             status_icon = {"pass": "✅", "warn": "⚠️", "fail": "❌"}[result.status]
             print(f"   {status_icon} {result.name}: {result.message} ({result.duration_ms:.1f}ms)")
@@ -795,13 +795,13 @@ class DeploymentValidator:
         # Overall status
         if failed == 0:
             if warned == 0:
-                print(f"\n🎉 DEPLOYMENT VALIDATION SUCCESSFUL!")
+                print("\n🎉 DEPLOYMENT VALIDATION SUCCESSFUL!")
                 print("   All checks passed. Deployment is ready for production.")
             else:
-                print(f"\n✅ DEPLOYMENT VALIDATION PASSED WITH WARNINGS")
+                print("\n✅ DEPLOYMENT VALIDATION PASSED WITH WARNINGS")
                 print(f"   {warned} warnings found. Review and address if needed.")
         else:
-            print(f"\n❌ DEPLOYMENT VALIDATION FAILED")
+            print("\n❌ DEPLOYMENT VALIDATION FAILED")
             print(f"   {failed} critical issues found. Address before production use.")
         
         print("=" * 80)

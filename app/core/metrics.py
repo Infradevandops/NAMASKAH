@@ -309,7 +309,7 @@ async def record_performance_metric(operation: str, duration: float, **kwargs):
     """Record performance metrics."""
     # Create operation-specific histogram if needed
     operation_histogram = Histogram(
-        f'operation_duration_seconds',
+        'operation_duration_seconds',
         'Operation duration in seconds',
         ['operation']
     )
