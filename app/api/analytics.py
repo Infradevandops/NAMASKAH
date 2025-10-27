@@ -140,7 +140,7 @@ def get_cost_analysis(
 def export_data(
     user_id: str = Depends(get_current_user_id),
     data_type: str = Query("verifications", description="Data type: verifications or transactions"),
-    format: str = Query("json", description="Format: json or csv"),
+    output_format: str = Query("json", description="Format: json or csv"),
     date_from: Optional[datetime] = Query(None, description="Start date"),
     date_to: Optional[datetime] = Query(None, description="End date"),
     db: Session = Depends(get_db)
@@ -195,7 +195,7 @@ def export_data(
     
     return {
         "data": data,
-        "format": format,
+        "format": output_format,
         "count": len(data),
         "date_range": {
             "from": date_from.isoformat(),

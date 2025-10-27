@@ -165,7 +165,7 @@ def get_transaction_history(
 @router.get("/transactions/export")
 async def export_transactions(
     user_id: str = Depends(get_current_user_id),
-    format: str = Query("csv", description="Export format: csv or json"),
+    export_format: str = Query("csv", description="Export format: csv or json"),
     db: Session = Depends(get_db)
 ):
     """Export user's transaction history."""
@@ -178,7 +178,7 @@ async def export_transactions(
         Transaction.user_id == user_id
     ).order_by(Transaction.created_at.desc()).all()
     
-    if format == "csv":
+    if export_format == "csv":
         output = io.StringIO()
         writer = csv.writer(output)
         
@@ -201,7 +201,7 @@ async def export_transactions(
             headers={"Content-Disposition": f"attachment; filename=transactions_{user_id}.csv"}
         )
     
-    elif format == "json":
+    elif export_format == "json":
         data = [
             {
                 "date": t.created_at.isoformat(),
