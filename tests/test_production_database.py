@@ -353,7 +353,7 @@ class TestDatabasePerformance:
         """)
         
         result = db_session.execute(query)
-        rows = result.fetchall()
+        _ = result.fetchall()
         
         duration = time.time() - start_time
         assert duration < 2.0  # Should complete in less than 2 seconds

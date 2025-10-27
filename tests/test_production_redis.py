@@ -327,7 +327,7 @@ class TestRedisCacheIntegration:
         try:
             # Attempt cache operations
             await cache.set("failover_test", "data", ttl=60)
-            result = await cache.get("failover_test")
+            await cache.get("failover_test")
             await cache.delete("failover_test")
             
             # If Redis is available, these should work

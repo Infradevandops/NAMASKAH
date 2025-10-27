@@ -485,7 +485,7 @@ class DeploymentValidator:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 # Make rapid requests to trigger rate limiting
                 responses = []
-                for i in range(10):
+                for _ in range(10):
                     try:
                         response = await client.get(f"{self.base_url}/system/health")
                         responses.append(response.status_code)
