@@ -30,7 +30,7 @@ def test_db():
     Base.metadata.drop_all(bind=engine)
 
 @pytest.fixture
-def client(test_db_fixture):
+def client():
     """Test client fixture."""
     return TestClient(app)
 
@@ -62,7 +62,7 @@ def test_user(db_session):
     return user
 
 @pytest.fixture
-def auth_headers(client, test_user):
+def auth_headers(client):
     """Authentication headers for test user."""
     response = client.post("/auth/login", json={
         "email": "test@example.com",

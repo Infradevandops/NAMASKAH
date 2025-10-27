@@ -12,7 +12,7 @@ security = HTTPBearer()
 
 def get_current_user_id(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
+    _db: Session = Depends(get_db)
 ) -> str:
     """Get current user ID from JWT token."""
     try:
