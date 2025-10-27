@@ -4,7 +4,6 @@ Namaskah SMS - Modular Application Factory
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from app.core.config import get_settings
 from app.core.database import engine
 from app.core.exceptions import setup_exception_handlers
 
