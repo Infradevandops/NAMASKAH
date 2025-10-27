@@ -2,7 +2,6 @@
 from sqlalchemy.orm import Session
 from .base import BaseService
 from .auth_service import AuthService
-# from .textverified_service import TextVerifiedService
 from .payment_service import PaymentService
 from .notification_service import NotificationService
 
