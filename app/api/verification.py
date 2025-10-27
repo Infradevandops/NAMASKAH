@@ -109,6 +109,8 @@ async def get_verification_status(
     textverified_service = get_textverified_service(db)
     try:
         details = await textverified_service.get_verification_status(verification_id)
+        return "completed" if details.get("state") == "verificationCompleted" else "pending"
+        
         new_status = "completed" if details.get("state") == "verificationCompleted" else "pending"
         
         if verification.status == "pending" and new_status == "completed":
