@@ -221,7 +221,6 @@ async def retry_verification(
         
     except ExternalServiceError as e:
         raise HTTPException(status_code=503, detail=str(e))
-    return VerificationResponse.from_orm(verification)
 
 
 @router.delete("/{verification_id}", response_model=SuccessResponse)
