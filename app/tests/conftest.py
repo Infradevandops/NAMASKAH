@@ -30,7 +30,7 @@ def test_db():
     Base.metadata.drop_all(bind=engine)
 
 @pytest.fixture
-def client(test_db):
+def client(test_db_fixture):
     """Test client fixture."""
     return TestClient(app)
 
