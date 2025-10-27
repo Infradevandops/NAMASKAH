@@ -124,6 +124,7 @@ async def get_verification_status(
                 service_name=verification.service_name,
                 phone_number=verification.phone_number
             )
+            return VerificationResponse.from_orm(verification)
     except Exception:
         pass  # Continue with current status if API call fails
     
@@ -240,9 +241,7 @@ async def cancel_verification(
     # Cancel with TextVerified
     textverified_service = get_textverified_service(db)
     try:
-        result = await textverified_service.cancel_verification(verification_id)
-        if result is not None:
-            return result
+        await textverified_service.cancel_verification(verification_id)
     except Exception:
         pass  # Continue with local cancellation even if API call fails
     
