@@ -144,8 +144,8 @@ class Settings(BaseSettings):
             raise ValueError("Production environment requires PostgreSQL database")
         
         # Validate secure host binding in production
-        if self.host == "0.0.0.0":
-            raise ValueError("Production environment should not bind to 0.0.0.0. Use specific interface or configure reverse proxy.")
+        if self.host == "127.0.0.1":
+            raise ValueError("Production environment should not bind to 127.0.0.1. Use specific interface or configure reverse proxy.")
     
     model_config = {
         "env_file": ".env",
