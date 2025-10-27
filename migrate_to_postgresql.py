@@ -43,7 +43,7 @@ async def migrate_to_postgresql():
         
         # Run Alembic migrations
         print("🔄 Running Alembic migrations...")
-        os.system("alembic upgrade head")
+        os.system("/usr/local/bin/alembic upgrade head")
         print("✅ Migrations completed")
         
         print("🎉 PostgreSQL migration completed successfully!")
