@@ -121,7 +121,7 @@ class TestLoggingSystem:
         logger = get_logger("test")
         
         # Test basic logging
-        with patch('sys.stdout') as mock_stdout:
+        with patch('sys.stdout'):
             logger.info("Test message", key="value", number=42)
             
             # In production, this should produce JSON output
@@ -318,7 +318,7 @@ class TestMonitoringPerformance:
         # Measure time for many metric recordings
         start_time = time.time()
         
-        for i in range(1000):
+        for _ in range(1000):
             collector.record_request("GET", "/test", 200, 0.1)
             collector.record_error("TestError", "low")
             collector.record_business_event("test_event", "success")
@@ -405,7 +405,7 @@ class TestMonitoringAlerts:
         collector = MetricsCollector()
         
         # Record slow requests
-        for i in range(10):
+        for _ in range(10):
             collector.record_request("GET", "/slow", 200, 3.0)  # 3 second responses
         
         health = collector.get_health_score()

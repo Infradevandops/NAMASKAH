@@ -61,7 +61,7 @@ class PerformanceBaseline:
                 start_time = time.time()
                 
                 try:
-                    response = await client.get(f"{self.base_url}{endpoint}", timeout=10)
+                    await client.get(f"{self.base_url}{endpoint}", timeout=10)
                     response_time = (time.time() - start_time) * 1000  # Convert to ms
                     metrics.append(response_time)
                 except Exception:

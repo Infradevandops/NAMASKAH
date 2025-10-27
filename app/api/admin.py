@@ -164,8 +164,6 @@ def get_platform_stats(
     start_date = datetime.now(timezone.utc) - timedelta(days=period)
     
     # Total users
-    total_users = db.query(User).count()
-    new_users = db.query(User).filter(User.created_at >= start_date).count()
     
     # Verifications
     total_verifications = db.query(Verification).filter(

@@ -30,8 +30,6 @@ def create_app() -> FastAPI:
     # Setup logging first - before any other operations
     setup_logging()
     
-    settings = get_settings()
-    
     fastapi_app = FastAPI(
         title="Namaskah SMS API",
         version="2.4.0",

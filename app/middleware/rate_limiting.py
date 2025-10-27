@@ -198,7 +198,6 @@ class AdaptiveRateLimitMiddleware(BaseHTTPMiddleware):
             adjusted_limit = self.base_limit
         
         # Apply rate limiting
-        client_ip = request.client.host if request.client else "unknown"
         
         # Simple rate limiting logic
         self.request_times.append(current_time)

@@ -28,8 +28,7 @@ async def create_verification(
 ):
     """Create new SMS or voice verification."""
     textverified_service = get_textverified_service(db)
-    notification_service = get_notification_service(db)
-    
+
     # Get user and check credits
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
