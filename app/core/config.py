@@ -160,15 +160,15 @@ from .secrets import SecretsManager
 @lru_cache()
 def get_settings() -> Settings:
     """Get cached settings instance with validation."""
-    settings = Settings()
+    settings_instance = Settings()
     
     # Validate secrets on startup
     SecretsManager.validate_required_secrets()
     
     # Validate production configuration
-    settings.validate_production_config()
+    settings_instance.validate_production_config()
     
-    return settings
+    return settings_instance
 
 # Legacy settings instance for backward compatibility  
 settings = get_settings()

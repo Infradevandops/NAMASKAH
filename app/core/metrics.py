@@ -301,8 +301,8 @@ async def record_business_event(event_type: str, status: str = "success", **kwar
     
     # Log business event for analytics
     from app.core.logging import log_business_event
-    logger = get_logger("business")
-    log_business_event(logger, event_type, {"status": status, **kwargs})
+    business_logger = get_logger("business")
+    log_business_event(business_logger, event_type, {"status": status, **kwargs})
 
 
 async def record_performance_metric(operation: str, duration: float, **kwargs):
@@ -318,8 +318,8 @@ async def record_performance_metric(operation: str, duration: float, **kwargs):
     
     # Log performance
     from app.core.logging import log_performance
-    logger = get_logger("performance")
-    log_performance(logger, operation, duration, kwargs)
+    performance_logger = get_logger("performance")
+    log_performance(performance_logger, operation, duration, kwargs)
 
 
 class DatabaseMetrics:

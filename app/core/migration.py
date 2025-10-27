@@ -36,12 +36,12 @@ class MigrationManager:
             check=True)
             return result.returncode == 0
         except subprocess.TimeoutExpired:
-            logger = logging.getLogger(__name__)
-            logger.error("Migration timed out")
+            migration_logger = logging.getLogger(__name__)
+            migration_logger.error("Migration timed out")
             return False
         except Exception as e:
-            logger = logging.getLogger(__name__)
-            logger.error("Migration failed: %s", e)
+            migration_logger = logging.getLogger(__name__)
+            migration_logger.error("Migration failed: %s", e)
             return False
     
     @staticmethod
@@ -67,11 +67,9 @@ class MigrationManager:
             check=True)
             return result.returncode == 0
         except subprocess.TimeoutExpired:
-            logger = logging.getLogger(__name__)
             logger.error("Migration creation timed out")
             return False
         except Exception as e:
-            logger = logging.getLogger(__name__)
             logger.error("Migration creation failed: %s", e)
             return False
     
@@ -101,11 +99,9 @@ class MigrationManager:
             check=True)
             return result.returncode == 0
         except subprocess.TimeoutExpired:
-            logger = logging.getLogger(__name__)
             logger.error("Rollback timed out")
             return False
         except Exception as e:
-            logger = logging.getLogger(__name__)
             logger.error("Rollback failed: %s", e)
             return False
     
