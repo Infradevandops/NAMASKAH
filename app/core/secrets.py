@@ -158,5 +158,5 @@ JWT_SECRET_KEY={keys['JWT_SECRET_KEY']}
             "environment": environment,
             "issues": issues,
             "warnings": warnings,
-            "secrets_count": len([k for k in os.environ.keys() if SecretsManager.is_sensitive_key(k)])
+            "secrets_count": len([k for k in os.environ if SecretsManager.is_sensitive_key(k)])
         }

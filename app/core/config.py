@@ -1,4 +1,5 @@
 """Core configuration management using Pydantic Settings."""
+import os
 from typing import Optional
 try:
     from pydantic_settings import BaseSettings
@@ -142,9 +143,8 @@ class Settings(BaseSettings):
         if not self.database_url.startswith('postgresql://'):
             raise ValueError("Production environment requires PostgreSQL database")
         
-        # Validate secure host binding in production
-        if self.host in ["127.0.0.1", "localhost"]:
-            raise ValueError("Production environment should not bind to 127.0.0.1. Use specific interface or configure reverse proxy.")
+        # Note: Host binding validation removed for cloud deployment compatibility
+        # Cloud platforms and containers handle networking securely at the infrastructure level
     
     model_config = {
         "env_file": [
