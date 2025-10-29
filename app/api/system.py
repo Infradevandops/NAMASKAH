@@ -203,7 +203,7 @@ async def landing_page(request: Request):
         logger.error("Landing page template error: %s", str(e), exc_info=True)
         
         # Return simple HTML as fallback
-        return HTMLResponse(content=f"""
+        return HTMLResponse(content="""
         <!DOCTYPE html>
         <html>
         <head>
