@@ -79,13 +79,14 @@ class Settings(BaseSettings):
         return v
     
     @validator('database_url')
-    def validate_database_url(cls, v):
+    def validate_database_url(cls, v, values):
         """Validate database URL format."""
         if not v:
             raise ValueError('Database URL is required')
         
         # Check for production database requirements
-        if v.startswith('sqlite://') and cls.environment == 'production':
+        environment = values.get('environment', 'development')
+        if v.startswith('sqlite://') and environment == 'production':
             raise ValueError('SQLite is not recommended for production. Use PostgreSQL.')
         
         return v
@@ -146,7 +147,11 @@ class Settings(BaseSettings):
             raise ValueError("Production environment should not bind to 127.0.0.1. Use specific interface or configure reverse proxy.")
     
     model_config = {
-        "env_file": ".env",
+        "env_file": [
+            ".env.local",      # Highest priority (local overrides)
+            ".env",            # Main environment file
+            ".env.development" # Fallback for development
+        ],
         "case_sensitive": False,
         "extra": "ignore"
     }

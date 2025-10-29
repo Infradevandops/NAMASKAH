@@ -6,7 +6,6 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.database import engine
 from app.core.exceptions import setup_exception_handlers
-
 from app.core.caching import cache
 from app.core.logging import setup_logging, get_logger
 

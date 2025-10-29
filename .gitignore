@@ -33,9 +33,17 @@ test.db
 *.log
 app.log
 
-# Environment
+# Environment - NEVER commit these files
 .env
 .env.local
+.env.production
+.env.development
+.env.staging
+.env.test
+
+# Backup of environment files (also sensitive)
+.env.backup
+.env.*.backup
 
 # IDE
 .vscode/

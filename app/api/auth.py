@@ -35,7 +35,7 @@ async def register(
         )
         
         # Generate access token
-        access_token = auth_service.create_access_token(user.id)
+        access_token = auth_service.create_user_token(user)
         
         # Send welcome email (async)
         await notification_service.send_email(
@@ -77,7 +77,7 @@ async def login(
         )
         
         # Generate access token
-        access_token = auth_service.create_access_token(user.id)
+        access_token = auth_service.create_user_token(user)
         
         return TokenResponse(
             access_token=access_token,
@@ -112,16 +112,18 @@ async def google_auth(
         auth_service = get_auth_service(db)
         
         # Check if user exists
-        user = db.query(User).filter(User.email == email).first()
+        existing_user = db.query(User).filter(User.email == email).first()
         
-        if not user:
+        if not existing_user:
             # Create new user
             user = auth_service.register_user(email=email, password=idinfo['sub'])
             user.email_verified = email_verified
             db.commit()
+        else:
+            user = existing_user
         
         # Generate access token
-        access_token = auth_service.create_access_token(user.id)
+        access_token = auth_service.create_user_token(user)
         
         return TokenResponse(
             access_token=access_token,
