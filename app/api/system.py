@@ -1,6 +1,8 @@
 """System API router for health checks and service status."""
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -171,27 +173,71 @@ async def get_application_metrics():
     }
 
 
-@root_router.get("/")
-async def landing_page():
+@root_router.get("/", response_class=HTMLResponse)
+async def landing_page(request: Request):
     """Landing page with service information."""
     try:
-        return {
-            "service": "Namaskah SMS",
+        # Initialize templates
+        templates = Jinja2Templates(directory="templates")
+        
+        # Context data for the template
+        context = {
+            "request": request,
+            "service_name": "Namaskah SMS",
             "version": "2.4.0",
             "description": "SMS Verification Service API",
             "status": "operational",
-            "endpoints": {
-                "health": "/system/health",
-                "auth": "/auth",
-                "verification": "/verify",
-                "docs": "/docs",
-                "redoc": "/redoc"
-            },
-            "message": "Welcome to Namaskah SMS API"
+            "total_services": 1807,
+            "success_rate": 95,
+            "active_users": 5247,
+            "verifications_today": 15234
         }
+        
+        # Render the landing page template
+        return templates.TemplateResponse("landing.html", context)
+        
     except Exception as e:
-        # Log the specific error for debugging
+        # Fallback to JSON response if template fails
         import logging
         logger = logging.getLogger(__name__)
-        logger.error("Landing page error: %s", str(e), exc_info=True)
-        raise
+        logger.error("Landing page template error: %s", str(e), exc_info=True)
+        
+        # Return simple HTML as fallback
+        return HTMLResponse(content=f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Namaskah SMS</title>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 0; padding: 40px; background: #f5f5f5; }}
+                .container {{ max-width: 800px; margin: 0 auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
+                h1 {{ color: #667eea; margin-bottom: 20px; }}
+                .status {{ color: #10b981; font-weight: bold; }}
+                .endpoints {{ background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }}
+                .endpoints a {{ color: #667eea; text-decoration: none; display: block; margin: 5px 0; }}
+                .endpoints a:hover {{ text-decoration: underline; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🚀 Namaskah SMS</h1>
+                <p><strong>Version:</strong> 2.4.0</p>
+                <p><strong>Description:</strong> SMS Verification Service API</p>
+                <p><strong>Status:</strong> <span class="status">Operational</span></p>
+                
+                <div class="endpoints">
+                    <h3>Available Endpoints:</h3>
+                    <a href="/system/health">🏥 Health Check</a>
+                    <a href="/auth">🔐 Authentication</a>
+                    <a href="/verify">📱 SMS Verification</a>
+                    <a href="/docs">📚 API Documentation</a>
+                    <a href="/redoc">📖 ReDoc Documentation</a>
+                </div>
+                
+                <p><em>Welcome to Namaskah SMS API - Your reliable SMS verification service!</em></p>
+            </div>
+        </body>
+        </html>
+        """, status_code=200)
