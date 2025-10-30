@@ -34,14 +34,14 @@ class PerformanceMonitor {
                 const response = await originalFetch(...args);
                 const endTime = performance.now();
                 const responseTime = endTime - startTime;
-                
+
                 this.addMetric('apiResponse', responseTime);
                 this.metrics.totalRequests++;
-                
+
                 if (!response.ok) {
                     this.metrics.failedRequests++;
                 }
-                
+
                 this.updateMetrics();
                 return response;
             } catch (error) {
@@ -58,7 +58,7 @@ class PerformanceMonitor {
                 time: Date.now(),
                 value: value
             });
-            
+
             // Keep only last 50 measurements
             if (this.metrics.responseTime.length > 50) {
                 this.metrics.responseTime.shift();
@@ -67,23 +67,23 @@ class PerformanceMonitor {
     }
 
     updateMetrics() {
-        this.metrics.errorRate = this.metrics.totalRequests > 0 
+        this.metrics.errorRate = this.metrics.totalRequests > 0
             ? (this.metrics.failedRequests / this.metrics.totalRequests * 100).toFixed(1)
             : 0;
         this.metrics.successRate = (100 - this.metrics.errorRate).toFixed(1);
-        
+
         this.updateDashboard();
     }
 
     updateDashboard() {
         const avgResponseTime = this.getAverageResponseTime();
-        
+
         // Update performance cards
         this.updateCard('response-time', `${avgResponseTime}ms`);
         this.updateCard('error-rate', `${this.metrics.errorRate}%`);
         this.updateCard('success-rate', `${this.metrics.successRate}%`);
         this.updateCard('total-requests', this.metrics.totalRequests);
-        
+
         // Update status indicators
         this.updateStatus('response-status', avgResponseTime < 500 ? 'good' : avgResponseTime < 1000 ? 'warning' : 'error');
         this.updateStatus('error-status', this.metrics.errorRate < 1 ? 'good' : this.metrics.errorRate < 5 ? 'warning' : 'error');
@@ -119,7 +119,7 @@ class PerformanceMonitor {
             const startTime = performance.now();
             const response = await fetch('/health');
             const endTime = performance.now();
-            
+
             if (response.ok) {
                 this.addMetric('apiResponse', endTime - startTime);
                 this.updateStatus('system-status', 'good');

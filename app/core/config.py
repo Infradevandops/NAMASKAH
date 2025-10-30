@@ -1,5 +1,4 @@
 """Core configuration management using Pydantic Settings."""
-import os
 from typing import Optional
 try:
     from pydantic_settings import BaseSettings
@@ -80,15 +79,16 @@ class Settings(BaseSettings):
         return v
     
     @validator('database_url')
-    def validate_database_url(cls, v, values):
+    def validate_database_url(cls, v, values=None):
         """Validate database URL format."""
         if not v:
             raise ValueError('Database URL is required')
         
-        # Check for production database requirements
-        environment = values.get('environment', 'development')
-        if v.startswith('sqlite://') and environment == 'production':
-            raise ValueError('SQLite is not recommended for production. Use PostgreSQL.')
+        # Check for production database requirements (skip if values not available)
+        if values:
+            environment = values.get('environment', 'development')
+            if v.startswith('sqlite://') and environment == 'production':
+                raise ValueError('SQLite is not recommended for production. Use PostgreSQL.')
         
         return v
     
@@ -166,7 +166,7 @@ def get_settings() -> Settings:
     settings_instance = Settings()
     
     # Validate secrets on startup
-    SecretsManager.validate_required_secrets()
+    SecretsManager.validate_required_secrets(settings_instance.environment)
     
     # Validate production configuration
     settings_instance.validate_production_config()
