@@ -16,6 +16,7 @@ from app.api.system import router as system_router, root_router
 from app.api.auth import router as auth_router
 from app.api.verification import router as verification_router
 from app.api.wallet import router as wallet_router
+from app.api.setup import router as setup_router
 
 # Import middleware
 from app.middleware.security import JWTAuthMiddleware, CORSMiddleware, SecurityHeadersMiddleware
@@ -58,6 +59,7 @@ def create_app() -> FastAPI:
     fastapi_app.include_router(admin_router)
     fastapi_app.include_router(analytics_router)
     fastapi_app.include_router(system_router)
+    fastapi_app.include_router(setup_router)
     
     # Static files and templates
     fastapi_app.mount("/static", StaticFiles(directory="static"), name="static")
