@@ -17,10 +17,11 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.exclude_paths = exclude_paths or [
             "/docs", "/redoc", "/openapi.json", "/health", 
-            "/", "/auth/login", "/auth/register", "/auth/google",
+            "/", "/app", "/services", "/pricing", "/about", "/contact",
+            "/auth/login", "/auth/register", "/auth/google",
             "/auth/forgot-password", "/auth/reset-password", "/auth/verify",
             "/services/list", "/services/price", "/services/status",
-            "/wallet/paystack/webhook", "/support/submit"
+            "/wallet/paystack/webhook", "/support/submit", "/system/health"
         ]
         self.security = HTTPBearer(auto_error=False)
     
