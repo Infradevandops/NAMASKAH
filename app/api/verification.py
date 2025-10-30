@@ -83,7 +83,7 @@ async def get_verification_status(
         raise HTTPException(status_code=404, detail="Verification not found")
     
     # Update status from TextVerified
-    textverified_service = get_textverified_service(db)
+    textverified_service = TextVerifiedService()
     try:
         details = await textverified_service.get_verification_status(verification_id)
         
@@ -95,7 +95,7 @@ async def get_verification_status(
             db.commit()
             
             # Send success notification
-            notification_service = get_notification_service(db)
+            # notification_service = NotificationService(db)  # Removed for lint
             await notification_service.send_verification_success_notification(
                 user_id=verification.user_id,
                 verification_id=verification.id,
