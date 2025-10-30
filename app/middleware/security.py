@@ -171,10 +171,9 @@ class CORSMiddleware(BaseHTTPMiddleware):
             response = await call_next(request)
         
         # Set CORS headers
-        if origin:
-            if ("*" in self.allowed_origins or origin in self.allowed_origins or 
-                (settings.environment == "development" and ("localhost" in origin or "127.0.0.1" in origin))):
-                response.headers["Access-Control-Allow-Origin"] = origin
+        if (origin and ("*" in self.allowed_origins or origin in self.allowed_origins or 
+            (settings.environment == "development" and ("localhost" in origin or "127.0.0.1" in origin)))):
+            response.headers["Access-Control-Allow-Origin"] = origin
         
         response.headers["Access-Control-Allow-Methods"] = ", ".join(self.allowed_methods)
         response.headers["Access-Control-Allow-Headers"] = ", ".join(self.allowed_headers)
