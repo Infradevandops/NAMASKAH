@@ -41,7 +41,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         
         # Exclude public pages from rate limiting
         public_paths = [
-            "/", "/app", "/services", "/pricing", "/about", "/contact",
+            "/", "/app", "/services", "/pricing", "/about", "/contact", "/admin",
             "/docs", "/redoc", "/openapi.json", "/system/health",
             "/static"  # Static files
         ]

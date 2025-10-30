@@ -41,8 +41,7 @@ async def register(
         await notification_service.send_email(
             to_email=user.email,
             subject="Welcome to Namaskah SMS!",
-            body=f"""
-            <h2>Welcome to Namaskah SMS!</h2>
+            body=f"""<h2>Welcome to Namaskah SMS!</h2>
             <p>Your account has been created successfully.</p>
             <p>You have {user.free_verifications} free verification(s) to get started.</p>
             <p><a href="/app">Start Using Namaskah SMS</a></p>
@@ -169,8 +168,7 @@ async def forgot_password(
         await notification_service.send_email(
             to_email=request_data.email,
             subject="Password Reset - Namaskah SMS",
-            body=f"""
-            <h2>Password Reset Request</h2>
+            body=f"""<h2>Password Reset Request</h2>
             <p>Click the link below to reset your password:</p>
             <p><a href="/auth/reset-password?token={reset_token}">Reset Password</a></p>
             <p>This link expires in 1 hour.</p>

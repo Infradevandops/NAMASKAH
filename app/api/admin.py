@@ -262,8 +262,7 @@ async def respond_to_ticket(
     await notification_service.send_email(
         to_email=ticket.email,
         subject=f"Re: Support Request #{ticket.id} - Namaskah SMS",
-        body=f"""
-        <h2>Support Response</h2>
+        body=f"""<h2>Support Response</h2>
         <p>Hi {ticket.name},</p>
         <p>We've reviewed your support request regarding <strong>{ticket.category}</strong>.</p>
         <p><strong>Your Message:</strong></p>
@@ -471,8 +470,7 @@ async def broadcast_notification(
             await notification_service.send_email(
                 to_email=user.email,
                 subject=title,
-                body=f"""
-                <h2>{title}</h2>
+                body=f"""<h2>{title}</h2>
                 <p>{message}</p>
                 <p>Best regards,<br>Namaskah Team</p>
                 """

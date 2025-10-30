@@ -465,3 +465,82 @@ async def contact_page(request: Request):
         </body>
         </html>
         """)
+
+
+@root_router.get("/admin", response_class=HTMLResponse)
+async def admin_page(request: Request):
+    """Admin dashboard page."""
+    try:
+        templates = Jinja2Templates(directory="templates")
+        context = {
+            "request": request,
+            "service_name": "Namaskah SMS",
+            "version": "2.4.0"
+        }
+        return templates.TemplateResponse("admin.html", context)
+    except Exception:
+        return HTMLResponse(content="""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Admin Dashboard - Namaskah SMS</title>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; }
+                .header { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; padding: 20px; }
+                .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+                .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin: 20px 0; }
+                .admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+                .admin-card { background: white; padding: 20px; border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 4px solid #dc2626; }
+                .admin-number { font-size: 2rem; font-weight: bold; color: #dc2626; }
+                .cta-button { background: #dc2626; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; text-decoration: none; display: inline-block; margin: 5px; }
+                .cta-button:hover { background: #b91c1c; }
+                .warning { background: #fef3c7; border: 1px solid #f59e0b; padding: 15px; border-radius: 8px; margin: 20px 0; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="container">
+                    <h1>🛡️ Admin Dashboard</h1>
+                    <p>Namaskah SMS Administration Panel</p>
+                </div>
+            </div>
+            
+            <div class="container">
+                <div class="warning">
+                    <h3>⚠️ Authentication Required</h3>
+                    <p>This is the admin dashboard. Please log in with admin credentials to access admin features.</p>
+                </div>
+                
+                <div class="card">
+                    <h2>🔐 Admin Access</h2>
+                    <p>To access admin features, you need to:</p>
+                    <ol>
+                        <li>Log in with an admin account</li>
+                        <li>Have admin privileges enabled</li>
+                        <li>Use proper authentication headers for API access</li>
+                    </ol>
+                    
+                    <div style="margin: 20px 0;">
+                        <a href="/auth/login" class="cta-button">Admin Login</a>
+                        <a href="/docs" class="cta-button" style="background: #6b7280;">API Docs</a>
+                        <a href="/" class="cta-button" style="background: #10b981;">← Back Home</a>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>📋 Admin API Endpoints</h3>
+                    <p>Available admin endpoints (require authentication):</p>
+                    <ul>
+                        <li><code>GET /admin/users</code> - List all users</li>
+                        <li><code>GET /admin/stats</code> - System statistics</li>
+                        <li><code>GET /admin/support/tickets</code> - Support tickets</li>
+                        <li><code>PUT /admin/users/{user_id}</code> - Update user</li>
+                        <li><code>DELETE /admin/users/{user_id}</code> - Delete user</li>
+                    </ul>
+                </div>
+            </div>
+        </body>
+        </html>
+        """)

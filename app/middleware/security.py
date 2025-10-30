@@ -17,7 +17,7 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.exclude_paths = exclude_paths or [
             "/docs", "/redoc", "/openapi.json", "/health", 
-            "/", "/app", "/services", "/pricing", "/about", "/contact",
+            "/", "/app", "/services", "/pricing", "/about", "/contact", "/admin",
             "/auth/login", "/auth/register", "/auth/google",
             "/auth/forgot-password", "/auth/reset-password", "/auth/verify",
             "/services/list", "/services/price", "/services/status",
@@ -45,7 +45,7 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
         db = SessionLocal()
         try:
             auth_service = AuthService(db)
-            user = auth_service.get_user_by_token(token)
+            user = auth_service.get_user_from_token(token)
             
             if not user:
                 return JSONResponse(
@@ -172,12 +172,9 @@ class CORSMiddleware(BaseHTTPMiddleware):
         
         # Set CORS headers
         if origin:
-            if "*" in self.allowed_origins or origin in self.allowed_origins:
+            if ("*" in self.allowed_origins or origin in self.allowed_origins or 
+                (settings.environment == "development" and ("localhost" in origin or "127.0.0.1" in origin))):
                 response.headers["Access-Control-Allow-Origin"] = origin
-            elif settings.environment == "development":
-                # Allow localhost in development
-                if "localhost" in origin or "127.0.0.1" in origin:
-                    response.headers["Access-Control-Allow-Origin"] = origin
         
         response.headers["Access-Control-Allow-Methods"] = ", ".join(self.allowed_methods)
         response.headers["Access-Control-Allow-Headers"] = ", ".join(self.allowed_headers)

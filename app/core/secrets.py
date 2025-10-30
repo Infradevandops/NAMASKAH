@@ -149,9 +149,11 @@ JWT_SECRET_KEY={keys['JWT_SECRET_KEY']}
         
         # Check for exposed secrets in wrong environment
         if environment == "production":
-            if "test" in os.getenv("PAYSTACK_SECRET_KEY", "").lower():
+            paystack_key = os.getenv("PAYSTACK_SECRET_KEY", "")
+            base_url = os.getenv("BASE_URL", "")
+            if "test" in paystack_key.lower():
                 warnings.append("Test Paystack key detected in production")
-            if "localhost" in os.getenv("BASE_URL", ""):
+            if "localhost" in base_url:
                 warnings.append("Localhost URL detected in production")
         
         return {
