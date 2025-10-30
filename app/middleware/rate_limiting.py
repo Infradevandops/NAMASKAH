@@ -38,6 +38,18 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     
     async def dispatch(self, request: Request, call_next):
         """Apply rate limiting based on IP and user."""
+        
+        # Exclude public pages from rate limiting
+        public_paths = [
+            "/", "/app", "/services", "/pricing", "/about", "/contact",
+            "/docs", "/redoc", "/openapi.json", "/system/health",
+            "/static"  # Static files
+        ]
+        
+        # Skip rate limiting for public pages
+        if any(request.url.path.startswith(path) for path in public_paths):
+            return await call_next(request)
+        
         current_time = time.time()
         
         # Get client identifier
