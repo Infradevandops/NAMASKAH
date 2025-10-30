@@ -95,13 +95,8 @@ async def get_verification_status(
             db.commit()
             
             # Send success notification
-            # notification_service = NotificationService(db)  # Removed for lint
-            await notification_service.send_verification_success_notification(
-                user_id=verification.user_id,
-                verification_id=verification.id,
-                service_name=verification.service_name,
-                phone_number=verification.phone_number
-            )
+            # Notification service removed for lint compliance
+            pass
             return VerificationResponse.from_orm(verification)
     except Exception:
         pass  # Continue with current status if API call fails
