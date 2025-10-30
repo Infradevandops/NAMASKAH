@@ -7,6 +7,7 @@ from app.utils.security import hash_password
 
 router = APIRouter(prefix="/setup", tags=["Setup"])
 
+@router.get("/create-admin")
 @router.post("/create-admin")
 def create_admin(db: Session = Depends(get_db)):
     """Create admin user for production."""
@@ -34,6 +35,7 @@ def create_admin(db: Session = Depends(get_db)):
     except Exception as e:
         return {"error": str(e)}
 
+@router.get("/test-user")
 @router.post("/test-user")
 def create_test_user(db: Session = Depends(get_db)):
     """Create test user for registration testing."""
