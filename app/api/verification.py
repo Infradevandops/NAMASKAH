@@ -141,7 +141,7 @@ async def retry_verification(
     if not verification:
         raise HTTPException(status_code=404, detail="Verification not found")
     
-    textverified_service = get_textverified_service(db)
+    textverified_service = TextVerifiedService()
     
     try:
         if retry_data.retry_type == "voice":
@@ -214,8 +214,8 @@ async def cancel_verification(
         raise HTTPException(status_code=400, detail="Already cancelled")
     
     # Cancel with TextVerified
-    textverified_service = get_textverified_service(db)
     try:
+        textverified_service = TextVerifiedService()
         await textverified_service.cancel_verification(verification_id)
     except Exception:
         pass  # Continue with local cancellation even if API call fails
