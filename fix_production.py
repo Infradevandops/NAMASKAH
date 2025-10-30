@@ -5,7 +5,6 @@ Diagnoses and fixes critical production issues
 """
 import os
 import requests
-import json
 from datetime import datetime
 
 def check_render_service():
