@@ -373,7 +373,9 @@
                 if (res.ok) {
                     const data = await res.json();
                     document.getElementById('user-email').textContent = data.email;
-                    document.getElementById('user-credits').textContent = data.credits.toFixed(2);
+                    document.getElementById('user-credits').textContent = (data.credits || 0).toFixed(2);
+                } else {
+                    console.error('Failed to load user data:', res.status);
                 }
             } catch (err) {
                 console.error('Failed to load user data:', err);

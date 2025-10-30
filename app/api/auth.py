@@ -142,8 +142,7 @@ def get_current_user(
     db: Session = Depends(get_db)
 ):
     """Get current authenticated user information."""
-    auth_service = get_auth_service(db)
-    user = auth_service.get(user_id)
+    user = db.query(User).filter(User.id == user_id).first()
     
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
