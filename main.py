@@ -21,6 +21,7 @@ from app.api.wallet import router as wallet_router
 from app.middleware.security import JWTAuthMiddleware, CORSMiddleware, SecurityHeadersMiddleware
 from app.middleware.logging import RequestLoggingMiddleware
 from app.middleware.rate_limiting import RateLimitMiddleware
+from app.core.security_hardening import SecurityMiddleware
 
 
 def create_app() -> FastAPI:
@@ -41,7 +42,8 @@ def create_app() -> FastAPI:
     # Setup exception handlers
     setup_exception_handlers(fastapi_app)
     
-    # Add middleware
+    # Add middleware (order matters - security first)
+    fastapi_app.add_middleware(SecurityMiddleware)
     fastapi_app.add_middleware(SecurityHeadersMiddleware)
     fastapi_app.add_middleware(CORSMiddleware)
     fastapi_app.add_middleware(JWTAuthMiddleware)

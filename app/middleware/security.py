@@ -201,15 +201,17 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         """Add security headers to all responses."""
         response = await call_next(request)
         
-        # Content Security Policy
+        # Enhanced Content Security Policy
         csp_policy = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://js.paystack.co; "
+            "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://js.paystack.co; "
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com; "
             "img-src 'self' data: https:; "
-            "connect-src 'self' https://api.paystack.co https://www.google-analytics.com; "
-            "frame-src https://js.paystack.co;"
+            "connect-src 'self' https://api.paystack.co https://www.google-analytics.com https://www.textverified.com; "
+            "frame-src https://js.paystack.co; "
+            "object-src 'none'; "
+            "base-uri 'self';"
         )
         
         response.headers["Content-Security-Policy"] = csp_policy

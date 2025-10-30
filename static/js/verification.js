@@ -1,28 +1,20 @@
-// Enhanced Verification Module
+// Verification Module - Consolidated and Secure
 let currentVerificationId = null;
 let autoRefreshInterval = null;
 let countdownInterval = null;
-let countdownSeconds = 45;
 let currentServiceName = null;
 let currentCapability = 'sms';
-let firstVerificationCompleted = false;
-let verificationStartTime = null;
-let maxRetries = 3;
-let currentRetryCount = 0;
 
-// Dynamic pricing function with fallback
+// Secure pricing function with fallback
 async function getServicePrice(serviceName, capability = 'sms') {
+    if (!serviceName || !window.SecurityUtils?.validateInput(serviceName, 'service')) {
+        return '1.00';
+    }
+    
     try {
-        const headers = {};
-        if (window.token) {
-            headers['Authorization'] = `Bearer ${window.token}`;
-        }
-        
-        const res = await fetch(`${API_BASE}/services/price/${serviceName}`, {
-            headers: headers
-        });
-        if (res.ok) {
-            const data = await res.json();
+        const response = await window.SecurityUtils.secureFetch(`${API_BASE}/services/price/${encodeURIComponent(serviceName)}`);
+        if (response.ok) {
+            const data = await response.json();
             return capability === 'voice' 
                 ? (data.base_price + data.voice_premium).toFixed(2)
                 : data.base_price.toFixed(2);
@@ -31,19 +23,15 @@ async function getServicePrice(serviceName, capability = 'sms') {
         console.error('Price fetch error:', err);
     }
     
-    // Fallback pricing if API fails
+    // Secure fallback pricing
     const fallbackPrices = {
         'whatsapp': 0.75, 'telegram': 0.75, 'discord': 0.75, 'google': 0.75,
         'instagram': 1.00, 'facebook': 1.00, 'twitter': 1.00, 'tiktok': 1.00,
-        'paypal': 1.50, 'venmo': 1.50, 'cashapp': 1.50
+        'paypal': 1.50
     };
     
-    const basePrice = fallbackPrices[serviceName.toLowerCase()] || 2.00;
-    const voicePremium = 0.30;
-    
-    return capability === 'voice' 
-        ? (basePrice + voicePremium).toFixed(2)
-        : basePrice.toFixed(2);
+    const basePrice = fallbackPrices[serviceName.toLowerCase()] || 1.00;
+    return capability === 'voice' ? (basePrice + 0.30).toFixed(2) : basePrice.toFixed(2);
 }
 
 // Get tier name for display

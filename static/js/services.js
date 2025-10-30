@@ -189,10 +189,11 @@ function renderServices() {
                     const tier = getServiceTier(service);
                     const tierData = tierInfo[tier];
                     const serviceName = formatServiceName(service);
-                    const safeService = service.replace(/'/g, "\\'");
+                    const safeService = window.SecurityUtils ? window.SecurityUtils.sanitizeServiceName(service) : service.replace(/[^a-zA-Z0-9-_]/g, '');
+                    const safeServiceName = window.SecurityUtils ? window.SecurityUtils.sanitizeHTML(serviceName) : serviceName;
                     
-                    html += `<div onclick="selectService('${safeService}')" style="font-size: 0.65rem; padding: 3px; cursor: pointer; border-radius: 3px; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;" onmouseover="this.style.background='var(--accent)'; this.style.color='white'" onmouseout="this.style.background=''; this.style.color=''">
-                        <span>${serviceName}</span>
+                    html += `<div data-service="${safeService}" class="service-item" style="font-size: 0.65rem; padding: 3px; cursor: pointer; border-radius: 3px; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;" onmouseover="this.style.background='var(--accent)'; this.style.color='white'" onmouseout="this.style.background=''; this.style.color=''">
+                        <span>${safeServiceName}</span>
                         <span style="font-size: 0.55rem; background: ${tierData.color}; color: white; padding: 1px 3px; border-radius: 2px; font-weight: bold;">${tierData.price}</span>
                     </div>`;
                 });
@@ -261,10 +262,15 @@ async function getServicePrice(serviceName, capability = 'sms') {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
         
-        const res = await fetch(`${API_BASE}/services/price/${encodeURIComponent(serviceName)}`, {
-            headers: headers,
-            signal: controller.signal
-        });
+        const res = await (window.SecurityUtils ? 
+            window.SecurityUtils.secureFetch(`${API_BASE}/services/price/${encodeURIComponent(serviceName)}`, {
+                headers: headers,
+                signal: controller.signal
+            }) : 
+            fetch(`${API_BASE}/services/price/${encodeURIComponent(serviceName)}`, {
+                headers: headers,
+                signal: controller.signal
+            }));
         
         clearTimeout(timeoutId);
         
@@ -381,12 +387,11 @@ function showCategoryServices(category) {
         // Show top 8 popular services in this category
         const popularServices = services.slice(0, 8);
         suggestionGrid.innerHTML = popularServices.map(service => {
-            const safeService = service.replace(/'/g, "\\'");
-            return `<button onclick="selectServiceFromSuggestion('${safeService}')" 
+            const safeService = window.SecurityUtils ? window.SecurityUtils.sanitizeServiceName(service) : service.replace(/[^a-zA-Z0-9-_]/g, '');
+            return `<button data-service="${safeService}" class="suggestion-btn" 
                      style="padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 16px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;" 
-                     onmouseover="this.style.background='#5a67d8'" 
-                     onmouseout="this.style.background='#667eea'">
-                ${formatServiceName(service)}
+                     style="padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 16px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                ${window.SecurityUtils ? window.SecurityUtils.sanitizeHTML(formatServiceName(service)) : formatServiceName(service)}
             </button>`;
         }).join('');
         suggestionsContainer.classList.remove('hidden');
@@ -457,9 +462,47 @@ function selectCapability(type) {
     updateCapability();
 }
 
+// Secure event delegation for service selection
+function setupSecureEventHandlers() {
+    const container = document.getElementById('categories-container');
+    if (container) {
+        container.addEventListener('click', (e) => {
+            const serviceItem = e.target.closest('.service-item');
+            if (serviceItem) {
+                const service = serviceItem.dataset.service;
+                if (service && window.SecurityUtils) {
+                    const sanitizedService = window.SecurityUtils.sanitizeServiceName(service);
+                    if (sanitizedService) {
+                        selectService(sanitizedService);
+                    }
+                }
+            }
+        });
+    }
+    
+    const suggestions = document.getElementById('service-suggestions');
+    if (suggestions) {
+        suggestions.addEventListener('click', (e) => {
+            const suggestionBtn = e.target.closest('.suggestion-btn');
+            if (suggestionBtn) {
+                const service = suggestionBtn.dataset.service;
+                if (service && window.SecurityUtils) {
+                    const sanitizedService = window.SecurityUtils.sanitizeServiceName(service);
+                    if (sanitizedService) {
+                        selectServiceFromSuggestion(sanitizedService);
+                    }
+                }
+            }
+        });
+    }
+}
+
 // Only load services after authentication
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 Services module initialized');
+    
+    // Setup secure event handlers
+    setupSecureEventHandlers();
     
     // Check if user is authenticated before loading services
     const token = localStorage.getItem('token');

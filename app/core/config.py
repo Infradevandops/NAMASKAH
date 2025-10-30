@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     textverified_email: Optional[str] = None
     textverified_base_url: str = "https://www.textverified.com"
     
+    # JWT Settings
+    jwt_expiry_hours: int = 720  # 30 days
+    
     # Paystack
     paystack_secret_key: Optional[str] = None
     paystack_public_key: Optional[str] = None

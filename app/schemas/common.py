@@ -15,7 +15,7 @@ class ErrorResponse(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Error timestamp")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "error": "ValidationError",
                 "message": "Invalid input data",
@@ -35,7 +35,7 @@ class SuccessResponse(BaseModel):
     data: Optional[Dict[str, Any]] = Field(None, description="Response data")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "success": True,
                 "message": "Operation completed successfully",
@@ -56,7 +56,7 @@ class PaginationResponse(GenericModel, Generic[T]):
     pages: int = Field(..., description="Total number of pages")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "items": [],
                 "total": 100,
@@ -77,7 +77,7 @@ class HealthCheck(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Check timestamp")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "status": "healthy",
                 "service": "namaskah-sms",
@@ -100,8 +100,8 @@ class ServiceStatus(BaseModel):
     last_checked: datetime = Field(..., description="Last check timestamp")
     
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "service_name": "textverified_api",
                 "status": "operational",
@@ -119,7 +119,7 @@ class ServiceStatusSummary(BaseModel):
     last_updated: datetime = Field(..., description="Last update timestamp")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "overall_status": "operational",
                 "services": [
@@ -151,7 +151,7 @@ class NotificationResponse(BaseModel):
     created_at: datetime
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "id": "notification_1642680000000",
                 "title": "Verification Completed",
@@ -171,7 +171,7 @@ class NotificationPreferences(BaseModel):
     receipt_notifications: bool = Field(default=True, description="Enable receipt notifications")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "in_app_notifications": True,
                 "email_notifications": True,
@@ -189,7 +189,7 @@ class AnalyticsResponse(BaseModel):
     daily_usage: List[Dict[str, Any]] = Field(..., description="Daily usage statistics")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "total_verifications": 150,
                 "success_rate": 94.5,
@@ -221,7 +221,7 @@ class SupportTicketCreate(BaseModel):
         return v
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "name": "John Doe",
                 "email": "john@example.com",
@@ -244,8 +244,8 @@ class SupportTicketResponse(BaseModel):
     updated_at: Optional[datetime]
     
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id": "ticket_1642680000000",
                 "name": "John Doe",
@@ -273,7 +273,7 @@ class ExportRequest(BaseModel):
         return v
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "format": "csv",
                 "date_from": "2024-01-01T00:00:00Z",

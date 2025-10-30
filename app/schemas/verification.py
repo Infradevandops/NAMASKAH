@@ -25,7 +25,7 @@ class VerificationCreate(BaseModel):
         return v.lower().strip()
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "service_name": "telegram",
                 "capability": "sms",
@@ -49,8 +49,8 @@ class VerificationResponse(BaseModel):
     completed_at: Optional[datetime]
     
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id": "verification_1642680000000",
                 "service_name": "telegram",
@@ -72,7 +72,7 @@ class MessageResponse(BaseModel):
     messages: List[str] = Field(..., description="List of SMS messages received")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "verification_id": "verification_1642680000000",
                 "messages": [
@@ -107,7 +107,7 @@ class NumberRentalRequest(BaseModel):
         return v
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "service_name": "telegram",
                 "duration_hours": 24.0,
@@ -133,8 +133,8 @@ class NumberRentalResponse(BaseModel):
     auto_extend: bool
     
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id": "rental_1642680000000",
                 "phone_number": "+1234567890",
@@ -163,7 +163,7 @@ class ExtendRentalRequest(BaseModel):
         return v
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "additional_hours": 12.0
             }
@@ -181,7 +181,7 @@ class RetryVerificationRequest(BaseModel):
         return v
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "retry_type": "voice"
             }
@@ -200,7 +200,7 @@ class ServicePriceResponse(BaseModel):
     addons: dict
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "service_name": "telegram",
                 "tier": "popular",
@@ -224,7 +224,7 @@ class VerificationHistoryResponse(BaseModel):
     total_count: int
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "verifications": [
                     {

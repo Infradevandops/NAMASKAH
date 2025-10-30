@@ -6,7 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user_id
-from app.services import get_textverified_service, get_notification_service
+from app.services.verification_service import VerificationService
+from app.services.textverified_service import TextVerifiedService
 from app.models.user import User
 from app.models.verification import Verification, NumberRental
 from app.schemas import (
@@ -15,6 +16,7 @@ from app.schemas import (
     RetryVerificationRequest, VerificationHistoryResponse,
     SuccessResponse, 
 )
+from app.core.security_hardening import validate_and_sanitize_service_data, secure_response
 from app.core.exceptions import InsufficientCreditsError, ExternalServiceError
 
 router = APIRouter(prefix="/verify", tags=["Verification"])
@@ -27,73 +29,46 @@ async def create_verification(
     db: Session = Depends(get_db)
 ):
     """Create new SMS or voice verification."""
-    textverified_service = get_textverified_service(db)
-
+    # Validate and sanitize input data
+    sanitized_data = validate_and_sanitize_service_data({
+        'service': verification_data.service_name,
+        'capability': getattr(verification_data, 'capability', 'sms'),
+        'country': getattr(verification_data, 'country', 'US')
+    })
+    
+    verification_service = VerificationService()
+    
     # Get user and check credits
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Calculate cost (simplified pricing)
-    base_cost = 1.0  # Base cost for SMS
-    if verification_data.capability == "voice":
-        base_cost += 0.25  # Voice premium
-    if verification_data.area_code:
-        base_cost += 4.0  # Area code premium
-    if verification_data.carrier:
-        base_cost += 6.0  # Carrier premium
-    
     # Check if user has sufficient credits or free verifications
     if user.free_verifications > 0:
-        cost = 0.0
         user.free_verifications -= 1
-    elif user.credits >= base_cost:
-        cost = base_cost
-        user.credits -= cost
+    elif user.credits >= 0.20:
+        user.credits -= 0.20
     else:
-        raise InsufficientCreditsError(f"Insufficient credits. Need {base_cost}, have {user.credits}")
+        raise HTTPException(status_code=400, detail="Insufficient credits")
     
-    try:
-        # Create verification with TextVerified
-        verification_id = await textverified_service.create_verification(
-            service_name=verification_data.service_name,
-            capability=verification_data.capability,
-            area_code=verification_data.area_code,
-            carrier=verification_data.carrier,
-            available=True
-        )
-        
-        # Get verification details
-        details = await textverified_service.get_verification_status(verification_id)
-        
-        # Save verification to database
-        verification = Verification(
-            id=verification_id,
-            user_id=user_id,
-            service_name=verification_data.service_name,
-            phone_number=details.get("number"),
-            capability=verification_data.capability,
-            status="pending",
-            cost=cost,
-            requested_carrier=verification_data.carrier,
-            requested_area_code=verification_data.area_code,
-            available=True
-        )
-        
-        db.add(verification)
-        db.commit()
-        db.refresh(verification)
-        
-        return VerificationResponse.from_orm(verification)
-        
-    except ExternalServiceError as e:
-        # Refund credits if verification creation failed
-        if cost > 0:
-            user.credits += cost
+    # Create verification
+    result = await verification_service.create_verification(
+        user_id=user_id,
+        service_name=verification_data.service_name,
+        db=db
+    )
+    
+    if "error" in result:
+        # Refund credits on error
+        if user.free_verifications < 1:
+            user.credits += 0.20
         else:
             user.free_verifications += 1
         db.commit()
-        raise HTTPException(status_code=503, detail=str(e))
+        raise HTTPException(status_code=400, detail=result["error"])
+    
+    db.commit()
+    return result
 
 
 @router.get("/{verification_id}", response_model=VerificationResponse)
@@ -134,23 +109,20 @@ async def get_verification_status(
     return VerificationResponse.from_orm(verification)
 
 
-@router.get("/{verification_id}/messages", response_model=MessageResponse)
+@router.get("/{verification_id}/messages")
 async def get_verification_messages(
     verification_id: str,
     db: Session = Depends(get_db)
 ):
     """Get SMS messages for verification (no auth required)."""
-    verification = db.query(Verification).filter(Verification.id == verification_id).first()
+    verification_service = VerificationService()
     
-    if not verification:
-        raise HTTPException(status_code=404, detail="Verification not found")
+    result = await verification_service.get_sms_messages(verification_id, db)
     
-    textverified_service = get_textverified_service(db)
-    try:
-        messages = await textverified_service.get_messages(verification_id)
-        return MessageResponse(verification_id=verification_id, messages=messages)
-    except ExternalServiceError as e:
-        raise HTTPException(status_code=503, detail=str(e))
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    
+    return result
 
 
 @router.post("/{verification_id}/retry", response_model=VerificationResponse)

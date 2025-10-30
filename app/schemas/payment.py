@@ -24,7 +24,7 @@ class PaymentInitialize(BaseModel):
         return v
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "amount_usd": 20.0,
                 "payment_method": "paystack"
@@ -41,7 +41,7 @@ class PaymentInitializeResponse(BaseModel):
     payment_details: Dict[str, Any] = Field(..., description="Payment breakdown")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "success": True,
                 "authorization_url": "https://checkout.paystack.com/abc123",
@@ -62,7 +62,7 @@ class PaymentVerify(BaseModel):
     reference: str = Field(..., description="Payment reference to verify")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "reference": "namaskah_user123_1642680000"
             }
@@ -78,7 +78,7 @@ class PaymentVerifyResponse(BaseModel):
     message: str = Field(..., description="Status message")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "status": "success",
                 "amount_credited": 10.0,
@@ -95,7 +95,7 @@ class WebhookPayload(BaseModel):
     data: Dict[str, Any] = Field(..., description="Webhook data")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "event": "charge.success",
                 "data": {
@@ -120,8 +120,8 @@ class TransactionResponse(BaseModel):
     created_at: datetime
     
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id": "transaction_1642680000000",
                 "amount": 10.0,
@@ -138,7 +138,7 @@ class TransactionHistoryResponse(BaseModel):
     total_count: int
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "transactions": [
                     {
@@ -167,7 +167,7 @@ class RefundRequest(BaseModel):
         return v
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "transaction_id": "transaction_1642680000000",
                 "amount": 5.0,
@@ -185,7 +185,7 @@ class RefundResponse(BaseModel):
     message: str
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "success": True,
                 "refund_id": "refund_123",
@@ -203,7 +203,7 @@ class WalletBalanceResponse(BaseModel):
     free_verifications: float = Field(..., description="Free verifications remaining")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "credits": 15.5,
                 "credits_usd": 31.0,
@@ -223,7 +223,7 @@ class SubscriptionPlan(BaseModel):
     features: List[str] = Field(..., description="Plan features")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "id": "pro",
                 "name": "Pro Plan",
@@ -251,7 +251,7 @@ class SubscriptionRequest(BaseModel):
         return v
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "plan_id": "pro"
             }
@@ -269,7 +269,7 @@ class SubscriptionResponse(BaseModel):
     features: Dict[str, Any]
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "plan": "pro",
                 "name": "Pro Plan",

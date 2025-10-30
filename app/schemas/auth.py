@@ -17,7 +17,7 @@ class UserCreate(BaseModel):
         return v
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "email": "user@example.com",
                 "password": "securepassword123",
@@ -50,8 +50,8 @@ class UserResponse(BaseModel):
     created_at: datetime
     
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id": "user_1642680000000",
                 "email": "user@example.com",
@@ -71,7 +71,7 @@ class LoginRequest(BaseModel):
     password: str = Field(..., description="User password")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "email": "user@example.com",
                 "password": "securepassword123"
@@ -86,7 +86,7 @@ class TokenResponse(BaseModel):
     user: UserResponse = Field(..., description="User information")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
                 "token_type": "bearer",
@@ -109,7 +109,7 @@ class APIKeyCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100, description="API key name")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "name": "Production API Key"
             }
@@ -126,8 +126,8 @@ class APIKeyResponse(BaseModel):
     last_used: Optional[datetime]
     
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id": "key_1642680000000",
                 "name": "Production API Key",
@@ -149,7 +149,7 @@ class APIKeyListResponse(BaseModel):
     last_used: Optional[datetime]
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "id": "key_1642680000000",
                 "name": "Production API Key",
@@ -166,7 +166,7 @@ class PasswordResetRequest(BaseModel):
     email: EmailStr = Field(..., description="Email address for password reset")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "email": "user@example.com"
             }
@@ -185,7 +185,7 @@ class PasswordResetConfirm(BaseModel):
         return v
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "token": "reset_token_abc123",
                 "new_password": "newsecurepassword123"
@@ -203,7 +203,7 @@ class GoogleAuthRequest(BaseModel):
     token: str = Field(..., description="Google OAuth token")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "token": "google_oauth_token_here"
             }

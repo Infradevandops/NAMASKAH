@@ -10,7 +10,7 @@ echo "======================================"
 
 # Check if running as root
 if [[ $EUID -eq 0 ]]; then
-   echo "❌ Don't run as root. Use a regular user with sudo access."
+   echo "❌ Don't run as root. Use a regular user with sudo access." >&2
    exit 1
 fi
 
@@ -19,7 +19,7 @@ python_version=$(python3 --version 2>&1 | cut -d' ' -f2 | cut -d'.' -f1,2)
 required_version="3.8"
 
 if [ "$(printf '%s\n' "$required_version" "$python_version" | sort -V | head -n1)" != "$required_version" ]; then
-    echo "❌ Python 3.8+ required. Found: $python_version"
+    echo "❌ Python 3.8+ required. Found: $python_version" >&2
     exit 1
 fi
 
@@ -27,7 +27,10 @@ echo "✅ Python version: $python_version"
 
 # Install dependencies
 echo "📦 Installing dependencies..."
-pip3 install -r requirements.txt
+if ! pip3 install -r requirements.txt; then
+    echo "❌ Failed to install dependencies" >&2
+    exit 1
+fi
 
 # Check environment variables
 echo "🔧 Checking environment configuration..."
@@ -42,9 +45,9 @@ for var in "${required_vars[@]}"; do
 done
 
 if [[ ${#missing_vars[@]} -gt 0 ]]; then
-    echo "❌ Missing required environment variables:"
-    printf '   %s\n' "${missing_vars[@]}"
-    echo "💡 Set them in .env file or export them"
+    echo "❌ Missing required environment variables:" >&2
+    printf '   %s\n' "${missing_vars[@]}" >&2
+    echo "💡 Set them in .env file or export them" >&2
     exit 1
 fi
 
@@ -133,13 +136,28 @@ fi
 echo "⏳ Waiting for application to start..."
 sleep 5
 
-# Health check
+# Health check with retry
 echo "🏥 Performing health check..."
-if curl -f -s http://localhost:8000/health > /dev/null; then
-    echo "✅ Health check passed"
-else
-    echo "❌ Health check failed"
-    echo "🔍 Check logs for errors"
+health_check_passed=false
+for i in {1..5}; do
+    if curl -f -s --connect-timeout 10 http://localhost:8000/health > /dev/null 2>&1; then
+        echo "✅ Health check passed"
+        health_check_passed=true
+        break
+    else
+        echo "⏳ Health check attempt $i/5 failed, retrying..."
+        sleep 2
+    fi
+done
+
+if [ "$health_check_passed" = false ]; then
+    echo "❌ Health check failed after 5 attempts" >&2
+    echo "🔍 Check logs for errors" >&2
+    if command -v pm2 &> /dev/null; then
+        echo "📋 PM2 logs: pm2 logs namaskah-sms" >&2
+    else
+        echo "📋 Application logs: tail -f app.log" >&2
+    fi
     exit 1
 fi
 
