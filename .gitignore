@@ -119,3 +119,8 @@ test_*.py
 !tests/test_*.py
 test_results.json
 .env.production
+
+# Admin creation scripts with credentials
+create_admin_production.py
+create_admin_supabase.py
+.env.render
