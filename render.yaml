@@ -2,29 +2,21 @@ services:
   - type: web
     name: namaskah-sms
     env: python
-    region: oregon
-    plan: starter
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && alembic upgrade head && python render_setup.py
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
+      - key: ENVIRONMENT
+        value: production
       - key: DATABASE_URL
         fromDatabase:
           name: namaskah-db
           property: connectionString
-      - key: JWT_SECRET_KEY
+      - key: SECRET_KEY
         generateValue: true
-      - key: TEXTVERIFIED_API_KEY
-        sync: false
-      - key: PAYSTACK_SECRET_KEY
-        sync: false
-      - key: GOOGLE_CLIENT_ID
-        sync: false
-    healthCheckPath: /health
-    autoDeploy: true
+      - key: JWT_SECRET_KEY  
+        generateValue: true
 
 databases:
   - name: namaskah-db
-    databaseName: namaskah
-    plan: starter
+    databaseName: namaskah_sms
+    user: namaskah_user
