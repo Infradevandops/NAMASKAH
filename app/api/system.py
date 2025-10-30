@@ -229,6 +229,7 @@ async def landing_page(request: Request):
                 
                 <div class="endpoints">
                     <h3>Available Endpoints:</h3>
+                    <a href="/app">📱 Main Dashboard</a>
                     <a href="/system/health">🏥 Health Check</a>
                     <a href="/auth">🔐 Authentication</a>
                     <a href="/verify">📱 SMS Verification</a>
@@ -241,3 +242,226 @@ async def landing_page(request: Request):
         </body>
         </html>
         """, status_code=200)
+
+
+@root_router.get("/app", response_class=HTMLResponse)
+async def dashboard_page(request: Request):
+    """Main dashboard/application page."""
+    try:
+        # Initialize templates
+        templates = Jinja2Templates(directory="templates")
+        
+        # Context data for the dashboard
+        context = {
+            "request": request,
+            "service_name": "Namaskah SMS",
+            "version": "2.4.0",
+            "user": {
+                "name": "User",
+                "credits": 0,
+                "free_verifications": 1
+            },
+            "stats": {
+                "total_services": 1807,
+                "success_rate": 95,
+                "active_users": 5247,
+                "verifications_today": 15234
+            }
+        }
+        
+        # Try to render the dashboard template
+        return templates.TemplateResponse("dashboard.html", context)
+        
+    except Exception as e:
+        # Fallback to simple dashboard HTML
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error("Dashboard template error: %s", str(e), exc_info=True)
+        
+        # Return simple dashboard as fallback
+        return HTMLResponse(content="""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Namaskah SMS - Dashboard</title>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; }
+                .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; }
+                .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+                .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin: 20px 0; }
+                .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+                .stat-card { background: white; padding: 20px; border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+                .stat-number { font-size: 2rem; font-weight: bold; color: #667eea; }
+                .cta-button { background: #667eea; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; text-decoration: none; display: inline-block; }
+                .cta-button:hover { background: #5a67d8; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="container">
+                    <h1>📱 Namaskah SMS Dashboard</h1>
+                    <p>SMS Verification Service - Get started with 1 free verification!</p>
+                </div>
+            </div>
+            
+            <div class="container">
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number">1,807</div>
+                        <div>Supported Services</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">95%</div>
+                        <div>Success Rate</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">5,247</div>
+                        <div>Active Users</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">15,234</div>
+                        <div>Verifications Today</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2>🚀 Get Started</h2>
+                    <p>Welcome to Namaskah SMS! You have <strong>1 free verification</strong> to get started.</p>
+                    <p>Verify accounts for WhatsApp, Telegram, Google, Discord, Instagram, and 1,800+ more services.</p>
+                    
+                    <div style="margin: 20px 0;">
+                        <a href="/auth/register" class="cta-button">Create Account</a>
+                        <a href="/auth/login" class="cta-button" style="background: #10b981;">Login</a>
+                        <a href="/docs" class="cta-button" style="background: #6b7280;">API Docs</a>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>📋 Quick Actions</h3>
+                    <ul>
+                        <li><a href="/verify/create">🆕 Create New Verification</a></li>
+                        <li><a href="/wallet/balance">💰 Check Balance</a></li>
+                        <li><a href="/auth/api-keys">🔑 Manage API Keys</a></li>
+                        <li><a href="/system/health">🏥 System Status</a></li>
+                    </ul>
+                </div>
+            </div>
+        </body>
+        </html>
+        """, status_code=200)
+
+
+@root_router.get("/services", response_class=HTMLResponse)
+async def services_page(request: Request):
+    """Services listing page."""
+    try:
+        templates = Jinja2Templates(directory="templates")
+        context = {
+            "request": request,
+            "service_name": "Namaskah SMS",
+            "total_services": 1807
+        }
+        return templates.TemplateResponse("services.html", context)
+    except Exception:
+        return HTMLResponse(content="""
+        <!DOCTYPE html>
+        <html>
+        <head><title>Services - Namaskah SMS</title></head>
+        <body>
+            <h1>📱 Supported Services</h1>
+            <p>We support 1,807+ services including:</p>
+            <ul>
+                <li>WhatsApp</li>
+                <li>Telegram</li>
+                <li>Google</li>
+                <li>Discord</li>
+                <li>Instagram</li>
+                <li>And 1,800+ more...</li>
+            </ul>
+            <a href="/app">← Back to Dashboard</a>
+        </body>
+        </html>
+        """)
+
+
+@root_router.get("/pricing", response_class=HTMLResponse)
+async def pricing_page(request: Request):
+    """Pricing page."""
+    return HTMLResponse(content="""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Pricing - Namaskah SMS</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f7fa; }
+            .container { max-width: 800px; margin: 0 auto; background: white; padding: 40px; border-radius: 10px; }
+            .price { font-size: 3rem; color: #667eea; font-weight: bold; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>💰 Simple Pricing</h1>
+            <div class="price">₦1</div>
+            <p>Per SMS verification</p>
+            <ul>
+                <li>✅ 1 Free verification on signup</li>
+                <li>✅ Pay as you go - no subscriptions</li>
+                <li>✅ Auto-refund if SMS not received</li>
+                <li>✅ 95%+ success rate</li>
+                <li>✅ 1,807+ supported services</li>
+            </ul>
+            <a href="/app" style="background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Get Started</a>
+        </div>
+    </body>
+    </html>
+    """)
+
+
+@root_router.get("/about", response_class=HTMLResponse)
+async def about_page(request: Request):
+    """About page."""
+    try:
+        templates = Jinja2Templates(directory="templates")
+        context = {"request": request, "service_name": "Namaskah SMS"}
+        return templates.TemplateResponse("about.html", context)
+    except Exception:
+        return HTMLResponse(content="""
+        <!DOCTYPE html>
+        <html>
+        <head><title>About - Namaskah SMS</title></head>
+        <body>
+            <h1>About Namaskah SMS</h1>
+            <p>Reliable SMS verification service for 1,807+ platforms.</p>
+            <p>Fast, secure, and affordable SMS verification solutions.</p>
+            <a href="/">← Back to Home</a>
+        </body>
+        </html>
+        """)
+
+
+@root_router.get("/contact", response_class=HTMLResponse)
+async def contact_page(request: Request):
+    """Contact page."""
+    try:
+        templates = Jinja2Templates(directory="templates")
+        context = {"request": request, "service_name": "Namaskah SMS"}
+        return templates.TemplateResponse("contact.html", context)
+    except Exception:
+        return HTMLResponse(content="""
+        <!DOCTYPE html>
+        <html>
+        <head><title>Contact - Namaskah SMS</title></head>
+        <body>
+            <h1>Contact Us</h1>
+            <p>Need help? We're here for you!</p>
+            <ul>
+                <li>📧 Email: support@namaskah.app</li>
+                <li>💬 Live Chat: Available 24/7</li>
+                <li>📚 Documentation: <a href="/docs">/docs</a></li>
+            </ul>
+            <a href="/">← Back to Home</a>
+        </body>
+        </html>
+        """)
