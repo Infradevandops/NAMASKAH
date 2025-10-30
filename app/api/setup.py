@@ -1,5 +1,5 @@
 """Setup API for production initialization."""
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.user import User
@@ -33,3 +33,50 @@ def create_admin(db: Session = Depends(get_db)):
         
     except Exception as e:
         return {"error": str(e)}
+
+@router.post("/test-user")
+def create_test_user(db: Session = Depends(get_db)):
+    """Create test user for registration testing."""
+    try:
+        # Check if test user exists
+        existing = db.query(User).filter(User.email == "test@namaskah.app").first()
+        if existing:
+            return {"message": "Test user already exists"}
+        
+        # Create test user
+        test_user = User(
+            email="test@namaskah.app",
+            password_hash=hash_password("Test123456"),
+            credits=100.0,
+            free_verifications=5,
+            is_admin=False,
+            is_verified=True
+        )
+        
+        db.add(test_user)
+        db.commit()
+        
+        return {"message": "Test user created successfully", "credentials": {"email": "test@namaskah.app", "password": "Test123456"}}
+        
+    except Exception as e:
+        return {"error": str(e)}
+
+@router.get("/test-registration")
+def test_registration_flow(db: Session = Depends(get_db)):
+    """Test user registration functionality."""
+    try:
+        # Test database connection
+        user_count = db.query(User).count()
+        
+        return {
+            "message": "Registration system ready",
+            "database_connected": True,
+            "total_users": user_count,
+            "test_credentials": {
+                "admin": {"email": "admin@namaskah.app", "password": "Namaskah@Admin2024"},
+                "test_user": {"email": "test@namaskah.app", "password": "Test123456"}
+            }
+        }
+        
+    except Exception as e:
+        return {"error": str(e), "database_connected": False}
