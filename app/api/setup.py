@@ -24,7 +24,7 @@ def create_admin(db: Session = Depends(get_db)):
             credits=1000.0,
             free_verifications=10,
             is_admin=True,
-            is_verified=True
+            email_verified=True
         )
         
         db.add(admin)
@@ -52,7 +52,7 @@ def create_test_user(db: Session = Depends(get_db)):
             credits=100.0,
             free_verifications=5,
             is_admin=False,
-            is_verified=True
+            email_verified=True
         )
         
         db.add(test_user)
