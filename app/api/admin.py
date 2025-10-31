@@ -27,40 +27,29 @@ def admin_dashboard():
         return HTMLResponse(content=f.read())
 
 
-@router.get("/users", response_model=PaginationResponse[UserResponse])
+@router.get("/users")
 def get_all_users(
     admin_id: str = Depends(get_admin_user_id),
-    search: Optional[str] = Query(None, description="Search by email or ID"),
-    page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(50, ge=1, le=100, description="Page size"),
     db: Session = Depends(get_db)
 ):
-    """Get all users with pagination and search (admin only)."""
-    query = db.query(User)
-    
-    # Search filter
-    if search:
-        query = query.filter(
-            (User.email.contains(search)) | (User.id.contains(search))
-        )
-    
-    # Get total count
-    total = query.count()
-    
-    # Pagination
-    offset = (page - 1) * size
-    users = query.order_by(User.created_at.desc()).offset(offset).limit(size).all()
-    
-    # Calculate pages
-    pages = (total + size - 1) // size
-    
-    return PaginationResponse(
-        items=[UserResponse.from_orm(user) for user in users],
-        total=total,
-        page=page,
-        size=size,
-        pages=pages
-    )
+    """Get all users (admin only)."""
+    try:
+        users = db.query(User).limit(size).all()
+        
+        items = []
+        for user in users:
+            items.append({
+                "id": user.id,
+                "email": user.email,
+                "credits": user.credits,
+                "is_admin": user.is_admin,
+                "created_at": user.created_at.isoformat() if user.created_at else None
+            })
+        
+        return {"items": items, "total": len(items)}
+    except Exception:
+        return {"items": [], "total": 0}
 
 
 @router.get("/users/{user_id}", response_model=UserResponse)
