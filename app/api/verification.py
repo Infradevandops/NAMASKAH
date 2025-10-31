@@ -65,8 +65,6 @@ async def create_verification(
         raise HTTPException(status_code=400, detail="Service not supported")
     
     # Create verification record
-    from app.models.transaction import Transaction
-    
     verification = Verification(
         user_id=user_id,
         service_name=verification_data.service_name,
@@ -77,15 +75,6 @@ async def create_verification(
     )
     
     db.add(verification)
-    
-    # Add transaction record
-    transaction = Transaction(
-        user_id=user_id,
-        amount=-service_info["cost"],
-        type="debit",
-        description=f"SMS verification for {verification_data.service_name}"
-    )
-    db.add(transaction)
     
     db.commit()
     db.refresh(verification)
