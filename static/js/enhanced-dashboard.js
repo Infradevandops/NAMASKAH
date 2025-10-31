@@ -30,7 +30,11 @@ class EnhancedDashboard {
             }
 
             const response = await fetch('/auth/me', {
-                headers: { 'Authorization': `Bearer ${token}` }
+                method: 'GET',
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
             });
 
             if (!response.ok) {
@@ -78,7 +82,11 @@ class EnhancedDashboard {
         try {
             const token = localStorage.getItem('token');
             const response = await fetch('/verifications/active', {
-                headers: { 'Authorization': `Bearer ${token}` }
+                method: 'GET',
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
             });
 
             const data = await response.json();
@@ -104,28 +112,56 @@ class EnhancedDashboard {
             return;
         }
 
-        container.innerHTML = this.activeVerifications.map(verification => `
-            <div class="verification-item" data-id="${verification.id}">
-                <div class="verification-info">
-                    <div class="verification-service">${this.formatServiceName(verification.service_name)}</div>
-                    <div class="verification-phone">${verification.phone_number || 'Pending...'}</div>
-                </div>
-                <div class="verification-status status-${verification.status}">
-                    ${verification.status}
-                </div>
-                <div class="verification-cost">N${verification.cost.toFixed(2)}</div>
-                <div class="verification-actions">
-                    <button class="btn-secondary btn-sm" onclick="window.open('/verify/${verification.id}', '_blank')">
-                        View
-                    </button>
-                    ${verification.status === 'pending' ? `
-                        <button class="btn-secondary btn-sm" onclick="dashboard.cancelVerification('${verification.id}')">
-                            Cancel
-                        </button>
-                    ` : ''}
-                </div>
-            </div>
-        `).join('');
+        container.innerHTML = this.activeVerifications.map(verification => {
+            const serviceDiv = document.createElement('div');
+            serviceDiv.className = 'verification-service';
+            serviceDiv.textContent = this.formatServiceName(verification.service_name);
+            
+            const phoneDiv = document.createElement('div');
+            phoneDiv.className = 'verification-phone';
+            phoneDiv.textContent = verification.phone_number || 'Pending...';
+            
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `verification-status status-${verification.status}`;
+            statusDiv.textContent = verification.status;
+            
+            const costDiv = document.createElement('div');
+            costDiv.className = 'verification-cost';
+            costDiv.textContent = `N${verification.cost.toFixed(2)}`;
+            
+            const viewBtn = document.createElement('button');
+            viewBtn.className = 'btn-secondary btn-sm';
+            viewBtn.textContent = 'View';
+            viewBtn.onclick = () => window.open(`/verify/${verification.id}`, '_blank');
+            
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'verification-actions';
+            actionsDiv.appendChild(viewBtn);
+            
+            if (verification.status === 'pending') {
+                const cancelBtn = document.createElement('button');
+                cancelBtn.className = 'btn-secondary btn-sm';
+                cancelBtn.textContent = 'Cancel';
+                cancelBtn.onclick = () => this.cancelVerification(verification.id);
+                actionsDiv.appendChild(cancelBtn);
+            }
+            
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'verification-item';
+            itemDiv.dataset.id = verification.id;
+            
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'verification-info';
+            infoDiv.appendChild(serviceDiv);
+            infoDiv.appendChild(phoneDiv);
+            
+            itemDiv.appendChild(infoDiv);
+            itemDiv.appendChild(statusDiv);
+            itemDiv.appendChild(costDiv);
+            itemDiv.appendChild(actionsDiv);
+            
+            return itemDiv.outerHTML;
+        }).join('');
     }
 
     displayVerificationError() {
@@ -172,7 +208,7 @@ class EnhancedDashboard {
         try {
             const token = localStorage.getItem('token');
             const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${wsProtocol}//${window.location.host}/ws?token=${token}`;
+            const wsUrl = `${wsProtocol}//${window.location.host}/ws?token=${encodeURIComponent(token)}`;
             
             this.websocket = new WebSocket(wsUrl);
 

@@ -21,7 +21,7 @@ async function register() {
     
     const urlParams = new URLSearchParams(window.location.search);
     const refCode = urlParams.get('ref');
-    const url = refCode ? `${API_BASE}/auth/register?referral_code=${refCode}` : `${API_BASE}/auth/register`;
+    const url = refCode ? `${API_BASE}/auth/register?referral_code=${encodeURIComponent(refCode)}` : `${API_BASE}/auth/register`;
     
     console.log('Fetching:', url);
     
@@ -31,7 +31,10 @@ async function register() {
         
         const res = await fetch(url, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
             body: JSON.stringify({email, password}),
             signal: controller.signal
         });
@@ -108,7 +111,10 @@ async function login() {
         
         const res = await fetch(url, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
             body: JSON.stringify({email, password}),
             signal: controller.signal
         });
@@ -173,7 +179,11 @@ async function checkAuth() {
     
     try {
         const res = await fetch(`${API_BASE}/auth/me`, {
-            headers: {'Authorization': `Bearer ${window.token}`}
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${window.token}`,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
         });
         
         console.log('Auth response:', res.status);
@@ -189,9 +199,13 @@ async function checkAuth() {
             }
             
             // Update UI
-            document.getElementById('user-email').textContent = user.email;
-            document.getElementById('user-credits').textContent = user.credits.toFixed(2);
-            document.getElementById('free-verifications').textContent = Math.floor(user.free_verifications || 0);
+            const userEmailEl = document.getElementById('user-email');
+            const userCreditsEl = document.getElementById('user-credits');
+            const freeVerificationsEl = document.getElementById('free-verifications');
+            
+            if (userEmailEl) userEmailEl.textContent = user.email;
+            if (userCreditsEl) userCreditsEl.textContent = user.credits.toFixed(2);
+            if (freeVerificationsEl) freeVerificationsEl.textContent = Math.floor(user.free_verifications || 0);
             
             // Show app directly
             console.log('Showing app section');

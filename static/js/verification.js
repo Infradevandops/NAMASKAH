@@ -109,7 +109,8 @@ async function createVerification() {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${window.token}`,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify(requestBody)
         });
@@ -334,17 +335,27 @@ function showRetryModal() {
         ? 'The voice verification call was not received or processed. Choose an option:'
         : 'The SMS verification code was not received. Choose an option:';
     
-    modal.innerHTML = `
-        <div class="modal-content" style="max-width: 500px;">
-            <h2>${title}</h2>
-            <p style="color: #6b7280; margin-bottom: 15px;">${description}</p>
-            
-            <div style="background: #f3f4f6; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; color: #374151;">
-                <strong>Verification Details:</strong><br>
-                Service: ${formatServiceName(currentServiceName)}<br>
-                Type: ${isVoice ? '📞 Voice Call' : '📱 SMS Text'}<br>
-                Elapsed: ${elapsedTime}s
-            </div>
+    const titleEl = document.createElement('h2');
+    titleEl.textContent = title;
+    
+    const descEl = document.createElement('p');
+    descEl.style.cssText = 'color: #6b7280; margin-bottom: 15px;';
+    descEl.textContent = description;
+    
+    const detailsDiv = document.createElement('div');
+    detailsDiv.style.cssText = 'background: #f3f4f6; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; color: #374151;';
+    detailsDiv.innerHTML = `<strong>Verification Details:</strong><br>Service: ${formatServiceName(currentServiceName)}<br>Type: ${isVoice ? '📞 Voice Call' : '📱 SMS Text'}<br>Elapsed: ${elapsedTime}s`;
+    
+    const modalContent = document.createElement('div');
+    modalContent.className = 'modal-content';
+    modalContent.style.maxWidth = '500px';
+    modalContent.appendChild(titleEl);
+    modalContent.appendChild(descEl);
+    modalContent.appendChild(detailsDiv);
+    
+    modal.appendChild(modalContent);
+    
+    modal.innerHTML += `
             
             <div style="display: flex; flex-direction: column; gap: 12px;">
                 ${!isVoice ? `
