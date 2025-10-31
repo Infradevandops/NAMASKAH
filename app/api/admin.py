@@ -2,6 +2,7 @@
 from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Query, Body
+from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
@@ -17,6 +18,13 @@ from app.schemas import (
 )
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
+
+
+@router.get("/", response_class=HTMLResponse)
+def admin_dashboard():
+    """Admin dashboard interface."""
+    with open("templates/admin.html", "r") as f:
+        return HTMLResponse(content=f.read())
 
 
 @router.get("/users", response_model=PaginationResponse[UserResponse])
