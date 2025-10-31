@@ -14,7 +14,7 @@ def run_command(cmd):
     try:
         if isinstance(cmd, str):
             cmd = cmd.split()
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
         return result.returncode == 0, result.stdout, result.stderr
     except Exception as e:
         return False, "", str(e)

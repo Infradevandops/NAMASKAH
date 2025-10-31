@@ -78,7 +78,7 @@ class DeploymentValidator:
             # Check if docker-compose is running
             result = subprocess.run(
                 ["/usr/local/bin/docker-compose", "-f", "docker-compose.prod.yml", "ps"],
-                capture_output=True, text=True, timeout=30
+                capture_output=True, text=True, timeout=30, check=False
             )
             
             if result.returncode == 0:
@@ -651,7 +651,7 @@ class DeploymentValidator:
             try:
                 result = subprocess.run(
                     ["/usr/bin/docker", "stats", "--no-stream", "--format", "json"],
-                    capture_output=True, text=True, timeout=10
+                    capture_output=True, text=True, timeout=10, check=False
                 )
                 
                 if result.returncode == 0:
@@ -734,7 +734,7 @@ class DeploymentValidator:
             try:
                 result = subprocess.run(
                     ["/usr/local/bin/docker-compose", "-f", "docker-compose.prod.yml", "logs", "--tail=1"],
-                    capture_output=True, text=True, timeout=10
+                    capture_output=True, text=True, timeout=10, check=False
                 )
                 docker_logs_available = result.returncode == 0
             except Exception:
