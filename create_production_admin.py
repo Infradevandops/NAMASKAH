@@ -2,7 +2,6 @@
 """Create production admin via API - Best Practice Approach"""
 
 import requests
-import json
 import time
 
 def create_admin_via_direct_db():

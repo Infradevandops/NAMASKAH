@@ -12,7 +12,9 @@ from pathlib import Path
 def run_command(cmd):
     """Run shell command and return result."""
     try:
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        if isinstance(cmd, str):
+            cmd = cmd.split()
+        result = subprocess.run(cmd, capture_output=True, text=True)
         return result.returncode == 0, result.stdout, result.stderr
     except Exception as e:
         return False, "", str(e)

@@ -30,7 +30,7 @@ async def create_verification(
 ):
     """Create new SMS or voice verification."""
     # Validate and sanitize input data
-    sanitized_data = validate_and_sanitize_service_data({
+    validate_and_sanitize_service_data({
         'service': verification_data.service_name,
         'capability': getattr(verification_data, 'capability', 'sms'),
         'country': getattr(verification_data, 'country', 'US')
