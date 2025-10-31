@@ -75,14 +75,16 @@ class Settings(BaseSettings):
     ssl_key_path: Optional[str] = None
     
     @validator('secret_key', 'jwt_secret_key')
-    def validate_key_length(cls, value):
+    @staticmethod
+    def validate_key_length(value):
         """Validate secret keys are at least 32 characters."""
         if value and len(value) < 32:
             raise ValueError('Secret keys must be at least 32 characters long')
         return value
     
     @validator('database_url')
-    def validate_database_url(cls, value, values=None):
+    @staticmethod
+    def validate_database_url(value, values=None):
         """Validate database URL format."""
         if not value:
             raise ValueError('Database URL is required')
@@ -96,7 +98,8 @@ class Settings(BaseSettings):
         return value
     
     @validator('base_url')
-    def validate_base_url(cls, value):
+    @staticmethod
+    def validate_base_url(value):
         """Validate base URL format."""
         if not value.startswith(('http://', 'https://')):
             raise ValueError('Base URL must start with http:// or https://')

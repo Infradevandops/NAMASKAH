@@ -59,9 +59,9 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         """Log incoming request details."""
         # Get user info if available
         user_id = getattr(request.state, 'user_id', None)
-        user_email = getattr(request.state, 'user', {})
-        if hasattr(user_email, 'email'):
-            user_email = user_email.email
+        user_obj = getattr(request.state, 'user', {})
+        if hasattr(user_obj, 'email'):
+            user_email = user_obj.email
         else:
             user_email = None
         
@@ -175,8 +175,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             return sanitized
         elif isinstance(data, list):
             return [RequestLoggingMiddleware._sanitize_sensitive_data(item) for item in data]
-        else:
-            return data
+        return data
 
 
 class PerformanceMetricsMiddleware(BaseHTTPMiddleware):

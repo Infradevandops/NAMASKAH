@@ -1,7 +1,7 @@
 """Secrets management for production security."""
 import os
 import secrets
-from typing import Optional, List, Dict
+from typing import Optional, Dict
 from pathlib import Path
 
 
@@ -112,8 +112,9 @@ class SecretsManager:
         
         keys = SecretsManager.generate_all_keys()
         
+        timestamp = secrets.token_hex(8)
         env_content = f"""# Generated environment file for {environment}
-# Generated on: {secrets.token_hex(8)}
+# Generated on: {timestamp}
 # 
 # IMPORTANT: Keep this file secure and never commit to version control
 
