@@ -283,8 +283,8 @@ async def dashboard_page(request: Request):
             }
         }
         
-        # Try to render the dashboard template
-        return templates.TemplateResponse("dashboard.html", context)
+        # Try to render the enhanced dashboard template
+        return templates.TemplateResponse("dashboard_enhanced.html", context)
         
     except Exception as e:
         # Fallback to simple dashboard HTML
