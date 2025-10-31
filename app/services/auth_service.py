@@ -9,6 +9,8 @@ from app.utils.security import (
     verify_token, generate_api_key, generate_secure_id
 )
 from app.core.exceptions import ValidationError
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 
 class AuthService(BaseService[User]):
