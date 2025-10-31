@@ -29,22 +29,22 @@ async def register(
     
     try:
         # Register user
-        user = auth_service.register_user(
+        new_user = auth_service.register_user(
             email=user_data.email,
             password=user_data.password,
             referral_code=user_data.referral_code
         )
         
         # Generate access token
-        access_token = auth_service.create_user_token(user)
+        access_token = auth_service.create_user_token(new_user)
         
         # Send welcome email (async)
         await notification_service.send_email(
-            to_email=user.email,
+            to_email=new_user.email,
             subject="Welcome to Namaskah SMS!",
             body=f"""<h2>Welcome to Namaskah SMS!</h2>
             <p>Your account has been created successfully.</p>
-            <p>You have {user.free_verifications} free verification(s) to get started.</p>
+            <p>You have {new_user.free_verifications} free verification(s) to get started.</p>
             <p><a href="/app">Start Using Namaskah SMS</a></p>
             """
         )
@@ -52,7 +52,7 @@ async def register(
         return TokenResponse(
             access_token=access_token,
             token_type="bearer",
-            user=UserResponse.from_orm(user)
+            user=UserResponse.from_orm(new_user)
         )
         
     except ValidationError as e:
@@ -266,21 +266,21 @@ async def login(
     
     try:
         # Authenticate user
-        user = auth_service.authenticate_user(
+        authenticated_user = auth_service.authenticate_user(
             email=login_data.email,
             password=login_data.password
         )
         
-        if not user:
+        if not authenticated_user:
             raise HTTPException(status_code=401, detail="Invalid email or password")
         
         # Generate access token
-        access_token = auth_service.create_user_token(user)
+        access_token = auth_service.create_user_token(authenticated_user)
         
         return TokenResponse(
             access_token=access_token,
             token_type="bearer",
-            user=UserResponse.from_orm(user)
+            user=UserResponse.from_orm(authenticated_user)
         )
         
     except HTTPException:
@@ -318,19 +318,19 @@ async def google_auth(
         
         if not existing_user:
             # Create new user
-            user = auth_service.register_user(email=email, password=idinfo['sub'])
-            user.email_verified = email_verified
+            google_user = auth_service.register_user(email=email, password=idinfo['sub'])
+            google_user.email_verified = email_verified
             db.commit()
         else:
-            user = existing_user
+            google_user = existing_user
         
         # Generate access token
-        access_token = auth_service.create_user_token(user)
+        access_token = auth_service.create_user_token(google_user)
         
         return TokenResponse(
             access_token=access_token,
             token_type="bearer",
-            user=UserResponse.from_orm(user)
+            user=UserResponse.from_orm(google_user)
         )
         
     except ImportError:
@@ -345,12 +345,12 @@ def get_current_user(
     db: Session = Depends(get_db)
 ):
     """Get current authenticated user information."""
-    user = db.query(User).filter(User.id == user_id).first()
+    current_user = db.query(User).filter(User.id == user_id).first()
     
-    if not user:
+    if not current_user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    return UserResponse.from_orm(user)
+    return UserResponse.from_orm(current_user)
 
 
 @router.post("/forgot-password", response_model=SuccessResponse)

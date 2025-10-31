@@ -75,41 +75,40 @@ class Settings(BaseSettings):
     ssl_key_path: Optional[str] = None
     
     @validator('secret_key', 'jwt_secret_key')
-    def validate_key_length(cls, v):
+    def validate_key_length(cls, value):
         """Validate secret keys are at least 32 characters."""
-        if v and len(v) < 32:
+        if value and len(value) < 32:
             raise ValueError('Secret keys must be at least 32 characters long')
-        return v
+        return value
     
     @validator('database_url')
-    def validate_database_url(cls, v, values=None):
+    def validate_database_url(cls, value, values=None):
         """Validate database URL format."""
-        if not v:
+        if not value:
             raise ValueError('Database URL is required')
         
         # Check for production database requirements (skip if values not available)
         if values:
             environment = values.get('environment', 'development')
-            if v.startswith('sqlite://') and environment == 'production':
+            if value.startswith('sqlite://') and environment == 'production':
                 raise ValueError('SQLite is not recommended for production. Use PostgreSQL.')
         
-        return v
+        return value
     
     @validator('base_url')
-    def validate_base_url(cls, v):
+    def validate_base_url(cls, value):
         """Validate base URL format."""
-        if not v.startswith(('http://', 'https://')):
+        if not value.startswith(('http://', 'https://')):
             raise ValueError('Base URL must start with http:// or https://')
-        return v
+        return value
     
     def __init__(self, **kwargs):
         # Generate secure keys if not provided
+        import secrets
         if not kwargs.get('secret_key'):
-            import secrets
             kwargs['secret_key'] = secrets.token_urlsafe(32)
         
         if not kwargs.get('jwt_secret_key'):
-            import secrets
             kwargs['jwt_secret_key'] = secrets.token_urlsafe(32)
             
         super().__init__(**kwargs)

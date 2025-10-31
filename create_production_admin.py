@@ -48,7 +48,7 @@ def create_admin_via_direct_db():
             try:
                 error_data = response.json()
                 print(f"   Error: {error_data.get('detail', 'Unknown error')}")
-            except:
+            except (ValueError, KeyError):
                 print(f"   Raw response: {response.text[:200]}")
                 
     except Exception as e:
@@ -83,7 +83,7 @@ def test_admin_login():
             try:
                 error_data = response.json()
                 print(f"   Error: {error_data.get('detail', 'Unknown error')}")
-            except:
+            except (ValueError, KeyError):
                 print(f"   Raw response: {response.text[:200]}")
                 
     except Exception as e:

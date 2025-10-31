@@ -156,7 +156,8 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         
         return request.client.host if request.client else "unknown"
     
-    def _sanitize_sensitive_data(self, data):
+    @staticmethod
+    def _sanitize_sensitive_data(data):
         """Recursively sanitize sensitive data from dictionaries."""
         if isinstance(data, dict):
             sanitized = {}
@@ -168,12 +169,12 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 if any(sensitive_key in key.lower() for sensitive_key in sensitive_keys):
                     sanitized[key] = "[REDACTED]"
                 elif isinstance(value, (dict, list)):
-                    sanitized[key] = self._sanitize_sensitive_data(value)
+                    sanitized[key] = RequestLoggingMiddleware._sanitize_sensitive_data(value)
                 else:
                     sanitized[key] = value
             return sanitized
         elif isinstance(data, list):
-            return [self._sanitize_sensitive_data(item) for item in data]
+            return [RequestLoggingMiddleware._sanitize_sensitive_data(item) for item in data]
         else:
             return data
 
@@ -323,7 +324,7 @@ class AuditTrailMiddleware(BaseHTTPMiddleware):
                     try:
                         body_data = json.loads(body.decode())
                         # Remove sensitive fields recursively
-                        audit_data["body"] = self._sanitize_sensitive_data(body_data)
+                        audit_data["body"] = RequestLoggingMiddleware._sanitize_sensitive_data(body_data)
                     except (json.JSONDecodeError, UnicodeDecodeError):
                         audit_data["body"] = "[BINARY_DATA]"
             except Exception:

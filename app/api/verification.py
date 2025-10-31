@@ -39,15 +39,15 @@ async def create_verification(
     verification_service = VerificationService()
     
     # Get user and check credits
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
+    current_user = db.query(User).filter(User.id == user_id).first()
+    if not current_user:
         raise HTTPException(status_code=404, detail="User not found")
     
     # Check if user has sufficient credits or free verifications
-    if user.free_verifications > 0:
-        user.free_verifications -= 1
-    elif user.credits >= 0.20:
-        user.credits -= 0.20
+    if current_user.free_verifications > 0:
+        current_user.free_verifications -= 1
+    elif current_user.credits >= 0.20:
+        current_user.credits -= 0.20
     else:
         raise HTTPException(status_code=400, detail="Insufficient credits")
     
@@ -60,10 +60,10 @@ async def create_verification(
     
     if "error" in result:
         # Refund credits on error
-        if user.free_verifications < 1:
-            user.credits += 0.20
+        if current_user.free_verifications < 1:
+            current_user.credits += 0.20
         else:
-            user.free_verifications += 1
+            current_user.free_verifications += 1
         db.commit()
         raise HTTPException(status_code=400, detail=result["error"])
     
@@ -216,15 +216,15 @@ async def cancel_verification(
         pass  # Continue with local cancellation even if API call fails
     
     # Refund credits
-    user = db.query(User).filter(User.id == user_id).first()
-    user.credits += verification.cost
+    current_user = db.query(User).filter(User.id == user_id).first()
+    current_user.credits += verification.cost
     
     verification.status = "cancelled"
     db.commit()
     
     return SuccessResponse(
         message="Verification cancelled and refunded",
-        data={"refunded": verification.cost, "new_balance": user.credits}
+        data={"refunded": verification.cost, "new_balance": current_user.credits}
     )
 
 
@@ -273,12 +273,12 @@ async def create_number_rental(
     total_cost = rental_data.duration_hours * hourly_rate
     
     # Check user credits
-    user = db.query(User).filter(User.id == user_id).first()
-    if user.credits < total_cost:
-        raise InsufficientCreditsError(f"Insufficient credits. Need {total_cost}, have {user.credits}")
+    current_user = db.query(User).filter(User.id == user_id).first()
+    if current_user.credits < total_cost:
+        raise InsufficientCreditsError(f"Insufficient credits. Need {total_cost}, have {current_user.credits}")
     
     # Deduct credits
-    user.credits -= total_cost
+    current_user.credits -= total_cost
     
     # Create rental (simplified - would integrate with TextVerified)
     
@@ -344,12 +344,12 @@ def extend_rental(
     extension_cost = extend_data.additional_hours * hourly_rate
     
     # Check user credits
-    user = db.query(User).filter(User.id == user_id).first()
-    if user.credits < extension_cost:
-        raise InsufficientCreditsError(extension_cost, user.credits)
+    current_user = db.query(User).filter(User.id == user_id).first()
+    if current_user.credits < extension_cost:
+        raise InsufficientCreditsError(extension_cost, current_user.credits)
     
     # Extend rental
-    user.credits -= extension_cost
+    current_user.credits -= extension_cost
     rental.duration_hours += extend_data.additional_hours
     rental.cost += extension_cost
     rental.expires_at += timedelta(hours=extend_data.additional_hours)

@@ -77,8 +77,8 @@ def fix_admin_login():
         password_valid = verify_password("Namaskah@Admin2024", admin.password_hash)
         
         print("\n🎯 ADMIN LOGIN CREDENTIALS:")
-        print(f"   📧 Email: admin@namaskah.app")
-        print(f"   🔑 Password: Namaskah@Admin2024")
+        print("   📧 Email: admin@namaskah.app")
+        print("   🔑 Password: Namaskah@Admin2024")
         print(f"   ✅ Password Valid: {password_valid}")
         print(f"   👑 Is Admin: {admin.is_admin}")
         

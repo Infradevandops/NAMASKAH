@@ -187,12 +187,13 @@ class TestProductionDatabase:
         tables_to_check = ['users', 'verifications', 'transactions', 'api_keys']
         
         for table_name in tables_to_check:
-            query = text(f"""
+            query = text("""
                 SELECT EXISTS (
                     SELECT FROM information_schema.tables 
-                    WHERE table_name = '{table_name}'
+                    WHERE table_name = :table_name
                 )
             """)
+            result = db_session.execute(query, {"table_name": table_name})
             result = db_session.execute(query)
             exists = result.scalar()
             assert exists, f"Table {table_name} does not exist"

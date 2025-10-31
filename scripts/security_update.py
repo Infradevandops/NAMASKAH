@@ -143,7 +143,7 @@ def main():
     generate_security_report()
     
     # Summary
-    print(f"\n📋 SUMMARY:")
+    print("\n📋 SUMMARY:")
     print(f"Vulnerability Check: {'✅ PASS' if vuln_check else '⚠️ ISSUES FOUND'}")
     print(f"Starlette Security: {'✅ SECURE' if starlette_ok else '❌ VULNERABLE'}")
     

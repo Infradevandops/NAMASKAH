@@ -49,7 +49,7 @@ def test_api_endpoints():
             try:
                 error_data = response.json()
                 print(f"   Error: {error_data.get('detail', 'Unknown error')}")
-            except:
+            except (ValueError, KeyError):
                 print(f"   Raw response: {response.text[:200]}")
         else:
             print("✅ Registration successful")
@@ -79,7 +79,7 @@ def test_api_endpoints():
             try:
                 error_data = response.json()
                 print(f"   Error: {error_data.get('detail', 'Unknown error')}")
-            except:
+            except (ValueError, KeyError):
                 print(f"   Raw response: {response.text[:200]}")
                 
     except Exception as e:

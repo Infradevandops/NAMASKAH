@@ -237,7 +237,7 @@ def fix_registration_issues(db_url: str) -> bool:
                     ALTER TABLE users 
                     ADD CONSTRAINT users_email_unique UNIQUE (email);
                 """))
-            except:
+            except Exception:
                 pass  # Constraint might already exist
             
             # Set default values for new registrations

@@ -56,7 +56,7 @@ def get_auth_service(db: Session) -> AuthService:
     return AuthService(db)
 
 
-def get_textverified_service(_db: Session):
+def get_textverified_service(db_session: Session):
     """Get TextVerifiedService instance."""
     # Placeholder - TextVerifiedService not implemented yet
     return None
