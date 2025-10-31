@@ -1,19 +1,5 @@
-// Authentication Module - Security Fixed
+// Authentication Module
 window.token = localStorage.getItem('token');
-
-function sanitizeText(text) {
-    if (typeof text !== 'string') return '';
-    return text.replace(/[<>"'&]/g, (match) => {
-        const map = {
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#x27;',
-            '&': '&amp;'
-        };
-        return map[match];
-    });
-}
 
 async function register() {
     const email = document.getElementById('register-email').value;
@@ -47,8 +33,7 @@ async function register() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-Token': window.csrfToken || ''
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({email, password}),
             signal: controller.signal
@@ -128,8 +113,7 @@ async function login() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-Token': window.csrfToken || ''
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({email, password}),
             signal: controller.signal
@@ -198,8 +182,7 @@ async function checkAuth() {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${window.token}`,
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-Token': window.csrfToken || ''
+                'X-Requested-With': 'XMLHttpRequest'
             }
         });
         
@@ -215,12 +198,12 @@ async function checkAuth() {
                 return;
             }
             
-            // Update UI with sanitized data
+            // Update UI
             const userEmailEl = document.getElementById('user-email');
             const userCreditsEl = document.getElementById('user-credits');
             const freeVerificationsEl = document.getElementById('free-verifications');
             
-            if (userEmailEl) userEmailEl.textContent = sanitizeText(user.email);
+            if (userEmailEl) userEmailEl.textContent = user.email;
             if (userCreditsEl) userCreditsEl.textContent = user.credits.toFixed(2);
             if (freeVerificationsEl) freeVerificationsEl.textContent = Math.floor(user.free_verifications || 0);
             
@@ -316,10 +299,7 @@ function showTab(tab) {
 async function checkEmailVerification() {
     try {
         const res = await fetch(`${API_BASE}/auth/me`, {
-            headers: { 
-                'Authorization': `Bearer ${window.token}`,
-                'X-CSRF-Token': window.csrfToken || ''
-            }
+            headers: { 'Authorization': `Bearer ${window.token}` }
         });
         const data = await res.json();
         
@@ -342,10 +322,7 @@ async function resendVerificationEmail() {
     try {
         const res = await fetch(`${API_BASE}/auth/resend-verification`, {
             method: 'POST',
-            headers: { 
-                'Authorization': `Bearer ${window.token}`,
-                'X-CSRF-Token': window.csrfToken || ''
-            }
+            headers: { 'Authorization': `Bearer ${window.token}` }
         });
         
         if (res.ok) {
@@ -375,12 +352,9 @@ window.sendResetEmail = async function() {
         return;
     }
     try {
-        const response = await fetch(`${API_BASE}/auth/forgot-password`, {
+        const response = await fetch('/auth/forgot-password', {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': window.csrfToken || ''
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email })
         });
         const data = await response.json();

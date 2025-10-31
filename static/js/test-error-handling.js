@@ -46,7 +46,7 @@ class FrontendErrorTester {
         try {
             // Test with invalid token
             const response = await fetch('/admin/stats', {
-                headers: { 'Authorization': 'Bearer invalid_token' }
+                headers: { 'Authorization': 'Bearer <test_token>' }
             });
             
             if (response.status === 401) {

@@ -97,14 +97,31 @@ class Utils {
 
     // API utilities with security
     async secureRequest(url, options = {}) {
+        // Validate URL
+        if (!url || typeof url !== 'string') {
+            throw new Error('Invalid URL');
+        }
+        
+        // Only allow same-origin or API_BASE URLs
+        const allowedOrigins = [window.location.origin];
+        if (window.API_BASE) {
+            allowedOrigins.push(new URL(window.API_BASE).origin);
+        }
+        
+        const requestUrl = new URL(url, window.location.origin);
+        if (!allowedOrigins.includes(requestUrl.origin)) {
+            throw new Error('Request to external origin not allowed');
+        }
+
         // Add security headers
         const headers = {
             'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
             ...options.headers
         };
 
         // Add CSRF token if available
-        const csrfToken = localStorage.getItem('csrf_token');
+        const csrfToken = window.csrfToken || localStorage.getItem('csrf_token');
         if (csrfToken && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method?.toUpperCase())) {
             headers['X-CSRF-Token'] = csrfToken;
         }
@@ -127,7 +144,7 @@ class Utils {
             }
         }
 
-        const response = await fetch(url, {
+        const response = await fetch(requestUrl.toString(), {
             ...options,
             headers
         });
@@ -163,11 +180,9 @@ class Utils {
         const notification = document.getElementById('notification');
         if (!notification) return;
 
-        // Sanitize message
-        message = this.sanitizeHTML(message);
-
-        notification.textContent = message;
-        notification.className = `notification ${type}`;
+        // Always use textContent to prevent XSS
+        notification.textContent = String(message);
+        notification.className = `notification ${this.sanitizeInput(type)}`;
         notification.classList.remove('hidden');
 
         setTimeout(() => {
@@ -326,26 +341,17 @@ class Utils {
         return result;
     }
 
-    // Safe content rendering to prevent raw HTML display
+    // Safe content rendering to prevent XSS
     safeRender(element, content) {
         if (!element) return;
         
-        // Check if content contains raw HTML patterns
-        const hasRawHTML = typeof content === 'string' && (
-            content.includes('<div') ||
-            content.includes('onclick=') ||
-            content.includes('style=') ||
-            content.includes('class="') ||
-            content.includes('tabindex=')
-        );
-        
-        if (hasRawHTML) {
-            console.warn('Prevented raw HTML rendering:', content.substring(0, 100));
-            element.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">Content unavailable</p>';
-            return false;
+        // Always use textContent for user-generated content
+        if (typeof content === 'string') {
+            element.textContent = content;
+        } else {
+            element.textContent = String(content);
         }
         
-        element.innerHTML = content;
         return true;
     }
 

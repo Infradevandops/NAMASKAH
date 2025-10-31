@@ -44,7 +44,10 @@ class WebSocketManager {
         this.ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                this.handleMessage(data);
+                // Validate message structure
+                if (this.validateMessage(data)) {
+                    this.handleMessage(data);
+                }
             } catch (error) {
                 console.error('WebSocket message parse error:', error);
             }
@@ -204,13 +207,27 @@ class WebSocketManager {
     createMessageElement(message, sender, timestamp) {
         const div = document.createElement('div');
         div.className = 'message-item';
-        div.innerHTML = `
-            <div class="message-header">
-                <strong>${sender}</strong>
-                <span class="message-time">${new Date(timestamp).toLocaleTimeString()}</span>
-            </div>
-            <div class="message-content">${window.securityManager?.sanitizeHTML(message) || message}</div>
-        `;
+        
+        const header = document.createElement('div');
+        header.className = 'message-header';
+        
+        const senderEl = document.createElement('strong');
+        senderEl.textContent = this.sanitizeText(sender);
+        
+        const timeEl = document.createElement('span');
+        timeEl.className = 'message-time';
+        timeEl.textContent = new Date(timestamp).toLocaleTimeString();
+        
+        header.appendChild(senderEl);
+        header.appendChild(timeEl);
+        
+        const content = document.createElement('div');
+        content.className = 'message-content';
+        content.textContent = this.sanitizeText(message);
+        
+        div.appendChild(header);
+        div.appendChild(content);
+        
         return div;
     }
 
@@ -377,6 +394,29 @@ window.addEventListener('beforeunload', () => {
         clearInterval(window.pollingInterval);
     }
 });
+
+    validateMessage(data) {
+        if (!data || typeof data !== 'object') return false;
+        if (!data.type || typeof data.type !== 'string') return false;
+        
+        const allowedTypes = ['auth_success', 'auth_error', 'verification_update', 'sms_received', 'notification', 'pong'];
+        return allowedTypes.includes(data.type);
+    }
+    
+    sanitizeText(text) {
+        if (typeof text !== 'string') return '';
+        return text.replace(/[<>"'&]/g, (match) => {
+            const map = {
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#x27;',
+                '&': '&amp;'
+            };
+            return map[match];
+        });
+    }
+}
 
 // Export for use in other modules
 window.WebSocketManager = WebSocketManager;

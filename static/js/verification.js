@@ -110,7 +110,8 @@ async function createVerification() {
             headers: {
                 'Authorization': `Bearer ${window.token}`,
                 'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-Token': window.csrfToken || ''
             },
             body: JSON.stringify(requestBody)
         });
@@ -355,37 +356,42 @@ function showRetryModal() {
     
     modal.appendChild(modalContent);
     
-    modal.innerHTML += `
-            
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                ${!isVoice ? `
-                    <button onclick="retryWithVoice()" style="background: #10b981; padding: 15px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; color: white;">
-                        📞 Try Voice Verification
-                        <div style="font-size: 13px; opacity: 0.9; margin-top: 5px;">Switch to voice call verification</div>
-                    </button>
-                ` : `
-                    <button onclick="retryWithSMS()" style="background: #10b981; padding: 15px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; color: white;">
-                        📱 Try SMS Verification
-                        <div style="font-size: 13px; opacity: 0.9; margin-top: 5px;">Switch to SMS text verification</div>
-                    </button>
-                `}
-                
-                <button onclick="retryWithSame()" style="background: #667eea; padding: 15px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; color: white;">
-                    🔄 Retry Same Number
-                    <div style="font-size: 13px; opacity: 0.9; margin-top: 5px;">Try again with current number</div>
-                </button>
-                
-                <button onclick="retryWithNew()" style="background: #f59e0b; padding: 15px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; color: white;">
-                    🆕 Get New Number
-                    <div style="font-size: 13px; opacity: 0.9; margin-top: 5px;">Request different number (free)</div>
-                </button>
-                
-                <button onclick="closeRetryModal()" style="background: #ef4444; padding: 12px; border: none; border-radius: 8px; cursor: pointer; color: white; font-weight: 600;">
-                    Cancel & Refund
-                </button>
-            </div>
-        </div>
-    `;
+    const buttonsDiv = document.createElement('div');
+    buttonsDiv.style.cssText = 'display: flex; flex-direction: column; gap: 12px;';
+    
+    if (!isVoice) {
+        const voiceBtn = document.createElement('button');
+        voiceBtn.textContent = '📞 Try Voice Verification';
+        voiceBtn.style.cssText = 'background: #10b981; padding: 15px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; color: white;';
+        voiceBtn.onclick = retryWithVoice;
+        buttonsDiv.appendChild(voiceBtn);
+    } else {
+        const smsBtn = document.createElement('button');
+        smsBtn.textContent = '📱 Try SMS Verification';
+        smsBtn.style.cssText = 'background: #10b981; padding: 15px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; color: white;';
+        smsBtn.onclick = retryWithSMS;
+        buttonsDiv.appendChild(smsBtn);
+    }
+    
+    const retryBtn = document.createElement('button');
+    retryBtn.textContent = '🔄 Retry Same Number';
+    retryBtn.style.cssText = 'background: #667eea; padding: 15px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; color: white;';
+    retryBtn.onclick = retryWithSame;
+    buttonsDiv.appendChild(retryBtn);
+    
+    const newBtn = document.createElement('button');
+    newBtn.textContent = '🆕 Get New Number';
+    newBtn.style.cssText = 'background: #f59e0b; padding: 15px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; color: white;';
+    newBtn.onclick = retryWithNew;
+    buttonsDiv.appendChild(newBtn);
+    
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel & Refund';
+    cancelBtn.style.cssText = 'background: #ef4444; padding: 12px; border: none; border-radius: 8px; cursor: pointer; color: white; font-weight: 600;';
+    cancelBtn.onclick = closeRetryModal;
+    buttonsDiv.appendChild(cancelBtn);
+    
+    modalContent.appendChild(buttonsDiv);
     document.body.appendChild(modal);
 }
 
@@ -660,30 +666,73 @@ async function checkMessages(silent = false) {
                 return codeMatch ? codeMatch[0] : msg;
             });
             
-            messagesList.innerHTML = `
-                <div style="background: #10b981; color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
-                    <h2 style="margin: 0 0 8px 0; font-size: 20px;">Verification Code Received</h2>
-                    <p style="margin: 0; opacity: 0.9;">Your verification code has arrived successfully</p>
-                </div>
-                <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; border: 2px solid #10b981; margin-bottom: 15px;">
-                    <h4 style="color: #166534; margin: 0 0 10px 0;">SMS Messages:</h4>
-                    ${data.messages.map((msg, idx) => {
-                        const code = extractedCodes[idx];
-                        return `<div style="background: white; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #d1fae5;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <strong style="color: #166534;">Code:</strong>
-                                <button onclick="copyCode('${code}')" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">Copy Code</button>
-                            </div>
-                            <code style="font-family: monospace; font-size: 18px; color: #166534; display: block; background: #f0fdf4; padding: 10px; border-radius: 4px; text-align: center; font-weight: bold;">${code}</code>
-                            <details style="margin-top: 8px;">
-                                <summary style="cursor: pointer; color: #6b7280; font-size: 13px;">Full message</summary>
-                                <div style="margin-top: 8px; font-size: 13px; color: #6b7280;">${msg}</div>
-                            </details>
-                        </div>`;
-                    }).join('')}
-                </div>
-                <button onclick="tryAnotherService()" style="margin-top: 15px; width: 100%; background: #667eea; color: white; padding: 14px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer;">Try Another Service</button>
-            `;
+            messagesList.innerHTML = '';
+            
+            const headerDiv = document.createElement('div');
+            headerDiv.style.cssText = 'background: #10b981; color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px;';
+            headerDiv.innerHTML = '<h2 style="margin: 0 0 8px 0; font-size: 20px;">Verification Code Received</h2><p style="margin: 0; opacity: 0.9;">Your verification code has arrived successfully</p>';
+            messagesList.appendChild(headerDiv);
+            
+            const messagesDiv = document.createElement('div');
+            messagesDiv.style.cssText = 'background: #f0fdf4; padding: 15px; border-radius: 8px; border: 2px solid #10b981; margin-bottom: 15px;';
+            
+            const title = document.createElement('h4');
+            title.style.cssText = 'color: #166534; margin: 0 0 10px 0;';
+            title.textContent = 'SMS Messages:';
+            messagesDiv.appendChild(title);
+            
+            data.messages.forEach((msg, idx) => {
+                const code = extractedCodes[idx];
+                const msgDiv = document.createElement('div');
+                msgDiv.style.cssText = 'background: white; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #d1fae5;';
+                
+                const codeHeader = document.createElement('div');
+                codeHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;';
+                
+                const codeLabel = document.createElement('strong');
+                codeLabel.style.color = '#166534';
+                codeLabel.textContent = 'Code:';
+                
+                const copyBtn = document.createElement('button');
+                copyBtn.style.cssText = 'background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;';
+                copyBtn.textContent = 'Copy Code';
+                copyBtn.onclick = () => copyCode(code);
+                
+                codeHeader.appendChild(codeLabel);
+                codeHeader.appendChild(copyBtn);
+                
+                const codeEl = document.createElement('code');
+                codeEl.style.cssText = 'font-family: monospace; font-size: 18px; color: #166534; display: block; background: #f0fdf4; padding: 10px; border-radius: 4px; text-align: center; font-weight: bold;';
+                codeEl.textContent = code;
+                
+                const details = document.createElement('details');
+                details.style.marginTop = '8px';
+                
+                const summary = document.createElement('summary');
+                summary.style.cssText = 'cursor: pointer; color: #6b7280; font-size: 13px;';
+                summary.textContent = 'Full message';
+                
+                const fullMsg = document.createElement('div');
+                fullMsg.style.cssText = 'margin-top: 8px; font-size: 13px; color: #6b7280;';
+                fullMsg.textContent = msg;
+                
+                details.appendChild(summary);
+                details.appendChild(fullMsg);
+                
+                msgDiv.appendChild(codeHeader);
+                msgDiv.appendChild(codeEl);
+                msgDiv.appendChild(details);
+                
+                messagesDiv.appendChild(msgDiv);
+            });
+            
+            const tryBtn = document.createElement('button');
+            tryBtn.style.cssText = 'margin-top: 15px; width: 100%; background: #667eea; color: white; padding: 14px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer;';
+            tryBtn.textContent = 'Try Another Service';
+            tryBtn.onclick = tryAnotherService;
+            
+            messagesList.appendChild(messagesDiv);
+            messagesList.appendChild(tryBtn);
             
             if (!silent) {
                 // Track verification success
@@ -827,44 +876,85 @@ function displayVoiceResults(data) {
     const transcriptionCode = data.transcription ? data.transcription.match(/\b\d{4,8}\b/)?.[0] : null;
     const hasTranscription = data.transcription && data.transcription.trim();
     
-    messagesList.innerHTML = `
-        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
-            <h2 style="margin: 0 0 8px 0; font-size: 20px;">📞 Voice Verification Complete</h2>
-            <p style="margin: 0; opacity: 0.9;">Your voice verification call has been processed</p>
-        </div>
-        <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; border: 2px solid #10b981; margin-bottom: 15px;">
-            <div style="margin-bottom: 10px;"><strong>Phone:</strong> ${formatPhoneNumber(data.phone_number)}</div>
-            <div style="margin-bottom: 10px;"><strong>Call Duration:</strong> ${data.call_duration ? `${data.call_duration}s` : 'N/A'}</div>
-            <div style="margin-bottom: 10px;"><strong>Status:</strong> ${data.call_status || 'Completed'}</div>
-            
-            ${hasTranscription ? `
-                <div style="background: white; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #d1fae5;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <strong style="color: #166534;">Verification Code:</strong>
-                        <button onclick="copyCode('${transcriptionCode || data.transcription}')" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">Copy Code</button>
-                    </div>
-                    <code style="font-family: monospace; font-size: 18px; color: #166534; display: block; background: #f0fdf4; padding: 10px; border-radius: 4px; text-align: center; font-weight: bold;">${transcriptionCode || data.transcription}</code>
-                    <details style="margin-top: 8px;">
-                        <summary style="cursor: pointer; color: #6b7280; font-size: 13px;">Full transcription</summary>
-                        <div style="margin-top: 8px; font-size: 13px; color: #6b7280; font-style: italic;">${data.transcription}</div>
-                    </details>
-                </div>
-            ` : `
-                <div style="background: #fef3c7; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #f59e0b;">
-                    <div style="color: #92400e; font-weight: 600; margin-bottom: 5px;">⚠️ Transcription Pending</div>
-                    <div style="color: #92400e; font-size: 13px;">Voice transcription is being processed. Please check again in a moment.</div>
-                </div>
-            `}
-            
-            ${data.audio_url ? `
-                <div style="margin-top: 15px;">
-                    <strong style="color: #166534;">Audio Recording:</strong>
-                    <audio controls src="${data.audio_url}" style="width: 100%; margin-top: 8px;"></audio>
-                </div>
-            ` : ''}
-        </div>
-        <button onclick="tryAnotherService()" style="margin-top: 15px; width: 100%; background: #667eea; color: white; padding: 14px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer;">Try Another Service</button>
-    `;
+    messagesList.innerHTML = '';
+    
+    const headerDiv = document.createElement('div');
+    headerDiv.style.cssText = 'background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px;';
+    headerDiv.innerHTML = '<h2 style="margin: 0 0 8px 0; font-size: 20px;">📞 Voice Verification Complete</h2><p style="margin: 0; opacity: 0.9;">Your voice verification call has been processed</p>';
+    messagesList.appendChild(headerDiv);
+    
+    const detailsDiv = document.createElement('div');
+    detailsDiv.style.cssText = 'background: #f0fdf4; padding: 15px; border-radius: 8px; border: 2px solid #10b981; margin-bottom: 15px;';
+    
+    const phoneDiv = document.createElement('div');
+    phoneDiv.style.marginBottom = '10px';
+    phoneDiv.innerHTML = `<strong>Phone:</strong> ${formatPhoneNumber(data.phone_number)}`;
+    detailsDiv.appendChild(phoneDiv);
+    
+    const durationDiv = document.createElement('div');
+    durationDiv.style.marginBottom = '10px';
+    durationDiv.innerHTML = `<strong>Call Duration:</strong> ${data.call_duration ? `${data.call_duration}s` : 'N/A'}`;
+    detailsDiv.appendChild(durationDiv);
+    
+    const statusDiv = document.createElement('div');
+    statusDiv.style.marginBottom = '10px';
+    statusDiv.innerHTML = `<strong>Status:</strong> ${data.call_status || 'Completed'}`;
+    detailsDiv.appendChild(statusDiv);
+    
+    if (hasTranscription) {
+        const transcriptionDiv = document.createElement('div');
+        transcriptionDiv.style.cssText = 'background: white; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #d1fae5;';
+        
+        const codeHeader = document.createElement('div');
+        codeHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;';
+        
+        const codeLabel = document.createElement('strong');
+        codeLabel.style.color = '#166534';
+        codeLabel.textContent = 'Verification Code:';
+        
+        const copyBtn = document.createElement('button');
+        copyBtn.style.cssText = 'background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;';
+        copyBtn.textContent = 'Copy Code';
+        copyBtn.onclick = () => copyCode(transcriptionCode || data.transcription);
+        
+        codeHeader.appendChild(codeLabel);
+        codeHeader.appendChild(copyBtn);
+        
+        const codeEl = document.createElement('code');
+        codeEl.style.cssText = 'font-family: monospace; font-size: 18px; color: #166534; display: block; background: #f0fdf4; padding: 10px; border-radius: 4px; text-align: center; font-weight: bold;';
+        codeEl.textContent = transcriptionCode || data.transcription;
+        
+        transcriptionDiv.appendChild(codeHeader);
+        transcriptionDiv.appendChild(codeEl);
+        
+        detailsDiv.appendChild(transcriptionDiv);
+    }
+    
+    if (data.audio_url) {
+        const audioDiv = document.createElement('div');
+        audioDiv.style.marginTop = '15px';
+        
+        const audioLabel = document.createElement('strong');
+        audioLabel.style.color = '#166534';
+        audioLabel.textContent = 'Audio Recording:';
+        
+        const audio = document.createElement('audio');
+        audio.controls = true;
+        audio.src = data.audio_url;
+        audio.style.cssText = 'width: 100%; margin-top: 8px;';
+        
+        audioDiv.appendChild(audioLabel);
+        audioDiv.appendChild(audio);
+        detailsDiv.appendChild(audioDiv);
+    }
+    
+    const tryBtn = document.createElement('button');
+    tryBtn.style.cssText = 'margin-top: 15px; width: 100%; background: #667eea; color: white; padding: 14px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer;';
+    tryBtn.textContent = 'Try Another Service';
+    tryBtn.onclick = tryAnotherService;
+    
+    messagesList.appendChild(detailsDiv);
+    messagesList.appendChild(tryBtn);
     
     document.getElementById('messages-section').classList.remove('hidden');
 }

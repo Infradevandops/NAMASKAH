@@ -105,6 +105,11 @@ class SecurityManager {
 
     // Secure API Request
     async secureRequest(url, options = {}) {
+        // Validate URL to prevent SSRF
+        if (!this.isValidURL(url)) {
+            throw new Error('Invalid or unsafe URL');
+        }
+        
         // Rate limiting check
         if (!this.checkRateLimit(url)) {
             throw new Error('Rate limit exceeded. Please try again later.');
@@ -114,6 +119,7 @@ class SecurityManager {
         options.headers = {
             'Content-Type': 'application/json',
             'X-CSRF-Token': this.csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
             ...options.headers
         };
 
@@ -196,6 +202,49 @@ class SecurityManager {
             console.error('Failed to retrieve secure item:', e);
             return null;
         }
+    }
+
+    // URL Validation to prevent SSRF
+    isValidURL(url) {
+        try {
+            const parsedUrl = new URL(url, window.location.origin);
+            
+            // Only allow same origin or API_BASE
+            const allowedOrigins = [window.location.origin];
+            if (window.API_BASE) {
+                allowedOrigins.push(new URL(window.API_BASE).origin);
+            }
+            
+            if (!allowedOrigins.includes(parsedUrl.origin)) {
+                return false;
+            }
+            
+            // Block private IP ranges
+            const hostname = parsedUrl.hostname;
+            if (this.isPrivateIP(hostname)) {
+                return false;
+            }
+            
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+    
+    isPrivateIP(hostname) {
+        // Check for private IP ranges
+        const privateRanges = [
+            /^127\./,
+            /^10\./,
+            /^172\.(1[6-9]|2[0-9]|3[0-1])\./,
+            /^192\.168\./,
+            /^169\.254\./,
+            /^::1$/,
+            /^fc00:/,
+            /^fe80:/
+        ];
+        
+        return privateRanges.some(range => range.test(hostname));
     }
 
     // Token Validation
