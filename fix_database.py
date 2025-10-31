@@ -13,20 +13,20 @@ def update_database_config():
     
     # Suggest fixes
     print("\n🔧 Database Connection Fixes:")
-    print("1. Check Supabase project status at https://supabase.com/dashboard")
+    print("1. Check database project status in your provider dashboard")
     print("2. Verify database is not paused or suspended")
     print("3. Check if IP restrictions are blocking Render.com")
     print("4. Verify DATABASE_URL environment variable in Render dashboard")
     
     # Provide correct format
     print("\n📋 Correct DATABASE_URL format:")
-    print("postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres")
+    print("postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].provider.co:5432/postgres")
     
     # Check network connectivity
     print("\n🌐 Testing network connectivity...")
     import subprocess
     try:
-        result = subprocess.run(['ping', '-c', '1', 'db.oegyaxxlzmogrtgmhrcy.supabase.co'], 
+        result = subprocess.run(['ping', '-c', '1', 'db.PROJECT-REF.provider.co'], 
                               capture_output=True, text=True, timeout=10, check=False)
         if result.returncode == 0:
             print("✅ Host is reachable")

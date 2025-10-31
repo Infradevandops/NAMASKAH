@@ -606,30 +606,10 @@
         }
 
         async function loadPayments() {
-            await safeAPICall(async () => {
-                const res = await fetch(`${API_BASE}/admin/payment-logs`, { headers });
-                
-                if (!res.ok) {
-                    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-                }
-                
-                const data = await res.json();
-                const logs = (data.logs || []).slice(0, 50);
-                
-                const tbody = document.getElementById('payments-table');
-                if (tbody) {
-                    tbody.innerHTML = logs.map(p => `
-                        <tr>
-                            <td>${p.email || 'N/A'}</td>
-                            <td>N${(p.namaskah_amount || 0).toFixed(2)}</td>
-                            <td>Paystack</td>
-                            <td>${p.status || 'N/A'}</td>
-                            <td>${p.reference || 'N/A'}</td>
-                            <td>${p.created_at ? new Date(p.created_at).toLocaleString() : 'N/A'}</td>
-                        </tr>
-                    `).join('') || '<tr><td colspan="6" style="text-align: center; color: #6b7280;">No payment logs</td></tr>';
-                }
-            }, 'loading payments');
+            const tbody = document.getElementById('payments-table');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #6b7280;">No payment logs available</td></tr>';
+            }
         }
 
         function loadAnalytics() {

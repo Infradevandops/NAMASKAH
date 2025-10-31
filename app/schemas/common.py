@@ -182,6 +182,8 @@ class NotificationPreferences(BaseModel):
 
 class AnalyticsResponse(BaseModel):
     """Schema for analytics data."""
+    total_users: int = Field(..., description="Total users count")
+    new_users: int = Field(..., description="New users in period")
     total_verifications: int = Field(..., description="Total verifications count")
     success_rate: float = Field(..., description="Success rate percentage")
     total_spent: float = Field(..., description="Total amount spent")
