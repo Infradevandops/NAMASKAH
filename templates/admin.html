@@ -367,10 +367,10 @@
                     
                     const data = await res.json();
                     
-                    if (res.ok && data.token) {
-                        if (data.is_admin) {
-                            localStorage.setItem('admin_token', data.token);
-                            localStorage.setItem('token', data.token);
+                    if (res.ok && data.access_token) {
+                        if (data.user && data.user.is_admin) {
+                            localStorage.setItem('admin_token', data.access_token);
+                            localStorage.setItem('token', data.access_token);
                             window.location.reload();
                         } else {
                             errorDiv.textContent = 'Admin access required';
@@ -404,7 +404,7 @@
             const updates = [
                 ['stat-users', data.total_users || 0],
                 ['stat-users-change', `+${data.new_users || 0} this week`],
-                ['stat-revenue', `N${(data.total_revenue || 0).toFixed(2)}`],
+                ['stat-revenue', `N${(data.total_spent || 0).toFixed(2)}`],
                 ['stat-verifications', data.total_verifications || 0],
                 ['stat-verifications-change', `${data.pending_verifications || 0} pending`],
                 ['stat-success', `${data.success_rate || 0}%`]
@@ -419,14 +419,14 @@
         }
 
         async function loadUsers() {
-            const res = await fetch(`${API_BASE}/admin/users?limit=100`, { headers });
+            const res = await fetch(`${API_BASE}/admin/users?size=100`, { headers });
             
             if (!res.ok) {
                 throw new Error(`HTTP ${res.status}: ${res.statusText}`);
             }
             
             const data = await res.json();
-            allUsers = data.users || [];
+            allUsers = data.items || [];
             renderUsers(allUsers);
         }
 
