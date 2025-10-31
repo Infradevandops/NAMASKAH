@@ -32,8 +32,8 @@ class MigrationManager:
                 capture_output=True,
                 text=True,
                 cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                timeout=300,   # 5 minute timeout
-            check=True)
+                timeout=300   # 5 minute timeout
+            )
             return result.returncode == 0
         except subprocess.TimeoutExpired:
             migration_logger = logging.getLogger(__name__)
@@ -63,8 +63,8 @@ class MigrationManager:
                 capture_output=True,
                 text=True,
                 cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                timeout=60, 
-            check=True)
+                timeout=60
+            )
             return result.returncode == 0
         except subprocess.TimeoutExpired:
             logger.error("Migration creation timed out")
@@ -95,8 +95,8 @@ class MigrationManager:
                 capture_output=True,
                 text=True,
                 cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                timeout=300, 
-            check=True)
+                timeout=300
+            )
             return result.returncode == 0
         except subprocess.TimeoutExpired:
             logger.error("Rollback timed out")
@@ -120,8 +120,8 @@ class MigrationManager:
                 capture_output=True,
                 text=True,
                 cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                timeout=30, 
-            check=True)
+                timeout=30
+            )
             if result.returncode == 0:
                 return result.stdout.strip()
             return None
@@ -164,7 +164,7 @@ class MigrationManager:
                 ]
                 
                 for table in expected_tables:
-                    result = conn.execute(text(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}'"))
+                    result = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name=:table_name"), {"table_name": table})
                     if not result.fetchone():
                         logger.error("Missing table: %s", table)
                         return False

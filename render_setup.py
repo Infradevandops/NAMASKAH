@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 """Setup script for Render deployment"""
-import os
-import sys
 from app.core.database import SessionLocal
 from app.models.user import User
 from app.utils.security import hash_password
@@ -43,8 +41,8 @@ def create_admin_for_render():
         db.refresh(admin_user)
         
         print("✅ Admin user created successfully!")
-        print(f"   📧 Email: admin@namaskah.app")
-        print(f"   🔑 Password: Namaskah@Admin2024")
+        print("   📧 Email: admin@namaskah.app")
+        print("   🔑 Password: Namaskah@Admin2024")
         print(f"   🆔 ID: {admin_user.id}")
         print(f"   💰 Credits: ${admin_user.credits}")
         
