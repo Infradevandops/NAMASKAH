@@ -28,12 +28,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         
         # Endpoint-specific limits
         self.endpoint_limits.update({
-            "/auth/login": (10, 900),  # 10 requests per 15 minutes
-            "/auth/register": (5, 3600),  # 5 requests per hour
-            "/auth/forgot-password": (3, 3600),  # 3 requests per hour
-            "/verify/create": (50, 3600),  # 50 verifications per hour
-            "/wallet/paystack/initialize": (20, 3600),  # 20 payments per hour
-            "/support/submit": (5, 3600),  # 5 support tickets per hour
+            "/auth/login": (100, 3600),  # 100 requests per hour (industry standard)
+            "/auth/register": (20, 3600),  # 20 registrations per hour
+            "/auth/forgot-password": (10, 3600),  # 10 password resets per hour
+            "/verify/create": (200, 3600),  # 200 verifications per hour
+            "/wallet/paystack/initialize": (50, 3600),  # 50 payments per hour
+            "/support/submit": (10, 3600),  # 10 support tickets per hour
         })
     
     async def dispatch(self, request: Request, call_next):
