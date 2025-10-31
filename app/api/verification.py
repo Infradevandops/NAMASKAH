@@ -51,24 +51,53 @@ async def create_verification(
     else:
         raise HTTPException(status_code=400, detail="Insufficient credits")
     
-    # Create verification
-    result = await verification_service.create_verification(
+    # Service mapping
+    service_mapping = {
+        "telegram": {"cost": 0.50},
+        "whatsapp": {"cost": 0.75},
+        "discord": {"cost": 0.60},
+        "instagram": {"cost": 0.80},
+        "twitter": {"cost": 0.70}
+    }
+    
+    service_info = service_mapping.get(verification_data.service_name.lower())
+    if not service_info:
+        raise HTTPException(status_code=400, detail="Service not supported")
+    
+    # Create verification record
+    from app.models.transaction import Transaction
+    
+    verification = Verification(
         user_id=user_id,
         service_name=verification_data.service_name,
-        db=db
+        capability=getattr(verification_data, 'capability', 'sms'),
+        status="pending",
+        cost=service_info["cost"],
+        phone_number="+1234567890"  # Placeholder
     )
     
-    if "error" in result:
-        # Refund credits on error
-        if current_user.free_verifications < 1:
-            current_user.credits += 0.20
-        else:
-            current_user.free_verifications += 1
-        db.commit()
-        raise HTTPException(status_code=400, detail=result["error"])
+    db.add(verification)
+    
+    # Add transaction record
+    transaction = Transaction(
+        user_id=user_id,
+        amount=-service_info["cost"],
+        type="debit",
+        description=f"SMS verification for {verification_data.service_name}"
+    )
+    db.add(transaction)
     
     db.commit()
-    return result
+    db.refresh(verification)
+    
+    return {
+        "id": verification.id,
+        "service_name": verification.service_name,
+        "phone_number": verification.phone_number,
+        "status": verification.status,
+        "cost": verification.cost,
+        "created_at": verification.created_at.isoformat()
+    }
 
 
 @router.get("/{verification_id}", response_model=VerificationResponse)
