@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.config import settings
-from app.core.health_checks import HealthChecker, readiness_probe, liveness_probe
+from app.core.health_checks import check_system_health, check_database_health
 from app.core.monitoring import dashboard_metrics
 from app.schemas import ServiceStatusSummary, ServiceStatus
 
@@ -18,16 +18,27 @@ root_router = APIRouter()
 
 
 @router.get("/health")
-async def health_check():
+async def health_check(db: Session = Depends(get_db)):
     """Comprehensive health check endpoint."""
-    return await HealthChecker.comprehensive_health_check()
+    from datetime import datetime, timezone
+    
+    health_data = check_system_health(db)
+    health_data["timestamp"] = datetime.now(timezone.utc).isoformat()
+    
+    return health_data
 
 
 @router.get("/health/readiness")
-async def readiness_check():
+async def readiness_check(db: Session = Depends(get_db)):
     """Kubernetes readiness probe."""
     from fastapi.responses import JSONResponse
-    is_ready = await readiness_probe()
+    
+    try:
+        db_health = check_database_health(db)
+        is_ready = db_health["status"] == "healthy"
+    except Exception:
+        is_ready = False
+    
     status_code = 200 if is_ready else 503
     return JSONResponse(
         status_code=status_code,
@@ -39,7 +50,10 @@ async def readiness_check():
 async def liveness_check():
     """Kubernetes liveness probe."""
     from fastapi.responses import JSONResponse
-    is_alive = await liveness_probe()
+    
+    # Simple liveness check - if we can respond, we're alive
+    is_alive = True
+    
     status_code = 200 if is_alive else 503
     return JSONResponse(
         status_code=status_code,
