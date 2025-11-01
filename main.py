@@ -17,6 +17,7 @@ from app.api.auth import router as auth_router
 from app.api.verification import router as verification_router
 from app.api.wallet import router as wallet_router
 from app.api.setup import router as setup_router
+from app.api.services import router as services_router
 
 # Import middleware
 from app.middleware.security import JWTAuthMiddleware, CORSMiddleware, SecurityHeadersMiddleware
@@ -55,6 +56,7 @@ def create_app() -> FastAPI:
     fastapi_app.include_router(root_router)  # Root routes (landing page)
     fastapi_app.include_router(auth_router)
     fastapi_app.include_router(verification_router)
+    fastapi_app.include_router(services_router)
     fastapi_app.include_router(wallet_router)
     fastapi_app.include_router(admin_router)
     fastapi_app.include_router(analytics_router)

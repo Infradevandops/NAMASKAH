@@ -51,31 +51,29 @@ async def create_verification(
     else:
         raise HTTPException(status_code=400, detail="Insufficient credits")
     
-    # Service mapping
-    service_mapping = {
-        "telegram": {"cost": 0.50},
-        "whatsapp": {"cost": 0.75},
-        "discord": {"cost": 0.60},
-        "instagram": {"cost": 0.80},
-        "twitter": {"cost": 0.70}
-    }
+    # Use TextVerified service to get real phone number
+    from app.services.textverified_service import TextVerifiedService
     
-    service_info = service_mapping.get(verification_data.service_name.lower())
-    if not service_info:
-        raise HTTPException(status_code=400, detail="Service not supported")
+    textverified = TextVerifiedService()
+    tv_result = await textverified.create_verification(
+        service_name=verification_data.service_name,
+        country=getattr(verification_data, 'country', 'US')
+    )
     
-    # Create verification record
+    if "error" in tv_result:
+        raise HTTPException(status_code=400, detail=tv_result["error"])
+    
+    # Create verification record with real data
     verification = Verification(
         user_id=user_id,
         service_name=verification_data.service_name,
         capability=getattr(verification_data, 'capability', 'sms'),
         status="pending",
-        cost=service_info["cost"],
-        phone_number="+1234567890"  # Placeholder
+        cost=tv_result["cost"],
+        phone_number=tv_result["phone_number"]
     )
     
     db.add(verification)
-    
     db.commit()
     db.refresh(verification)
     
@@ -128,14 +126,33 @@ async def get_verification_messages(
     db: Session = Depends(get_db)
 ):
     """Get SMS messages for verification (no auth required)."""
-    verification_service = VerificationService()
+    verification = db.query(Verification).filter(Verification.id == verification_id).first()
     
-    result = await verification_service.get_sms_messages(verification_id, db)
+    if not verification:
+        raise HTTPException(status_code=404, detail="Verification not found")
     
-    if "error" in result:
-        raise HTTPException(status_code=404, detail=result["error"])
+    # Get messages from TextVerified
+    textverified = TextVerifiedService()
     
-    return result
+    try:
+        # Use verification ID as number_id for TextVerified
+        messages_result = await textverified.get_sms(verification_id)
+        
+        if "messages" in messages_result:
+            messages = messages_result["messages"]
+            
+            # Update verification status if messages received
+            if messages and verification.status == "pending":
+                verification.status = "completed"
+                verification.completed_at = datetime.now(timezone.utc)
+                db.commit()
+            
+            return {"messages": messages, "status": verification.status}
+        else:
+            return {"messages": [], "status": verification.status}
+            
+    except Exception as e:
+        return {"messages": [], "status": verification.status, "error": str(e)}
 
 
 @router.post("/{verification_id}/retry", response_model=VerificationResponse)

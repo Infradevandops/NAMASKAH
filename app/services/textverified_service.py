@@ -17,12 +17,13 @@ class TextVerifiedService:
             try:
                 response = await client.get(
                     f"{self.base_url}/Services",
-                    params={"bearer": self.api_key}
+                    params={"bearer": self.api_key},
+                    timeout=15
                 )
                 if response.status_code == 200:
-                    return response.json()
+                    return {"services": response.json()}
                 else:
-                    return {"error": f"API returned status {response.status_code}: {response.text}"}
+                    return {"error": f"API returned status {response.status_code}"}
             except Exception as e:
                 return {"error": f"API request failed: {str(e)}"}
     
@@ -62,3 +63,28 @@ class TextVerifiedService:
                 }
             )
             return response.json()
+    
+    async def create_verification(self, service_name: str, country: str = "US") -> Dict[str, Any]:
+        """Create verification by getting a phone number."""
+        # Service name to ID mapping
+        service_mapping = {
+            "telegram": 1, "whatsapp": 2, "discord": 3, 
+            "instagram": 4, "twitter": 5, "google": 6
+        }
+        
+        service_id = service_mapping.get(service_name.lower())
+        if not service_id:
+            return {"error": f"Service {service_name} not supported"}
+        
+        # Get phone number from TextVerified
+        number_result = await self.get_number(service_id, country)
+        
+        if "error" in number_result:
+            return number_result
+        
+        return {
+            "phone_number": number_result.get("number"),
+            "number_id": number_result.get("id"),
+            "service_id": service_id,
+            "cost": 0.50
+        }
