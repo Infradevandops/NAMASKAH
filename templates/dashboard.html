@@ -196,27 +196,186 @@
             </div>
             
             <div class="card">
-                <h3>Select Service</h3>
-                <div class="services-grid" id="services-grid">
-                    <button class="service-btn" onclick="createVerification('telegram')">📱 Telegram</button>
-                    <button class="service-btn" onclick="createVerification('whatsapp')">💬 WhatsApp</button>
-                    <button class="service-btn" onclick="createVerification('discord')">🎮 Discord</button>
-                    <button class="service-btn" onclick="createVerification('google')">🔍 Google</button>
-                    <button class="service-btn" onclick="createVerification('instagram')">📷 Instagram</button>
-                    <button class="service-btn" onclick="createVerification('facebook')">👥 Facebook</button>
-                    <button class="service-btn" onclick="createVerification('twitter')">🐦 Twitter</button>
-                    <button class="service-btn" onclick="createVerification('tiktok')">🎵 TikTok</button>
+                <h3>Create Verification</h3>
+                
+                <!-- Service Selection -->
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">Select Service:</label>
+                    <select id="service-select" style="width: 100%; padding: 12px; border: 2px solid #334155; background: #0f1f3a; color: white; border-radius: 8px; margin-bottom: 15px;">
+                        <optgroup label="🔥 Most Popular (1,800+ Available)">
+                            <option value="telegram">📱 Telegram - $0.75</option>
+                            <option value="whatsapp">💬 WhatsApp - $0.75</option>
+                            <option value="discord">🎮 Discord - $0.75</option>
+                            <option value="google">🔍 Google - $0.75</option>
+                            <option value="instagram">📷 Instagram - $1.00</option>
+                            <option value="facebook">👥 Facebook - $1.00</option>
+                            <option value="twitter">🐦 Twitter - $1.00</option>
+                            <option value="tiktok">🎵 TikTok - $1.00</option>
+                        </optgroup>
+                        <optgroup label="💼 Business & Finance">
+                            <option value="paypal">💳 PayPal - $1.50</option>
+                            <option value="microsoft">🏢 Microsoft - $1.00</option>
+                            <option value="amazon">📦 Amazon - $1.00</option>
+                            <option value="apple">🍎 Apple - $1.25</option>
+                            <option value="netflix">🎬 Netflix - $1.00</option>
+                            <option value="spotify">🎵 Spotify - $0.85</option>
+                        </optgroup>
+                        <optgroup label="🎮 Gaming & Entertainment">
+                            <option value="steam">🎮 Steam - $0.90</option>
+                            <option value="twitch">📺 Twitch - $0.85</option>
+                            <option value="youtube">📹 YouTube - $0.75</option>
+                            <option value="reddit">🤖 Reddit - $0.80</option>
+                            <option value="snapchat">👻 Snapchat - $1.00</option>
+                            <option value="pinterest">📌 Pinterest - $0.85</option>
+                        </optgroup>
+                        <optgroup label="🛒 E-commerce & Services">
+                            <option value="uber">🚗 Uber - $0.90</option>
+                            <option value="lyft">🚕 Lyft - $0.90</option>
+                            <option value="airbnb">🏠 Airbnb - $1.10</option>
+                            <option value="ebay">🛒 eBay - $0.95</option>
+                            <option value="etsy">🎨 Etsy - $0.85</option>
+                            <option value="shopify">🛍️ Shopify - $1.00</option>
+                        </optgroup>
+                        <optgroup label="💰 Crypto & Trading">
+                            <option value="coinbase">₿ Coinbase - $1.50</option>
+                            <option value="binance">₿ Binance - $1.50</option>
+                            <option value="kraken">₿ Kraken - $1.40</option>
+                            <option value="robinhood">📈 Robinhood - $1.25</option>
+                        </optgroup>
+                        <optgroup label="📧 Communication">
+                            <option value="outlook">📧 Outlook - $0.85</option>
+                            <option value="yahoo">📧 Yahoo - $0.80</option>
+                            <option value="protonmail">🔒 ProtonMail - $1.20</option>
+                            <option value="slack">💬 Slack - $1.00</option>
+                            <option value="zoom">📹 Zoom - $0.95</option>
+                        </optgroup>
+                    </select>
+                </div>
+                
+                <!-- Verification Type Selection -->
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 12px; font-weight: 600;">Verification Type:</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <label class="capability-option" style="display: flex; align-items: center; padding: 15px; border: 2px solid #334155; border-radius: 12px; cursor: pointer; transition: all 0.2s; background: #1a2942;">
+                            <input type="radio" name="capability" value="sms" checked style="margin-right: 12px; transform: scale(1.2);">
+                            <div>
+                                <div style="font-size: 18px; margin-bottom: 4px;">📱 SMS Text</div>
+                                <div style="font-size: 12px; color: #94a3b8;">Receive code via text message</div>
+                                <div style="font-size: 11px; color: #10b981; font-weight: 600;">Base Price</div>
+                            </div>
+                        </label>
+                        <label class="capability-option" style="display: flex; align-items: center; padding: 15px; border: 2px solid #334155; border-radius: 12px; cursor: pointer; transition: all 0.2s; background: #1a2942;">
+                            <input type="radio" name="capability" value="voice" style="margin-right: 12px; transform: scale(1.2);">
+                            <div>
+                                <div style="font-size: 18px; margin-bottom: 4px;">📞 Voice Call</div>
+                                <div style="font-size: 12px; color: #94a3b8;">Receive code via phone call</div>
+                                <div style="font-size: 11px; color: #f59e0b; font-weight: 600;">+$0.30 Premium</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Country Selection -->
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">Country (70 Available):</label>
+                    <select id="country-select" style="width: 100%; padding: 12px; border: 2px solid #334155; background: #0f1f3a; color: white; border-radius: 8px;">
+                        <optgroup label="🌟 Popular (Premium)">
+                            <option value="US">🇺🇸 United States (1.0x)</option>
+                            <option value="GB">🇬🇧 United Kingdom (1.2x)</option>
+                            <option value="DE">🇩🇪 Germany (1.3x)</option>
+                            <option value="CA">🇨🇦 Canada (1.1x)</option>
+                            <option value="AU">🇦🇺 Australia (1.4x)</option>
+                            <option value="FR">🇫🇷 France (1.3x)</option>
+                            <option value="NL">🇳🇱 Netherlands (1.2x)</option>
+                            <option value="CH">🇨🇭 Switzerland (1.8x)</option>
+                            <option value="JP">🇯🇵 Japan (1.5x)</option>
+                            <option value="SG">🇸🇬 Singapore (1.3x)</option>
+                        </optgroup>
+                        <optgroup label="🌍 Europe">
+                            <option value="SE">🇸🇪 Sweden (1.5x)</option>
+                            <option value="NO">🇳🇴 Norway (1.6x)</option>
+                            <option value="DK">🇩🇰 Denmark (1.5x)</option>
+                            <option value="FI">🇫🇮 Finland (1.4x)</option>
+                            <option value="AT">🇦🇹 Austria (1.3x)</option>
+                            <option value="BE">🇧🇪 Belgium (1.2x)</option>
+                            <option value="IT">🇮🇹 Italy (1.1x)</option>
+                            <option value="ES">🇪🇸 Spain (1.0x)</option>
+                            <option value="PT">🇵🇹 Portugal (0.9x)</option>
+                            <option value="IE">🇮🇪 Ireland (1.3x)</option>
+                            <option value="PL">🇵🇱 Poland (0.8x)</option>
+                            <option value="CZ">🇨🇿 Czech Republic (0.7x)</option>
+                            <option value="HU">🇭🇺 Hungary (0.7x)</option>
+                            <option value="RO">🇷🇴 Romania (0.6x)</option>
+                        </optgroup>
+                        <optgroup label="🌏 Asia-Pacific">
+                            <option value="KR">🇰🇷 South Korea (1.2x)</option>
+                            <option value="HK">🇭🇰 Hong Kong (1.1x)</option>
+                            <option value="TW">🇹🇼 Taiwan (1.0x)</option>
+                            <option value="MY">🇲🇾 Malaysia (0.6x)</option>
+                            <option value="TH">🇹🇭 Thailand (0.5x)</option>
+                            <option value="PH">🇵🇭 Philippines (0.4x)</option>
+                            <option value="ID">🇮🇩 Indonesia (0.3x)</option>
+                            <option value="VN">🇻🇳 Vietnam (0.3x)</option>
+                            <option value="IN">🇮🇳 India (0.2x)</option>
+                            <option value="CN">🇨🇳 China (0.8x)</option>
+                        </optgroup>
+                        <optgroup label="🌎 Americas">
+                            <option value="MX">🇲🇽 Mexico (0.4x)</option>
+                            <option value="BR">🇧🇷 Brazil (0.4x)</option>
+                            <option value="AR">🇦🇷 Argentina (0.3x)</option>
+                            <option value="CL">🇨🇱 Chile (0.5x)</option>
+                            <option value="CO">🇨🇴 Colombia (0.3x)</option>
+                            <option value="PE">🇵🇪 Peru (0.3x)</option>
+                        </optgroup>
+                        <optgroup label="🌍 Middle East & Africa">
+                            <option value="AE">🇦🇪 UAE (0.8x)</option>
+                            <option value="SA">🇸🇦 Saudi Arabia (0.6x)</option>
+                            <option value="IL">🇮🇱 Israel (1.0x)</option>
+                            <option value="TR">🇹🇷 Turkey (0.3x)</option>
+                            <option value="ZA">🇿🇦 South Africa (0.4x)</option>
+                            <option value="NG">🇳🇬 Nigeria (0.2x)</option>
+                            <option value="EG">🇪🇬 Egypt (0.2x)</option>
+                            <option value="RU">🇷🇺 Russia (0.3x)</option>
+                        </optgroup>
+                    </select>
+                    <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                        📊 Price multiplier shown • 70 countries • 1,800+ services available
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <button type="button" onclick="loadAllServices()" style="background: #667eea; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; cursor: pointer;">
+                            🔍 Browse All 1,800+ Services
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Create Button -->
+                <button class="btn" onclick="createVerification()" style="width: 100%; background: #10b981; font-size: 16px; font-weight: 600; padding: 15px;">
+                    <span id="create-btn-text">🚀 Create Verification</span>
+                    <span id="create-loading" style="display: none;">⏳ Creating...</span>
+                </button>
+                
+                <!-- Price Display -->
+                <div id="price-display" style="text-align: center; margin-top: 12px; font-size: 14px; color: #94a3b8;">
+                    Estimated cost: <span id="estimated-cost">$0.75</span>
+                    <div id="price-breakdown"></div>
                 </div>
             </div>
             
             <div id="verification-card" class="verification-card">
-                <h3>Verification Active</h3>
-                <div>Service: <span id="service-name"></span></div>
-                <div class="phone-display" id="phone-number"></div>
-                <div>Status: <span id="status">pending</span></div>
-                <div style="text-align: center; margin: 15px 0;">
-                    <button class="btn" onclick="checkMessages()">Check Messages</button>
-                    <button class="btn btn-danger" onclick="cancelVerification()">Cancel</button>
+                <h3>🚀 Verification Active</h3>
+                <div style="margin: 10px 0;">Service: <span id="service-name" style="font-weight: 600; text-transform: capitalize;"></span></div>
+                <div class="phone-display" id="phone-number" style="font-family: monospace; font-size: 20px; font-weight: bold; background: #f0f9ff; color: #0369a1; padding: 12px; border-radius: 8px; text-align: center; margin: 12px 0; cursor: pointer;" onclick="copyPhone()"></div>
+                <div style="margin: 10px 0;">Status: <span id="status" style="padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; background: #fef3c7; color: #92400e;">pending</span></div>
+                <div style="text-align: center; margin: 20px 0;">
+                    <button class="btn" onclick="checkMessages()" style="background: #10b981; margin-right: 8px;">
+                        <span id="check-btn-text">📱 Check Messages</span>
+                    </button>
+                    <button class="btn btn-danger" onclick="cancelVerification()">
+                        ❌ Cancel & Refund
+                    </button>
+                </div>
+                <div style="font-size: 12px; color: #6b7280; text-align: center; margin-top: 10px;">
+                    💡 Click phone number to copy • Auto-checking every 10 seconds
                 </div>
             </div>
             
@@ -383,14 +542,27 @@
         }
         
         // Verification Functions
-        async function createVerification(serviceName) {
+        async function createVerification() {
             const token = localStorage.getItem('token');
             if (!token) {
                 showNotification('Please login first', 'error');
                 return;
             }
             
-            showLoading(true);
+            const serviceName = document.getElementById('service-select').value;
+            const capability = document.querySelector('input[name="capability"]:checked').value;
+            const country = document.getElementById('country-select').value;
+            
+            if (!serviceName) {
+                showNotification('Please select a service', 'error');
+                return;
+            }
+            
+            const createBtnText = document.getElementById('create-btn-text');
+            const createLoading = document.getElementById('create-loading');
+            
+            createBtnText.style.display = 'none';
+            createLoading.style.display = 'inline';
             
             try {
                 const res = await fetch('/verify/create', {
@@ -399,17 +571,22 @@
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ service_name: serviceName })
+                    body: JSON.stringify({ 
+                        service_name: serviceName,
+                        capability: capability,
+                        country: country
+                    })
                 });
                 
                 const data = await res.json();
-                showLoading(false);
                 
                 if (res.ok) {
                     currentVerificationId = data.id;
                     displayVerification(data);
                     document.getElementById('user-credits').textContent = data.remaining_credits.toFixed(2);
-                    showNotification(`Verification created! Cost: N${data.cost}`, 'success');
+                    
+                    const capabilityText = capability === 'voice' ? '📞 Voice' : '📱 SMS';
+                    showNotification(`${capabilityText} verification created! Cost: N${data.cost}`, 'success');
                     startAutoRefresh();
                 } else {
                     if (res.status === 402) {
@@ -420,8 +597,10 @@
                     }
                 }
             } catch (err) {
-                showLoading(false);
                 showNotification('Network error', 'error');
+            } finally {
+                createBtnText.style.display = 'inline';
+                createLoading.style.display = 'none';
             }
         }
         
@@ -429,7 +608,28 @@
             document.getElementById('service-name').textContent = data.service_name;
             document.getElementById('phone-number').textContent = data.phone_number;
             document.getElementById('status').textContent = data.status;
-            document.getElementById('verification-card').style.display = 'block';
+            
+            // Update verification card with capability info
+            const verificationCard = document.getElementById('verification-card');
+            const capability = data.capability || 'sms';
+            const capabilityIcon = capability === 'voice' ? '📞' : '📱';
+            const capabilityText = capability === 'voice' ? 'Voice Call' : 'SMS Text';
+            
+            // Add capability indicator
+            const existingCapability = verificationCard.querySelector('.capability-indicator');
+            if (existingCapability) {
+                existingCapability.remove();
+            }
+            
+            const capabilityDiv = document.createElement('div');
+            capabilityDiv.className = 'capability-indicator';
+            capabilityDiv.style.cssText = 'background: #f0f9ff; color: #0369a1; padding: 8px 12px; border-radius: 6px; margin: 10px 0; font-size: 14px; font-weight: 600;';
+            capabilityDiv.textContent = `${capabilityIcon} ${capabilityText} Verification`;
+            
+            const phoneDiv = verificationCard.querySelector('.phone-display');
+            phoneDiv.parentNode.insertBefore(capabilityDiv, phoneDiv.nextSibling);
+            
+            verificationCard.style.display = 'block';
             document.getElementById('messages-section').style.display = 'none';
         }
         
@@ -439,19 +639,25 @@
             const token = localStorage.getItem('token');
             
             try {
-                const res = await fetch(`/verify/${currentVerificationId}/messages`, {
+                // Check if this is a voice verification
+                const capability = document.querySelector('.capability-indicator')?.textContent.includes('Voice') ? 'voice' : 'sms';
+                const endpoint = capability === 'voice' ? 'voice' : 'messages';
+                
+                const res = await fetch(`/verify/${currentVerificationId}/${endpoint}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
                 if (res.ok) {
                     const data = await res.json();
                     
-                    if (data.messages.length > 0) {
+                    if (data.messages && data.messages.length > 0) {
                         stopAutoRefresh();
-                        displayMessages(data.messages);
-                        showNotification('SMS received!', 'success');
+                        displayMessages(data.messages, capability);
+                        const messageType = capability === 'voice' ? 'Voice call' : 'SMS';
+                        showNotification(`${messageType} received!`, 'success');
                     } else {
-                        showNotification('No messages yet. Keep waiting...', 'error');
+                        const waitingType = capability === 'voice' ? 'voice call' : 'SMS';
+                        showNotification(`No ${waitingType} yet. Keep waiting...`, 'error');
                     }
                 } else {
                     showNotification('Failed to check messages', 'error');
@@ -461,15 +667,37 @@
             }
         }
         
-        function displayMessages(messages) {
+        function displayMessages(messages, capability = 'sms') {
             const messagesList = document.getElementById('messages-list');
-            messagesList.innerHTML = messages.map(msg => {
+            const isVoice = capability === 'voice';
+            const messageType = isVoice ? 'Voice Call' : 'SMS Message';
+            const icon = isVoice ? '📞' : '📱';
+            
+            messagesList.innerHTML = `
+                <div style="background: #10b981; color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center;">
+                    <h3 style="margin: 0 0 8px 0;">${icon} ${messageType} Received!</h3>
+                    <p style="margin: 0; opacity: 0.9;">Your verification code has arrived</p>
+                </div>
+            ` + messages.map(msg => {
                 const code = msg.match(/\\b\\d{4,8}\\b/)?.[0] || msg;
                 return `
-                    <div class="code" onclick="copyCode('${code}')">${code}</div>
-                    <div style="font-size: 12px; margin-bottom: 10px;">Full message: ${msg}</div>
+                    <div style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 12px; padding: 20px; margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <strong style="color: #166534;">Verification Code:</strong>
+                            <button onclick="copyCode('${code}')" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">Copy Code</button>
+                        </div>
+                        <div class="code" onclick="copyCode('${code}')" style="font-family: monospace; font-size: 24px; font-weight: bold; color: #166534; background: white; padding: 15px; border-radius: 8px; text-align: center; cursor: pointer; border: 2px dashed #10b981;">${code}</div>
+                        <details style="margin-top: 12px;">
+                            <summary style="cursor: pointer; color: #6b7280; font-size: 13px;">Full ${messageType.toLowerCase()}</summary>
+                            <div style="margin-top: 8px; font-size: 13px; color: #6b7280; background: #f9fafb; padding: 10px; border-radius: 6px;">${msg}</div>
+                        </details>
+                    </div>
                 `;
-            }).join('');
+            }).join('') + `
+                <button onclick="tryAnotherService()" style="width: 100%; background: #667eea; color: white; padding: 14px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; margin-top: 15px;">
+                    ✨ Try Another Service
+                </button>
+            `;
             
             document.getElementById('messages-section').style.display = 'block';
         }
@@ -596,6 +824,197 @@
             document.getElementById('loading').style.display = show ? 'block' : 'none';
         }
         
+        // Enhanced price calculation with country multipliers
+        function updateEstimatedCost() {
+            const serviceSelect = document.getElementById('service-select');
+            const countrySelect = document.getElementById('country-select');
+            const capabilityRadio = document.querySelector('input[name="capability"]:checked');
+            
+            if (!serviceSelect || !capabilityRadio || !countrySelect) return;
+            
+            const serviceOption = serviceSelect.options[serviceSelect.selectedIndex];
+            const countryOption = countrySelect.options[countrySelect.selectedIndex];
+            
+            const basePrice = parseFloat(serviceOption.text.match(/\$([0-9.]+)/)?.[1] || '1.00');
+            const countryMultiplier = parseFloat(countryOption.text.match(/\(([0-9.]+)x\)/)?.[1] || '1.0');
+            const isVoice = capabilityRadio.value === 'voice';
+            
+            let totalPrice = basePrice * countryMultiplier;
+            if (isVoice) totalPrice += 0.30;
+            
+            document.getElementById('estimated-cost').textContent = `$${totalPrice.toFixed(2)}`;
+            
+            // Update price breakdown
+            const breakdown = document.getElementById('price-breakdown');
+            if (breakdown) {
+                breakdown.innerHTML = `
+                    <div style="font-size: 11px; color: #6b7280; margin-top: 8px;">
+                        Base: $${basePrice} × ${countryMultiplier}x country ${isVoice ? '+ $0.30 voice' : ''}
+                    </div>
+                `;
+            }
+        }
+        
+        // Capability selection styling
+        function updateCapabilitySelection() {
+            document.querySelectorAll('.capability-option').forEach(option => {
+                const radio = option.querySelector('input[type="radio"]');
+                if (radio.checked) {
+                    option.style.borderColor = '#10b981';
+                    option.style.background = '#064e3b';
+                } else {
+                    option.style.borderColor = '#334155';
+                    option.style.background = '#1a2942';
+                }
+            });
+            updateEstimatedCost();
+        }
+        
+        function tryAnotherService() {
+            // Clear current verification
+            currentVerificationId = null;
+            stopAutoRefresh();
+            document.getElementById('verification-card').style.display = 'none';
+            document.getElementById('messages-section').style.display = 'none';
+            
+            // Scroll to service selection
+            document.getElementById('service-select').scrollIntoView({ behavior: 'smooth' });
+            showNotification('Select a new service to verify', 'success');
+        }
+        
+        // Load all available services from TextVerified
+        async function loadAllServices() {
+            showLoading(true);
+            
+            try {
+                const response = await fetch('/verify/services');
+                const data = await response.json();
+                
+                if (data.services) {
+                    showServiceBrowser(data.services);
+                } else {
+                    showNotification('Unable to load services. Please try again.', 'error');
+                }
+            } catch (error) {
+                showNotification('Network error loading services', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Show service browser modal
+        function showServiceBrowser(services) {
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px;';
+            
+            const content = document.createElement('div');
+            content.style.cssText = 'background: #1a2942; border-radius: 12px; padding: 20px; max-width: 800px; max-height: 80vh; overflow-y: auto; width: 100%;';
+            
+            const header = document.createElement('div');
+            header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #334155; padding-bottom: 15px;';
+            header.innerHTML = `
+                <h2 style="color: white; margin: 0;">🔍 Browse All Services (${services.length}+ Available)</h2>
+                <button onclick="this.closest('.modal').remove()" style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer;">✕ Close</button>
+            `;
+            
+            const searchBox = document.createElement('input');
+            searchBox.type = 'text';
+            searchBox.placeholder = 'Search services...';
+            searchBox.style.cssText = 'width: 100%; padding: 12px; border: 2px solid #334155; background: #0f1f3a; color: white; border-radius: 8px; margin-bottom: 15px;';
+            
+            const serviceGrid = document.createElement('div');
+            serviceGrid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; max-height: 400px; overflow-y: auto;';
+            
+            // Render services
+            function renderServices(filteredServices = services) {
+                serviceGrid.innerHTML = filteredServices.map(service => `
+                    <button onclick="selectService('${service.name}'); this.closest('.modal').remove();" 
+                            style="background: #667eea; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; text-align: left; transition: all 0.2s;"
+                            onmouseover="this.style.background='#5a67d8'" onmouseout="this.style.background='#667eea'">
+                        <div style="font-weight: 600;">${service.name}</div>
+                        <div style="font-size: 12px; opacity: 0.8;">$${service.price} ${service.voice_supported ? '📞' : '📱'}</div>
+                    </button>
+                `).join('');
+            }
+            
+            // Search functionality
+            searchBox.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                const filtered = services.filter(s => s.name.toLowerCase().includes(query));
+                renderServices(filtered);
+            });
+            
+            renderServices();
+            
+            content.appendChild(header);
+            content.appendChild(searchBox);
+            content.appendChild(serviceGrid);
+            modal.appendChild(content);
+            modal.className = 'modal';
+            
+            document.body.appendChild(modal);
+        }
+        
+        // Select service from browser
+        function selectService(serviceName) {
+            const serviceSelect = document.getElementById('service-select');
+            
+            // Check if service exists in dropdown
+            const option = Array.from(serviceSelect.options).find(opt => opt.value === serviceName);
+            
+            if (option) {
+                serviceSelect.value = serviceName;
+            } else {
+                // Add new option if not in dropdown
+                const newOption = document.createElement('option');
+                newOption.value = serviceName;
+                newOption.textContent = `🔍 ${serviceName} - Custom`;
+                serviceSelect.appendChild(newOption);
+                serviceSelect.value = serviceName;
+            }
+            
+            updateEstimatedCost();
+            showNotification(`Selected ${serviceName} for verification`, 'success');
+        }
+        
+        function copyPhone() {
+            const phone = document.getElementById('phone-number').textContent;
+            if (phone && phone !== 'Loading...') {
+                navigator.clipboard.writeText(phone).then(() => {
+                    showNotification('📱 Phone number copied to clipboard!', 'success');
+                }).catch(() => {
+                    showNotification('Failed to copy phone number', 'error');
+                });
+            }
+        }
+        
+        // Auto-detect user country
+        function detectUserCountry() {
+            try {
+                const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                const countryMap = {
+                    'America/New_York': 'US', 'America/Los_Angeles': 'US', 'America/Chicago': 'US',
+                    'Europe/London': 'GB', 'Europe/Berlin': 'DE', 'Europe/Paris': 'FR',
+                    'Europe/Amsterdam': 'NL', 'Europe/Stockholm': 'SE', 'Europe/Oslo': 'NO',
+                    'Asia/Tokyo': 'JP', 'Asia/Singapore': 'SG', 'Asia/Hong_Kong': 'HK',
+                    'Australia/Sydney': 'AU', 'America/Toronto': 'CA'
+                };
+                
+                for (const [tz, country] of Object.entries(countryMap)) {
+                    if (timezone.includes(tz.split('/')[1])) {
+                        const countrySelect = document.getElementById('country-select');
+                        if (countrySelect) {
+                            countrySelect.value = country;
+                            updateEstimatedCost();
+                        }
+                        break;
+                    }
+                }
+            } catch (e) {
+                // Fallback to US if detection fails
+            }
+        }
+        
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             const token = localStorage.getItem('token');
@@ -603,6 +1022,33 @@
                 showApp();
                 loadUserData();
             }
+            
+            // Auto-detect user country
+            detectUserCountry();
+            
+            // Load service count
+            loadServiceCount();
+            
+            // Add event listeners for price updates
+            setTimeout(() => {
+                const serviceSelect = document.getElementById('service-select');
+                const countrySelect = document.getElementById('country-select');
+                
+                if (serviceSelect) {
+                    serviceSelect.addEventListener('change', updateEstimatedCost);
+                }
+                
+                if (countrySelect) {
+                    countrySelect.addEventListener('change', updateEstimatedCost);
+                }
+                
+                document.querySelectorAll('input[name="capability"]').forEach(radio => {
+                    radio.addEventListener('change', updateCapabilitySelection);
+                });
+                
+                // Initialize capability selection styling
+                updateCapabilitySelection();
+            }, 100);
         });
         
         // Auto-refresh user data every 30 seconds
@@ -613,14 +1059,22 @@
         }, 30000);
     </script>
 
+    <script src="/static/js/enhanced-verification.js"></script>
     <script src="/ws/client.js"></script>
     <script>
-        // Override createVerification to use WebSocket
-        const originalCreateVerification = window.createVerification;
-        window.createVerification = async function(serviceName) {
-            const result = await originalCreateVerification(serviceName);
-            if (result && result.id) {
-                startRealtimeMonitoring(result.id);
+        // Enhanced WebSocket integration
+        function startRealtimeMonitoring(verificationId) {
+            if (typeof connectWebSocket === 'function') {
+                connectWebSocket(verificationId);
+            }
+        }
+        
+        // Override verification manager to use WebSocket
+        const originalCreateVerification = verificationManager.createVerification;
+        verificationManager.createVerification = async function() {
+            const result = await originalCreateVerification.call(this);
+            if (this.currentVerificationId) {
+                startRealtimeMonitoring(this.currentVerificationId);
             }
             return result;
         };

@@ -65,42 +65,31 @@ async def create_verification(
     if not current_user:
         raise HTTPException(status_code=404, detail="User not found")
     
+    # Get service pricing
+    textverified = TextVerifiedService()
+    verification_result = await textverified.create_verification(
+        verification_data.service_name, 
+        getattr(verification_data, 'country', 'US'),
+        capability
+    )
+    
+    if "error" in verification_result:
+        raise HTTPException(status_code=400, detail=verification_result["error"])
+    
+    cost = verification_result["cost"]
+    
     # Check if user has sufficient credits or free verifications
     if current_user.free_verifications > 0:
         current_user.free_verifications -= 1
-    elif current_user.credits >= 0.20:
-        current_user.credits -= 0.20
+        cost = 0  # Free verification
+    elif current_user.credits >= cost:
+        current_user.credits -= cost
     else:
-        raise HTTPException(status_code=400, detail="Insufficient credits")
+        raise HTTPException(status_code=402, detail=f"Insufficient credits. Need ${cost:.2f}, have ${current_user.credits:.2f}")
     
-    textverified = TextVerifiedService()
-    
-    # Get service ID from service name
-    services_result = await textverified.get_services()
-    if "error" in services_result:
-        raise HTTPException(status_code=503, detail="SMS service unavailable")
-    
-    service_id = None
-    service_price = 0.50
-    
-    for service in services_result.get("services", []):
-        if service["name"].lower() == verification_data.service_name.lower():
-            service_id = service["id"]
-            service_price = service.get("price", 0.50)
-            break
-    
-    if not service_id:
-        raise HTTPException(status_code=400, detail=f"Service {verification_data.service_name} not found")
-    
-    # Get phone number from TextVerified
-    country = getattr(verification_data, 'country', 'US')
-    capability = getattr(verification_data, 'capability', 'sms')
-    is_voice = capability == 'voice'
-    
-    number_result = await textverified.get_number(service_id, country, voice=is_voice)
-    
-    if "error" in number_result:
-        raise HTTPException(status_code=400, detail=number_result["error"])
+    # Phone number and service details already obtained from create_verification
+    phone_number = verification_result["phone_number"]
+    number_id = verification_result["number_id"]
     
     # Create verification record
     verification = Verification(
@@ -108,12 +97,17 @@ async def create_verification(
         service_name=verification_data.service_name,
         capability=capability,
         status="pending",
-        cost=service_price,
-        phone_number=number_result.get("number", "Unknown")
+        cost=cost,
+        phone_number=phone_number
     )
     
     # Store TextVerified number_id for polling
-    verification.verification_code = number_result.get("id", "")
+    verification.verification_code = number_id
+    
+    # Store additional metadata for voice verifications
+    if capability == "voice":
+        verification.requested_carrier = getattr(verification_data, 'carrier', None)
+        verification.requested_area_code = getattr(verification_data, 'area_code', None)
     
     db.add(verification)
     db.commit()
@@ -125,8 +119,10 @@ async def create_verification(
         "id": verification.id,
         "service_name": verification.service_name,
         "phone_number": verification.phone_number,
+        "capability": verification.capability,
         "status": verification.status,
         "cost": verification.cost,
+        "remaining_credits": current_user.credits,
         "created_at": verification.created_at.isoformat()
     }
 
@@ -200,7 +196,7 @@ async def get_verification_voice(
     verification_id: str,
     db: Session = Depends(get_db)
 ):
-    """Get voice verification code."""
+    """Get voice verification code and details."""
     verification = db.query(Verification).filter(Verification.id == verification_id).first()
     
     if not verification:
@@ -216,11 +212,23 @@ async def get_verification_voice(
         voice_result = await textverified.get_voice(number_id)
         
         if "error" not in voice_result and voice_result.get("voice"):
+            # Update verification with voice details
             verification.status = "completed"
             verification.completed_at = datetime.now(timezone.utc)
+            verification.transcription = voice_result.get("transcription")
+            verification.call_duration = voice_result.get("call_duration")
+            verification.audio_url = voice_result.get("audio_url")
             db.commit()
             
-            return {"messages": [voice_result["voice"]], "status": "completed"}
+            return {
+                "messages": [voice_result["voice"]], 
+                "status": "completed",
+                "phone_number": verification.phone_number,
+                "transcription": voice_result.get("transcription"),
+                "call_duration": voice_result.get("call_duration"),
+                "call_status": voice_result.get("call_status", "completed"),
+                "audio_url": voice_result.get("audio_url")
+            }
         else:
             return {"messages": [], "status": verification.status}
             
