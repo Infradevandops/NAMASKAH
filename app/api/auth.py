@@ -369,11 +369,10 @@ async def forgot_password(
         await notification_service.send_email(
             to_email=request_data.email,
             subject="Password Reset - Namaskah SMS",
-            body=f"""<h2>Password Reset Request</h2>
-            <p>Click the link below to reset your password:</p>
-            <p><a href="/auth/reset-password?token={reset_token}">Reset Password</a></p>
-            <p>This link expires in 1 hour.</p>
-            """
+            body=f"<h2>Password Reset Request</h2>" + \
+                 f"<p>Click the link below to reset your password:</p>" + \
+                 f"<p><a href='/auth/reset-password?token={reset_token}'>Reset Password</a></p>" + \
+                 f"<p>This link expires in 1 hour.</p>"
         )
     
     # Always return success for security
