@@ -51,14 +51,16 @@ async def create_verification(
     db: Session = Depends(get_db)
 ):
     """Create new SMS or voice verification."""
+    # Get capability from request data
+    capability = getattr(verification_data, 'capability', 'sms')
+    country = getattr(verification_data, 'country', 'US')
+    
     # Validate and sanitize input data
     validate_and_sanitize_service_data({
         'service': verification_data.service_name,
-        'capability': getattr(verification_data, 'capability', 'sms'),
-        'country': getattr(verification_data, 'country', 'US')
+        'capability': capability,
+        'country': country
     })
-    
-
     
     # Get user and check credits
     current_user = db.query(User).filter(User.id == user_id).first()
@@ -69,7 +71,7 @@ async def create_verification(
     textverified = TextVerifiedService()
     verification_result = await textverified.create_verification(
         verification_data.service_name, 
-        getattr(verification_data, 'country', 'US'),
+        country,
         capability
     )
     
