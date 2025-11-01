@@ -4,7 +4,7 @@ Prometheus-compatible metrics for monitoring and alerting.
 """
 import time
 import psutil
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from collections import defaultdict, Counter
 from prometheus_client import Counter as PrometheusCounter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
 from app.core.config import settings
