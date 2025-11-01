@@ -16,7 +16,7 @@ from .base import BaseService
 class PaymentService(BaseService[Transaction]):
     """Service for payment processing with Paystack."""
     
-    def b(Session: _Session):
+    def __init__(self, db: Session):
         super().__init__(Transaction, db)
         self.secret_key = settings.paystack_secret_key
         self.client = httpx.AsyncClient(

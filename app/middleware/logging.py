@@ -14,14 +14,21 @@ logger = get_logger("middleware.logging")
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
     """Request/response logging middleware with structured format."""
     
-    def s(Optional: _Optional):
+    def __init__(
+        self,
+        app,
+        log_requests: bool = True,
+        log_responses: bool = True,
+        log_body: bool = False,
+        exclude_paths: Optional[list] = None
+    ):
         super().__init__(app)
         self.log_requests = log_requests
         self.log_responses = log_responses
         self.log_body = log_body
         self.exclude_paths = exclude_paths or ["/health", "/docs", "/redoc", "/openapi.json"]
     
-    async def t(Request: _Request):
+    async def dispatch(self, request: Request, call_next):
         """Log request and response with performance metrics."""
         # Skip logging for excluded paths
         if any(request.url.path.startswith(path) for path in self.exclude_paths):
@@ -48,7 +55,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         
         return response
     
-    async def t(Request: _Request):
+    async def _log_request(self, request: Request):
         """Log incoming request details."""
         # Get user info if available
         user_id = getattr(request.state, 'user_id', None)
@@ -105,7 +112,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         logger.info("HTTP request received: %s", log_data)
     
     @staticmethod
-    def e(float: _float):
+    def _log_response(request: Request, response: Response, process_time: float):
         """Log response details and performance metrics."""
         # Get user info if available
         user_id = getattr(request.state, 'user_id', None)
@@ -183,7 +190,7 @@ class PerformanceMetricsMiddleware(BaseHTTPMiddleware):
             "endpoint_metrics": {}
         }
     
-    async def t(Request: _Request):
+    async def dispatch(self, request: Request, call_next):
         """Collect performance metrics."""
         start_time = time.time()
         
@@ -265,14 +272,14 @@ class PerformanceMetricsMiddleware(BaseHTTPMiddleware):
 class AuditTrailMiddleware(BaseHTTPMiddleware):
     """Audit trail middleware for sensitive operations."""
     
-    def s(Optional: _Optional):
+    def __init__(self, app, sensitive_paths: Optional[list] = None):
         super().__init__(app)
         self.sensitive_paths = sensitive_paths or [
             "/admin", "/wallet", "/verify/create", "/auth/register",
             "/auth/login", "/api-keys", "/webhooks"
         ]
     
-    async def t(Request: _Request):
+    async def dispatch(self, request: Request, call_next):
         """Create audit trail for sensitive operations."""
         # Check if this is a sensitive operation
         is_sensitive = any(request.url.path.startswith(path) for path in self.sensitive_paths)
@@ -288,7 +295,7 @@ class AuditTrailMiddleware(BaseHTTPMiddleware):
         
         return response
     
-    async def e(str: _str):
+    async def _log_audit_event(self, request: Request, phase: str):
         """Log audit event before processing."""
         user_id = getattr(request.state, 'user_id', None)
         user = getattr(request.state, 'user', None)
@@ -325,7 +332,7 @@ class AuditTrailMiddleware(BaseHTTPMiddleware):
         logger.info("Audit trail - before: %s", audit_data)
     
     @staticmethod
-    def e(Response: _Response):
+    def _log_audit_event_after(request: Request, response: Response):
         """Log audit event after processing."""
         user_id = getattr(request.state, 'user_id', None)
         
