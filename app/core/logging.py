@@ -110,12 +110,12 @@ def setup_log_rotation():
     root_logger.addHandler(file_handler)
 
 
-def e(str: _str):
+def get_logger(name: str = None):
     """Get basic logger instance."""
     return logging.getLogger(name or __name__)
 
 
-def d(str: _str):
+def set_correlation_id(correlation_id: str = None):
     """Set correlation ID for request tracking."""
     if correlation_id is None:
         correlation_id = str(uuid.uuid4())
@@ -123,7 +123,7 @@ def d(str: _str):
     return correlation_id
 
 
-def d(str: _str):
+def set_user_context(user_id: str):
     """Set user context for logging."""
     user_id_var.set(user_id)
 
@@ -134,7 +134,7 @@ def clear_context():
     user_id_var.set(None)
 
 
-def t(dict: _dict):
+def log_error(logger, error: Exception, context: dict = None):
     """Log error with full context and stack trace."""
     error_context = {
         "error_type": type(error).__name__,
@@ -149,7 +149,7 @@ def t(dict: _dict):
     logger.error("Exception occurred: %s", error_context, exc_info=True)
 
 
-def t(dict: _dict):
+def log_performance(logger, operation: str, duration: float, context: dict = None):
     """Log performance metrics with enhanced categorization."""
     perf_context = {
         "operation": operation,
@@ -178,7 +178,7 @@ def t(dict: _dict):
     getattr(logger, log_level)("Operation performance: %s", perf_context)
 
 
-def a(Dict: _Dict):
+def log_business_event(logger, event_type: str, event_data: Dict[str, Any]):
     """Log business events for analytics."""
     from datetime import datetime, timezone
     business_context = {
@@ -193,7 +193,7 @@ def a(Dict: _Dict):
     logger.info("Business event: %s", business_context)
 
 
-def s(Dict: _Dict):
+def log_security_event(logger, event_type: str, severity: str, details: Dict[str, Any]):
     """Log security events."""
     security_context = {
         "event_type": event_type,
@@ -213,7 +213,8 @@ def s(Dict: _Dict):
         logger.info("Security event: %s", security_context)
 
 
-def p(str: _str):
+def log_api_request(logger, method: str, path: str, status_code: int, duration: float, 
+                   user_id: str = None, ip: str = None):
     """Log API request with standardized format."""
     request_context = {
         "method": method,
