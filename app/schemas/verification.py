@@ -24,8 +24,8 @@ class VerificationCreate(BaseModel):
             raise ValueError('Service name cannot be empty')
         return v.lower().strip()
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "service_name": "telegram",
                 "capability": "sms",
@@ -33,6 +33,7 @@ class VerificationCreate(BaseModel):
                 "carrier": "verizon"
             }
         }
+    }
 
 
 class VerificationResponse(BaseModel):
@@ -48,9 +49,9 @@ class VerificationResponse(BaseModel):
     created_at: datetime
     completed_at: Optional[datetime]
     
-    class Config:
-        from_attributes = True
-        json_schema_extra = {
+    model_config = {
+        "from_attributes": True,
+        "json_schema_extra": {
             "example": {
                 "id": "verification_1642680000000",
                 "service_name": "telegram",
@@ -64,6 +65,7 @@ class VerificationResponse(BaseModel):
                 "completed_at": None
             }
         }
+    }
 
 
 class MessageResponse(BaseModel):
@@ -71,8 +73,8 @@ class MessageResponse(BaseModel):
     verification_id: str
     messages: List[str] = Field(..., description="List of SMS messages received")
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "verification_id": "verification_1642680000000",
                 "messages": [
@@ -81,6 +83,7 @@ class MessageResponse(BaseModel):
                 ]
             }
         }
+    }
 
 
 class NumberRentalRequest(BaseModel):
@@ -106,8 +109,8 @@ class NumberRentalRequest(BaseModel):
             raise ValueError('Maximum rental duration is 1 year')
         return v
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "service_name": "telegram",
                 "duration_hours": 24.0,
@@ -117,6 +120,7 @@ class NumberRentalRequest(BaseModel):
                 "carrier": "verizon"
             }
         }
+    }
 
 
 class NumberRentalResponse(BaseModel):
@@ -132,9 +136,9 @@ class NumberRentalResponse(BaseModel):
     expires_at: datetime
     auto_extend: bool
     
-    class Config:
-        from_attributes = True
-        json_schema_extra = {
+    model_config = {
+        "from_attributes": True,
+        "json_schema_extra": {
             "example": {
                 "id": "rental_1642680000000",
                 "phone_number": "+1234567890",
@@ -148,6 +152,7 @@ class NumberRentalResponse(BaseModel):
                 "auto_extend": False
             }
         }
+    }
 
 
 class ExtendRentalRequest(BaseModel):
@@ -162,12 +167,13 @@ class ExtendRentalRequest(BaseModel):
             raise ValueError('Maximum extension is 1 year')
         return v
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "additional_hours": 12.0
             }
         }
+    }
 
 
 class RetryVerificationRequest(BaseModel):
@@ -180,12 +186,13 @@ class RetryVerificationRequest(BaseModel):
             raise ValueError('Retry type must be voice, same, or new')
         return v
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "retry_type": "voice"
             }
         }
+    }
 
 
 class ServicePriceResponse(BaseModel):
@@ -199,8 +206,8 @@ class ServicePriceResponse(BaseModel):
     monthly_verifications: int
     addons: dict
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "service_name": "telegram",
                 "tier": "popular",
@@ -216,6 +223,7 @@ class ServicePriceResponse(BaseModel):
                 }
             }
         }
+    }
 
 
 class VerificationHistoryResponse(BaseModel):
@@ -223,8 +231,8 @@ class VerificationHistoryResponse(BaseModel):
     verifications: List[VerificationResponse]
     total_count: int
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "verifications": [
                     {
@@ -241,3 +249,4 @@ class VerificationHistoryResponse(BaseModel):
                 "total_count": 1
             }
         }
+    }

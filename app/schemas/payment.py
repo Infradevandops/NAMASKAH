@@ -23,13 +23,14 @@ class PaymentInitialize(BaseModel):
             raise ValueError('Only paystack payment method is supported')
         return v
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "amount_usd": 20.0,
                 "payment_method": "paystack"
             }
         }
+    }
 
 
 class PaymentInitializeResponse(BaseModel):
@@ -40,8 +41,8 @@ class PaymentInitializeResponse(BaseModel):
     reference: str = Field(..., description="Payment reference")
     payment_details: Dict[str, Any] = Field(..., description="Payment breakdown")
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "success": True,
                 "authorization_url": "https://checkout.paystack.com/abc123",
@@ -55,18 +56,20 @@ class PaymentInitializeResponse(BaseModel):
                 }
             }
         }
+    }
 
 
 class PaymentVerify(BaseModel):
     """Schema for payment verification."""
     reference: str = Field(..., description="Payment reference to verify")
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "reference": "namaskah_user123_1642680000"
             }
         }
+    }
 
 
 class PaymentVerifyResponse(BaseModel):
@@ -77,8 +80,8 @@ class PaymentVerifyResponse(BaseModel):
     reference: str = Field(..., description="Payment reference")
     message: str = Field(..., description="Status message")
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "status": "success",
                 "amount_credited": 10.0,
@@ -87,6 +90,7 @@ class PaymentVerifyResponse(BaseModel):
                 "message": "Payment verified and credited successfully"
             }
         }
+    }
 
 
 class WebhookPayload(BaseModel):
@@ -94,8 +98,8 @@ class WebhookPayload(BaseModel):
     event: str = Field(..., description="Webhook event type")
     data: Dict[str, Any] = Field(..., description="Webhook data")
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "event": "charge.success",
                 "data": {
@@ -109,6 +113,7 @@ class WebhookPayload(BaseModel):
                 }
             }
         }
+    }
 
 
 class TransactionResponse(BaseModel):
@@ -119,9 +124,9 @@ class TransactionResponse(BaseModel):
     description: str
     created_at: datetime
     
-    class Config:
-        from_attributes = True
-        json_schema_extra = {
+    model_config = {
+        "from_attributes": True,
+        "json_schema_extra": {
             "example": {
                 "id": "transaction_1642680000000",
                 "amount": 10.0,
@@ -130,6 +135,7 @@ class TransactionResponse(BaseModel):
                 "created_at": "2024-01-20T10:00:00Z"
             }
         }
+    }
 
 
 class TransactionHistoryResponse(BaseModel):
@@ -137,8 +143,8 @@ class TransactionHistoryResponse(BaseModel):
     transactions: List[TransactionResponse]
     total_count: int
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "transactions": [
                     {
@@ -152,6 +158,7 @@ class TransactionHistoryResponse(BaseModel):
                 "total_count": 1
             }
         }
+    }
 
 
 class RefundRequest(BaseModel):
@@ -166,14 +173,15 @@ class RefundRequest(BaseModel):
             raise ValueError('Refund amount must be positive')
         return v
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "transaction_id": "transaction_1642680000000",
                 "amount": 5.0,
                 "reason": "Service not delivered"
             }
         }
+    }
 
 
 class RefundResponse(BaseModel):
@@ -184,8 +192,8 @@ class RefundResponse(BaseModel):
     status: str
     message: str
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "success": True,
                 "refund_id": "refund_123",
@@ -194,6 +202,7 @@ class RefundResponse(BaseModel):
                 "message": "Refund initiated successfully"
             }
         }
+    }
 
 
 class WalletBalanceResponse(BaseModel):
@@ -202,14 +211,15 @@ class WalletBalanceResponse(BaseModel):
     credits_usd: float = Field(..., description="Credits value in USD")
     free_verifications: float = Field(..., description="Free verifications remaining")
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "credits": 15.5,
                 "credits_usd": 31.0,
                 "free_verifications": 1.0
             }
         }
+    }
 
 
 class SubscriptionPlan(BaseModel):
@@ -222,8 +232,8 @@ class SubscriptionPlan(BaseModel):
     free_verifications: int = Field(..., description="Free verifications per month")
     features: List[str] = Field(..., description="Plan features")
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "id": "pro",
                 "name": "Pro Plan",
@@ -238,6 +248,7 @@ class SubscriptionPlan(BaseModel):
                 ]
             }
         }
+    }
 
 
 class SubscriptionRequest(BaseModel):
@@ -250,12 +261,13 @@ class SubscriptionRequest(BaseModel):
             raise ValueError('Plan ID must be pro or turbo')
         return v
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "plan_id": "pro"
             }
         }
+    }
 
 
 class SubscriptionResponse(BaseModel):
@@ -268,8 +280,8 @@ class SubscriptionResponse(BaseModel):
     expires_at: Optional[str]
     features: Dict[str, Any]
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "plan": "pro",
                 "name": "Pro Plan",
@@ -283,3 +295,4 @@ class SubscriptionResponse(BaseModel):
                 }
             }
         }
+    }

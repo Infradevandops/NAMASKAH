@@ -16,14 +16,15 @@ class UserCreate(BaseModel):
             raise ValueError('Password must be at least 6 characters')
         return v
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "email": "user@example.com",
                 "password": "securepassword123",
                 "referral_code": "ABC123"
             }
         }
+    }
 
 
 class UserUpdate(BaseModel):
@@ -49,9 +50,9 @@ class UserResponse(BaseModel):
     referral_code: str
     created_at: datetime
     
-    class Config:
-        from_attributes = True
-        json_schema_extra = {
+    model_config = {
+        "from_attributes": True,
+        "json_schema_extra": {
             "example": {
                 "id": "user_1642680000000",
                 "email": "user@example.com",
@@ -63,6 +64,7 @@ class UserResponse(BaseModel):
                 "created_at": "2024-01-20T10:00:00Z"
             }
         }
+    }
 
 
 class LoginRequest(BaseModel):
@@ -70,13 +72,14 @@ class LoginRequest(BaseModel):
     email: EmailStr = Field(..., description="User email address")
     password: str = Field(..., description="User password")
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "email": "user@example.com",
                 "password": "securepassword123"
             }
         }
+    }
 
 
 class TokenResponse(BaseModel):
@@ -85,8 +88,8 @@ class TokenResponse(BaseModel):
     token_type: str = Field(default="bearer", description="Token type")
     user: UserResponse = Field(..., description="User information")
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
                 "token_type": "bearer",
@@ -102,18 +105,20 @@ class TokenResponse(BaseModel):
                 }
             }
         }
+    }
 
 
 class APIKeyCreate(BaseModel):
     """Schema for API key creation."""
     name: str = Field(..., min_length=1, max_length=100, description="API key name")
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "name": "Production API Key"
             }
         }
+    }
 
 
 class APIKeyResponse(BaseModel):
@@ -125,9 +130,9 @@ class APIKeyResponse(BaseModel):
     created_at: datetime
     last_used: Optional[datetime]
     
-    class Config:
-        from_attributes = True
-        json_schema_extra = {
+    model_config = {
+        "from_attributes": True,
+        "json_schema_extra": {
             "example": {
                 "id": "key_1642680000000",
                 "name": "Production API Key",
@@ -137,6 +142,7 @@ class APIKeyResponse(BaseModel):
                 "last_used": None
             }
         }
+    }
 
 
 class APIKeyListResponse(BaseModel):
@@ -148,8 +154,8 @@ class APIKeyListResponse(BaseModel):
     created_at: datetime
     last_used: Optional[datetime]
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "id": "key_1642680000000",
                 "name": "Production API Key",
@@ -159,18 +165,20 @@ class APIKeyListResponse(BaseModel):
                 "last_used": "2024-01-20T15:30:00Z"
             }
         }
+    }
 
 
 class PasswordResetRequest(BaseModel):
     """Schema for password reset request."""
     email: EmailStr = Field(..., description="Email address for password reset")
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "email": "user@example.com"
             }
         }
+    }
 
 
 class PasswordResetConfirm(BaseModel):
@@ -184,13 +192,14 @@ class PasswordResetConfirm(BaseModel):
             raise ValueError('Password must be at least 6 characters')
         return v
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "token": "reset_token_abc123",
                 "new_password": "newsecurepassword123"
             }
         }
+    }
 
 
 class EmailVerificationRequest(BaseModel):
@@ -202,9 +211,10 @@ class GoogleAuthRequest(BaseModel):
     """Schema for Google OAuth authentication."""
     token: str = Field(..., description="Google OAuth token")
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "token": "google_oauth_token_here"
             }
         }
+    }
