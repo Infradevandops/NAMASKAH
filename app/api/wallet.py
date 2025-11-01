@@ -107,7 +107,7 @@ async def paystack_webhook(
     db: Session = Depends(get_db)
 ):
     """Handle Paystack webhook notifications."""
-    payment_service = get_payment_service(db)
+    from app.services.webhook_service import WebhookService
     
     # Get signature and body
     signature = request.headers.get('x-paystack-signature')
@@ -116,8 +116,10 @@ async def paystack_webhook(
     if not signature:
         raise HTTPException(status_code=400, detail="Missing signature")
     
+    webhook_service = WebhookService(db)
+    
     # Verify webhook signature
-    if not payment_service.verify_webhook_signature(body, signature):
+    if not webhook_service.verify_signature(body, signature):
         raise HTTPException(status_code=400, detail="Invalid signature")
     
     # Parse webhook data
@@ -128,7 +130,7 @@ async def paystack_webhook(
     
     # Process webhook
     try:
-        success = payment_service.process_webhook_payment(webhook_data)
+        success = webhook_service.process_payment_webhook(webhook_data)
         
         if success:
             return {"status": "success"}
