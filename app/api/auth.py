@@ -56,7 +56,7 @@ async def register(
         
     except ValidationError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception:
+    except Exception as e:
         raise HTTPException(status_code=500, detail="Registration failed")
 
 
@@ -286,7 +286,7 @@ async def login(
         raise
     except AuthenticationError as e:
         raise HTTPException(status_code=401, detail=str(e))
-    except Exception:
+    except Exception as e:
         raise HTTPException(status_code=500, detail="Login failed. Please try again.")
 
 
@@ -321,20 +321,18 @@ async def google_auth(
             user.email_verified = email_verified
             db.commit()
         
-        google_user = user
-        
         # Generate access token
-        access_token = auth_service.create_user_token(google_user)
+        access_token = auth_service.create_user_token(user)
         
         return TokenResponse(
             access_token=access_token,
             token_type="bearer",
-            user=UserResponse.from_orm(google_user)
+            user=UserResponse.from_orm(user)
         )
         
     except ImportError:
         raise HTTPException(status_code=503, detail="Google OAuth not configured")
-    except Exception:
+    except Exception as e:
         raise HTTPException(status_code=401, detail="Google authentication failed")
 
 

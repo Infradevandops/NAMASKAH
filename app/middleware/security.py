@@ -196,8 +196,7 @@ class CORSMiddleware(BaseHTTPMiddleware):
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Security headers middleware."""
     
-    @staticmethod
-    async def dispatch(request: Request, call_next):
+    async def dispatch(self, request: Request, call_next):
         """Add security headers to all responses."""
         response = await call_next(request)
         

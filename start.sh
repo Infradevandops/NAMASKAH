@@ -29,10 +29,12 @@ if [ ! -f sms.db ]; then
 fi
 
 # Start server
-echo "✅ Starting server on http://localhost:8000"
+HOST=${HOST:-127.0.0.1}
+PORT=${PORT:-8000}
+echo "✅ Starting server on http://${HOST}:${PORT}"
 echo ""
 echo "📝 Login with:"
 echo "   Email: admin@namaskah.app"
 echo "   Password: admin123"
 echo ""
-python main.py
+uvicorn main:app --host "$HOST" --port "$PORT" --reload

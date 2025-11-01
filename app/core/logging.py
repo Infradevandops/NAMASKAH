@@ -146,7 +146,7 @@ def log_error(logger, error: Exception, context: dict = None):
     if context:
         error_context.update(context)
     
-    logger.error("Exception occurred: %s", error_context, exc_info=True)
+    logger.error("Exception occurred", extra=error_context, exc_info=True)
 
 
 def log_performance(logger, operation: str, duration: float, context: dict = None):
@@ -175,7 +175,7 @@ def log_performance(logger, operation: str, duration: float, context: dict = Non
         perf_context.update(context)
     
     # Log at appropriate level
-    getattr(logger, log_level)("Operation performance: %s", perf_context)
+    getattr(logger, log_level)("Operation performance", extra=perf_context)
 
 
 def log_business_event(logger, event_type: str, event_data: Dict[str, Any]):
@@ -190,7 +190,7 @@ def log_business_event(logger, event_type: str, event_data: Dict[str, Any]):
     safe_event_data = {k: v for k, v in event_data.items() if k != 'event'}
     business_context.update(safe_event_data)
     
-    logger.info("Business event: %s", business_context)
+    logger.info("Business event", extra=business_context)
 
 
 def log_security_event(logger, event_type: str, severity: str, details: Dict[str, Any]):
@@ -206,11 +206,11 @@ def log_security_event(logger, event_type: str, severity: str, details: Dict[str
     security_context.update(safe_details)
     
     if severity in ["high", "critical"]:
-        logger.error("Security event: %s", security_context)
+        logger.error("Security event", extra=security_context)
     elif severity == "medium":
-        logger.warning("Security event: %s", security_context)
+        logger.warning("Security event", extra=security_context)
     else:
-        logger.info("Security event: %s", security_context)
+        logger.info("Security event", extra=security_context)
 
 
 def log_api_request(logger, method: str, path: str, status_code: int, duration: float, 
@@ -237,4 +237,4 @@ def log_api_request(logger, method: str, path: str, status_code: int, duration: 
     else:
         log_level = "info"
     
-    getattr(logger, log_level)("API request: %s", request_context)
+    getattr(logger, log_level)("API request", extra=request_context)

@@ -168,7 +168,6 @@ class Settings(BaseSettings):
 
 
 from functools import lru_cache
-from .secrets import SecretsManager
 
 @lru_cache()
 def get_settings() -> Settings:
@@ -176,7 +175,11 @@ def get_settings() -> Settings:
     settings_instance = Settings()
     
     # Validate secrets on startup
-    SecretsManager.validate_required_secrets(settings_instance.environment)
+    try:
+        from .secrets import SecretsManager
+        SecretsManager.validate_required_secrets(settings_instance.environment)
+    except ImportError:
+        pass  # SecretsManager is optional
     
     # Validate production configuration
     settings_instance.validate_production_config()

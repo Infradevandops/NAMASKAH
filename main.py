@@ -3,6 +3,7 @@ Namaskah SMS - Modular Application Factory
 """
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
 
 from app.core.database import engine
 from app.core.exceptions import setup_exception_handlers
@@ -13,7 +14,6 @@ from app.core.logging import setup_logging, get_logger
 from app.api.admin import router as admin_router
 from app.api.analytics import router as analytics_router
 from app.api.system import router as system_router, root_router
-from fastapi.responses import HTMLResponse
 from app.api.auth import router as auth_router
 from app.api.verification import router as verification_router
 from app.api.wallet import router as wallet_router
