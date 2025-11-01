@@ -29,12 +29,12 @@ async function loadHistory(silent = false, showAll = false) {
             const verifications = data.verifications;
             
             if (verifications.length === 0) {
-                list.textContent = '<p style="color: #6b7280;  // XSS Fix: Use textContent instead of innerHTML">No verifications yet. Create one above!</p>';
+                list.innerHTML = '<p style="color: #6b7280;">No verifications yet. Create one above!</p>';
             } else {
                 const displayItems = showAll ? verifications : verifications.slice(0, 5);
-                list.textContent = displayItems.map(v => `
+                list.innerHTML = displayItems.map(v => `
                     <div class="verification-item" onclick="loadVerification('${v.id}')">
-                        <div style="display: flex;  // XSS Fix: Use textContent instead of innerHTML justify-content: space-between; align-items: center;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
                                 <strong>${formatServiceName(v.service_name)}</strong>
                                 <div style="font-size: 14px; color: #6b7280;">${formatPhoneNumber(v.phone_number)}</div>
@@ -100,11 +100,11 @@ async function loadTransactions(silent = false, showAll = false) {
             const transactions = data.transactions;
             
             if (transactions.length === 0) {
-                list.textContent = '<p style="color: #6b7280;  // XSS Fix: Use textContent instead of innerHTML">No transactions yet.</p>';
+                list.innerHTML = '<p style="color: #6b7280;">No transactions yet.</p>';
             } else {
                 const displayItems = showAll ? transactions : transactions.slice(0, 5);
-                list.textContent = displayItems.map(t => {
-                    const isCredit = t.type === 'credit';  // XSS Fix: Use textContent instead of innerHTML
+                list.innerHTML = displayItems.map(t => {
+                    const isCredit = t.type === 'credit';
                     const color = isCredit ? '#10b981' : '#ef4444';
                     const sign = isCredit ? '+' : '';
                     return `

@@ -264,7 +264,7 @@ function logout() {
     appSection.classList.add('fade-out');
     
     setTimeout(() => {
-        document.getElementById('verifications').innerHTML = '';
+        document.getElementById('verifications').textContent = '';  // XSS Fix: Use textContent instead of innerHTML
         document.getElementById('top-logout-btn').classList.add('hidden');
         appSection.classList.add('hidden');
         appSection.classList.remove('fade-out');

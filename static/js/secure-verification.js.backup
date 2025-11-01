@@ -113,10 +113,10 @@ class SecureVerification {
             const safeContent = window.SecurityUtils.sanitizeHTML(message.content || '');
             const safeTimestamp = window.SecurityUtils.sanitizeHTML(message.timestamp || '');
             
-            messageDiv.textContent = `
+            messageDiv.innerHTML = `
                 <div class="message-content">${safeContent}</div>
                 <div class="message-timestamp">${safeTimestamp}</div>
-            `;  // XSS Fix: Use textContent instead of innerHTML
+            `;
             
             container.appendChild(messageDiv);
         });

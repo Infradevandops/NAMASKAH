@@ -147,8 +147,8 @@ function showCryptoPayment(method, amount) {
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.style.display = 'flex';
-    modal.textContent = `
-        <div class="modal-content" style="max-width: 500px;  // XSS Fix: Use textContent instead of innerHTML">
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 500px;">
             <span class="close" onclick="this.parentElement.parentElement.remove()">&times;</span>
             <h2>💰 ${cryptoName} Payment</h2>
             <p style="color: #6b7280; margin-bottom: 20px;">Send exactly <strong>$${amount} USD</strong> worth of ${cryptoName} to the address below:</p>

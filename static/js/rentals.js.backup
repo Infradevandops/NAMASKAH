@@ -30,12 +30,12 @@ function displayActiveRentals() {
     if (!container) return;
     
     if (activeRentals.length === 0) {
-        container.textContent = '<p class="text-gray-500">No active rentals</p>';  // XSS Fix: Use textContent instead of innerHTML
+        container.innerHTML = '<p class="text-gray-500">No active rentals</p>';
         return;
     }
     
-    container.textContent = activeRentals.map(rental => `
-        <div class="rental-card" style="border: 1px solid #e5e7eb;  // XSS Fix: Use textContent instead of innerHTML border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+    container.innerHTML = activeRentals.map(rental => `
+        <div class="rental-card" style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
             <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 8px;">
                 <strong>${formatPhoneNumber(rental.phone_number)}</strong>
                 <span class="badge active">${rental.service_name}</span>
@@ -179,8 +179,8 @@ function showRentalMessages(data) {
         `).join('')
         : '<p style="color: #6b7280;">No messages received yet</p>';
     
-    modal.textContent = `
-        <div class="modal-content" style="max-width: 600px;  // XSS Fix: Use textContent instead of innerHTML">
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px;">
             <h2>Rental Messages</h2>
             <div style="margin: 16px 0;">
                 <strong>Phone:</strong> ${formatPhoneNumber(data.phone_number)}<br>

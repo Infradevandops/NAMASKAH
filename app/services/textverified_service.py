@@ -10,8 +10,19 @@ class TextVerifiedService:
         
     async def get_services(self) -> Dict[str, Any]:
         """Get available services from TextVerified."""
-        if not self.api_key:
-            return {"error": "TextVerified API key not configured"}
+        if not self.api_key or self.api_key in ['your_production_textverified_api_key', 'your_textverified_api_key']:
+            # Return mock services for testing when API key not configured
+            return {
+                "services": [
+                    {"id": 1, "name": "telegram", "price": 0.50},
+                    {"id": 2, "name": "whatsapp", "price": 0.60},
+                    {"id": 3, "name": "discord", "price": 0.45},
+                    {"id": 4, "name": "instagram", "price": 0.55},
+                    {"id": 5, "name": "twitter", "price": 0.50},
+                    {"id": 6, "name": "google", "price": 0.65}
+                ],
+                "note": "Mock services - Configure TEXTVERIFIED_API_KEY for production"
+            }
         
         async with httpx.AsyncClient() as client:
             try:

@@ -22,6 +22,29 @@ from app.core.exceptions import InsufficientCreditsError, ExternalServiceError
 router = APIRouter(prefix="/verify", tags=["Verification"])
 
 
+@router.get("/services")
+async def get_available_services():
+    """Get available SMS verification services."""
+    try:
+        textverified = TextVerifiedService()
+        result = await textverified.get_services()
+        return result
+    except Exception as e:
+        # Return mock services if there's any error
+        return {
+            "services": [
+                {"id": 1, "name": "telegram", "price": 0.50},
+                {"id": 2, "name": "whatsapp", "price": 0.60},
+                {"id": 3, "name": "discord", "price": 0.45},
+                {"id": 4, "name": "instagram", "price": 0.55},
+                {"id": 5, "name": "twitter", "price": 0.50},
+                {"id": 6, "name": "google", "price": 0.65}
+            ],
+            "note": "Mock services - API configuration needed",
+            "error": str(e)
+        }
+
+
 @router.post("/create", response_model=VerificationResponse, status_code=status.HTTP_201_CREATED)
 async def create_verification(
     verification_data: VerificationCreate,

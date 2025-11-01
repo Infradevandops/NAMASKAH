@@ -103,17 +103,17 @@ class EnhancedDashboard {
         if (!container) return;
 
         if (this.activeVerifications.length === 0) {
-            container.textContent = `
+            container.innerHTML = `
                 <div class="empty-state">
                     <p>No active verifications</p>
                     <p class="text-muted">Create a verification to get started</p>
                 </div>
-            `;  // XSS Fix: Use textContent instead of innerHTML
+            `;
             return;
         }
 
-        container.textContent = this.activeVerifications.map(verification => {
-            const serviceDiv = document.createElement('div');  // XSS Fix: Use textContent instead of innerHTML
+        container.innerHTML = this.activeVerifications.map(verification => {
+            const serviceDiv = document.createElement('div');
             serviceDiv.className = 'verification-service';
             serviceDiv.textContent = this.formatServiceName(verification.service_name);
             
@@ -167,14 +167,14 @@ class EnhancedDashboard {
     displayVerificationError() {
         const container = document.getElementById('active-verifications');
         if (container) {
-            container.textContent = `
+            container.innerHTML = `
                 <div class="error-state">
                     <p>Failed to load verifications</p>
                     <button class="btn-secondary" onclick="dashboard.loadActiveVerifications()">
                         Retry
                     </button>
                 </div>
-            `;  // XSS Fix: Use textContent instead of innerHTML
+            `;
         }
     }
 

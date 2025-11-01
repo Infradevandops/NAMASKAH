@@ -41,7 +41,7 @@ class SecurityUtils {
             .replace(/on\w+\s*=/gi, '')
             .replace(/data:/gi, '');
         
-        element.textContent = sanitized;  // XSS Fix: Use textContent instead of innerHTML
+        element.innerHTML = sanitized;
     }
 
     // Validate and sanitize service names
