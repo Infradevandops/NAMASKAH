@@ -1,7 +1,7 @@
 """Logging middleware for request/response tracking and performance metrics."""
 import time
 import json
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
@@ -255,7 +255,7 @@ class PerformanceMetricsMiddleware(BaseHTTPMiddleware):
         
         return response
     
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self):
         """Get current performance metrics."""
         return self.metrics.copy()
     
