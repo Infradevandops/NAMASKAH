@@ -473,6 +473,10 @@
                 if (response.ok) {
                     const verification = await response.json();
                     activeVerifications.push(verification);
+                    
+                    // Connect WebSocket for real-time updates
+                    connectWebSocket(verification.id);
+                    
                     renderVerifications();
                     showSection('active');
                     loadUserBalance(); // Refresh balance
@@ -589,7 +593,36 @@
             document.getElementById('success-rate').textContent = `${successRate}%`;
         }
         
-        // Start polling for updates
+        // WebSocket connection for real-time updates
+        function connectWebSocket(verificationId) {
+            const ws = new WebSocket(`wss://namaskahsms.onrender.com/ws/verification/${verificationId}`);
+            
+            ws.onmessage = function(event) {
+                const update = JSON.parse(event.data);
+                updateVerificationStatus(verificationId, update);
+            };
+            
+            ws.onerror = function() {
+                // Fallback to polling if WebSocket fails
+                setTimeout(() => refreshMessages(verificationId), 5000);
+            };
+            
+            return ws;
+        }
+        
+        // Update verification status from WebSocket
+        function updateVerificationStatus(verificationId, update) {
+            const verification = activeVerifications.find(v => v.id === verificationId);
+            if (verification) {
+                verification.status = update.status;
+                if (update.messages) {
+                    displayMessages(verificationId, update.messages);
+                }
+                renderVerifications();
+            }
+        }
+        
+        // Start polling for updates (fallback)
         function startPolling() {
             pollInterval = setInterval(() => {
                 activeVerifications.forEach(verification => {
@@ -597,7 +630,7 @@
                         refreshMessages(verification.id);
                     }
                 });
-            }, 5000); // Poll every 5 seconds
+            }, 10000); // Poll every 10 seconds as fallback
         }
         
         // Show section

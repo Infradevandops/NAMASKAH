@@ -77,6 +77,10 @@ async def create_verification(
     db.commit()
     db.refresh(verification)
     
+    # Start SMS polling
+    from app.services.sms_polling_service import polling_service
+    await polling_service.start_polling(verification.id)
+    
     return {
         "id": verification.id,
         "service_name": verification.service_name,
