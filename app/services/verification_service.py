@@ -1,10 +1,8 @@
 """SMS verification service using TextVerified API."""
-import asyncio
 from typing import Dict, Any, Optional
 from sqlalchemy.orm import Session
 from app.models.verification import Verification
 from app.services.textverified_service import TextVerifiedService
-from app.core.database import get_db
 
 class VerificationService:
     def __init__(self):

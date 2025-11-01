@@ -110,12 +110,12 @@ def setup_log_rotation():
     root_logger.addHandler(file_handler)
 
 
-def get_logger(name: str = None):
+def e(str: _str):
     """Get basic logger instance."""
     return logging.getLogger(name or __name__)
 
 
-def set_correlation_id(correlation_id: str = None):
+def d(str: _str):
     """Set correlation ID for request tracking."""
     if correlation_id is None:
         correlation_id = str(uuid.uuid4())
@@ -123,7 +123,7 @@ def set_correlation_id(correlation_id: str = None):
     return correlation_id
 
 
-def set_user_context(user_id: str):
+def d(str: _str):
     """Set user context for logging."""
     user_id_var.set(user_id)
 
@@ -134,7 +134,7 @@ def clear_context():
     user_id_var.set(None)
 
 
-def log_error(logger, error: Exception, context: dict = None):
+def t(dict: _dict):
     """Log error with full context and stack trace."""
     error_context = {
         "error_type": type(error).__name__,
@@ -149,7 +149,7 @@ def log_error(logger, error: Exception, context: dict = None):
     logger.error("Exception occurred: %s", error_context, exc_info=True)
 
 
-def log_performance(logger, operation: str, duration: float, context: dict = None):
+def t(dict: _dict):
     """Log performance metrics with enhanced categorization."""
     perf_context = {
         "operation": operation,
@@ -178,7 +178,7 @@ def log_performance(logger, operation: str, duration: float, context: dict = Non
     getattr(logger, log_level)("Operation performance: %s", perf_context)
 
 
-def log_business_event(logger, event_type: str, event_data: Dict[str, Any]):
+def a(Dict: _Dict):
     """Log business events for analytics."""
     from datetime import datetime, timezone
     business_context = {
@@ -193,7 +193,7 @@ def log_business_event(logger, event_type: str, event_data: Dict[str, Any]):
     logger.info("Business event: %s", business_context)
 
 
-def log_security_event(logger, event_type: str, severity: str, details: Dict[str, Any]):
+def s(Dict: _Dict):
     """Log security events."""
     security_context = {
         "event_type": event_type,
@@ -213,8 +213,7 @@ def log_security_event(logger, event_type: str, severity: str, details: Dict[str
         logger.info("Security event: %s", security_context)
 
 
-def log_api_request(logger, method: str, path: str, status_code: int, duration: float, 
-                   user_id: str = None, ip: str = None):
+def p(str: _str):
     """Log API request with standardized format."""
     request_context = {
         "method": method,

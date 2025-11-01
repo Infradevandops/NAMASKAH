@@ -64,9 +64,15 @@ class PaymentError(NamaskahException):
 class InsufficientCreditsError(NamaskahException):
     """Insufficient credits error."""
     
-    def __init__(self, required: float, available: float):
-        message = f"Insufficient credits. Required: {required}, Available: {available}"
-        details = {"required": required, "available": available}
+    def __init__(self, required_or_message, available=None):
+        if available is not None:
+            # Called with (required, available)
+            message = f"Insufficient credits. Required: {required_or_message}, Available: {available}"
+            details = {"required": required_or_message, "available": available}
+        else:
+            # Called with just message
+            message = str(required_or_message)
+            details = {}
         super().__init__(message, "INSUFFICIENT_CREDITS", details)
 
 
