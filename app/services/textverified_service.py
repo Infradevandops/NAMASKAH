@@ -29,7 +29,7 @@ class TextVerifiedService:
             try:
                 response = await client.get(
                     f"{self.base_url}/Services",
-                    headers={"Authorization": f"Bearer {self.api_key}"},
+                    params={"bearer": self.api_key},
                     timeout=15
                 )
                 if response.status_code == 200:
