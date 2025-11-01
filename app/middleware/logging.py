@@ -1,7 +1,7 @@
 """Logging middleware for request/response tracking and performance metrics."""
 import time
 import json
-from typing import Dict, Optional, Any
+from typing import Dict, Optional
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
