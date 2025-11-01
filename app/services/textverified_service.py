@@ -6,7 +6,7 @@ from app.core.config import settings
 class TextVerifiedService:
     def __init__(self):
         self.api_key = settings.textverified_api_key
-        self.base_url = "https://www.textverified.com/api"
+        self.base_url = "https://api.textverified.com"  # Updated endpoint
         
     async def get_services(self) -> Dict[str, Any]:
         """Get available services from TextVerified."""
