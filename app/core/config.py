@@ -2,9 +2,14 @@
 from typing import Optional
 try:
     from pydantic_settings import BaseSettings
+except ImportError:
+    from pydantic import BaseSettings
+
+try:
     from pydantic import field_validator
 except ImportError:
-    from pydantic import BaseSettings, validator as field_validator
+    from pydantic import validator
+    field_validator = validator
 
 
 class Settings(BaseSettings):

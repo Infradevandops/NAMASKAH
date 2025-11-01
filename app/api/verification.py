@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user_id
-from app.services.verification_service import VerificationService
 from app.services.textverified_service import TextVerifiedService
 from app.models.user import User
 from app.models.verification import Verification, NumberRental
@@ -14,7 +13,7 @@ from app.schemas import (
     VerificationCreate, VerificationResponse,
     NumberRentalRequest, NumberRentalResponse, ExtendRentalRequest,
     RetryVerificationRequest, VerificationHistoryResponse,
-    SuccessResponse, 
+    SuccessResponse
 )
 from app.core.security_hardening import validate_and_sanitize_service_data
 from app.core.exceptions import InsufficientCreditsError, ExternalServiceError
@@ -59,7 +58,7 @@ async def create_verification(
         'country': getattr(verification_data, 'country', 'US')
     })
     
-    verification_service = VerificationService()
+    # Removed unused verification_service
     
     # Get user and check credits
     current_user = db.query(User).filter(User.id == user_id).first()
