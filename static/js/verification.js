@@ -148,7 +148,13 @@ async function createVerification() {
                 showNotification('🔒 Session expired. Please login again', 'error');
                 setTimeout(() => logout(), 2000);
             } else if (res.status === 503) {
-                showNotification(`⚠️ Service unavailable: ${service}. Try another service`, 'error');
+                if (data.detail && data.detail.includes('API key')) {
+                    showNotification('🔑 INVALID API KEY: TextVerified API key is missing or invalid. Contact admin to configure real API key.', 'error');
+                } else {
+                    showNotification(`⚠️ Service unavailable: ${service}. Try another service`, 'error');
+                }
+            } else if (res.status === 400 && data.detail && data.detail.includes('API key')) {
+                showNotification('🔑 CONFIGURATION ERROR: TextVerified API key is invalid. This is not a demo - real API key required.', 'error');
             } else {
                 showNotification(`❌ ${data.detail || 'Failed to create verification'}`, 'error');
             }

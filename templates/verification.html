@@ -88,6 +88,23 @@
         .step.completed .step-number { background: #28a745; color: white; }
         .step-label { font-size: 12px; text-align: center; }
         .hidden { display: none; }
+        .tier-badge {
+            padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;
+            margin-right: 5px;
+        }
+        .tier-premium { background: #ffd700; color: #333; }
+        .tier-standard { background: #007bff; color: white; }
+        .tier-economy { background: #28a745; color: white; }
+        .voice-badge {
+            padding: 2px 6px; border-radius: 10px; font-size: 10px;
+            background: #17a2b8; color: white;
+        }
+        .country-option {
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .country-details {
+            font-size: 11px; color: #666;
+        }
     </style>
 </head>
 <body>
@@ -123,15 +140,33 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="country">Country:</label>
-                        <select id="country">
-                            <option value="US">United States</option>
-                            <option value="UK">United Kingdom</option>
-                            <option value="CA">Canada</option>
-                            <option value="AU">Australia</option>
-                            <option value="DE">Germany</option>
-                            <option value="FR">France</option>
+                        <label for="countryFilter">Filter by Region:</label>
+                        <select id="countryFilter" onchange="filterCountries()">
+                            <option value="all">All Regions</option>
+                            <option value="popular">Popular Countries</option>
+                            <option value="North America">🇺🇸 North America</option>
+                            <option value="Europe">🇪🇺 Europe</option>
+                            <option value="Asia-Pacific">🌏 Asia-Pacific</option>
+                            <option value="Latin America">🌎 Latin America</option>
+                            <option value="Middle East & Africa">🌍 Middle East & Africa</option>
+                            <option value="CIS">🇷🇺 CIS</option>
                         </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="country">Select Country:</label>
+                        <select id="country">
+                            <option value="">Loading countries...</option>
+                        </select>
+                        <div id="countryInfo" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px; display: none;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <span id="countryTier" class="tier-badge"></span>
+                                    <span id="countryVoice" class="voice-badge"></span>
+                                </div>
+                                <div id="countryPrice" style="font-weight: bold;"></div>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="form-group">
@@ -226,11 +261,15 @@
         let selectedService = null;
         let pollingInterval = null;
         
-        // Load services on page load
+        // Load services and countries on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadServices();
+            loadCountries();
             loadBalance();
         });
+        
+        let allCountries = [];
+        let popularCountries = [];
         
         async function loadServices() {
             try {
@@ -291,6 +330,120 @@
             }
         }
         
+        async function loadCountries() {
+            try {
+                const [allResponse, popularResponse] = await Promise.all([
+                    fetch('/countries/'),
+                    fetch('/countries/popular')
+                ]);
+                
+                const allData = await allResponse.json();
+                const popularData = await popularResponse.json();
+                
+                if (allData.countries) {
+                    allCountries = allData.countries;
+                    popularCountries = popularData.countries || [];
+                    populateCountrySelect('popular'); // Start with popular countries
+                } else {
+                    showAlert('Failed to load countries', 'error');
+                }
+            } catch (error) {
+                showAlert('Error loading countries: ' + error.message, 'error');
+            }
+        }
+        
+        function populateCountrySelect(filter = 'all') {
+            const select = document.getElementById('country');
+            select.innerHTML = '<option value="">Select a country...</option>';
+            
+            let countries = [];
+            
+            if (filter === 'popular') {
+                countries = popularCountries;
+            } else if (filter === 'all') {
+                countries = allCountries;
+            } else {
+                countries = allCountries.filter(c => c.region === filter);
+            }
+            
+            // Sort by tier then name
+            countries.sort((a, b) => {
+                if (a.tier !== b.tier) {
+                    const tierOrder = {'Premium': 0, 'Standard': 1, 'Economy': 2};
+                    return tierOrder[a.tier] - tierOrder[b.tier];
+                }
+                return a.name.localeCompare(b.name);
+            });
+            
+            countries.forEach(country => {
+                const option = document.createElement('option');
+                option.value = country.code;
+                option.textContent = `${country.name} (${country.tier}${country.voice_supported ? ' + Voice' : ''})`;
+                option.dataset.country = JSON.stringify(country);
+                select.appendChild(option);
+            });
+        }
+        
+        function filterCountries() {
+            const filter = document.getElementById('countryFilter').value;
+            populateCountrySelect(filter);
+            document.getElementById('country').value = '';
+            hideCountryInfo();
+        }
+        
+        function showCountryInfo(country) {
+            const info = document.getElementById('countryInfo');
+            const tier = document.getElementById('countryTier');
+            const voice = document.getElementById('countryVoice');
+            const price = document.getElementById('countryPrice');
+            
+            tier.textContent = country.tier;
+            tier.className = `tier-badge tier-${country.tier.toLowerCase()}`;
+            
+            if (country.voice_supported) {
+                voice.textContent = 'Voice Available';
+                voice.style.display = 'inline';
+            } else {
+                voice.style.display = 'none';
+            }
+            
+            const basePrice = selectedService ? selectedService.price : 1.0;
+            const countryPrice = basePrice * country.price_multiplier;
+            price.textContent = `~$${countryPrice.toFixed(2)}`;
+            
+            info.style.display = 'block';
+        }
+        
+        function hideCountryInfo() {
+            document.getElementById('countryInfo').style.display = 'none';
+        }
+        
+        // Add country selection handler
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('country').addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                if (selectedOption.dataset.country) {
+                    const country = JSON.parse(selectedOption.dataset.country);
+                    showCountryInfo(country);
+                    
+                    // Update voice option availability
+                    const voiceRadio = document.querySelector('input[value="voice"]');
+                    const voiceLabel = voiceRadio.parentElement;
+                    
+                    if (country.voice_supported) {
+                        voiceRadio.disabled = false;
+                        voiceLabel.style.opacity = '1';
+                    } else {
+                        voiceRadio.disabled = true;
+                        voiceLabel.style.opacity = '0.5';
+                        document.querySelector('input[value="sms"]').checked = true;
+                    }
+                } else {
+                    hideCountryInfo();
+                }
+            });
+        });
+        
         async function getNumber() {
             if (!selectedService) {
                 showAlert('Please select a service first', 'error');
@@ -298,7 +451,22 @@
             }
             
             const country = document.getElementById('country').value;
+            if (!country) {
+                showAlert('Please select a country', 'error');
+                return;
+            }
+            
             const isVoice = document.querySelector('input[name="verifyType"]:checked').value === 'voice';
+            
+            // Check if voice is supported for selected country
+            const selectedOption = document.getElementById('country').options[document.getElementById('country').selectedIndex];
+            if (selectedOption.dataset.country) {
+                const countryData = JSON.parse(selectedOption.dataset.country);
+                if (isVoice && !countryData.voice_supported) {
+                    showAlert('Voice verification not available for this country', 'error');
+                    return;
+                }
+            }
             
             document.getElementById('getNumberBtn').disabled = true;
             document.getElementById('getNumberBtn').textContent = 'Getting number...';

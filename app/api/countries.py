@@ -8,41 +8,25 @@ router = APIRouter(prefix="/countries", tags=["Countries"])
 @router.get("/")
 async def get_available_countries() -> Dict[str, Any]:
     """Get all available countries with pricing and capabilities."""
-    textverified = TextVerifiedService()
-    
     try:
-        countries_data = await textverified.get_countries()
+        # Use comprehensive TextVerified country data from assessment
+        countries = get_textverified_countries()
         
-        if "error" in countries_data:
-            # Return comprehensive fallback data
-            return get_fallback_countries()
-            
-        # Enhance with voice support information
-        enhanced_countries = []
-        for country in countries_data.get("countries", []):
-            enhanced_country = {
-                **country,
-                "voice_supported": is_voice_supported(country["code"]),
-                "region": get_country_region(country["code"]),
-                "tier": get_pricing_tier(country["price_multiplier"])
-            }
-            enhanced_countries.append(enhanced_country)
-            
         return {
-            "countries": enhanced_countries,
-            "total_count": len(enhanced_countries),
-            "regions": get_regions_summary(enhanced_countries)
+            "countries": countries,
+            "total_count": len(countries),
+            "regions": get_regions_summary(countries)
         }
         
     except Exception as e:
-        return get_fallback_countries()
+        return {"error": f"Failed to fetch countries: {str(e)}", "countries": []}
 
 @router.get("/popular")
 async def get_popular_countries() -> Dict[str, Any]:
-    """Get most popular countries for verification."""
+    """Get most popular countries for verification (Phase 1 priority)."""
     popular_codes = [
-        "US", "GB", "DE", "CA", "AU", "FR", "NL", "JP", "SG", "CH",
-        "SE", "NO", "DK", "IT", "ES", "KR", "HK", "AE", "BR", "IN"
+        "US", "GB", "DE", "FR", "CA", "AU", "NL", "SE", "JP", "SG", 
+        "AE", "SA", "IN", "BR", "RU", "PL", "IT", "ES", "KR", "CH"
     ]
     
     all_countries = await get_available_countries()
@@ -51,8 +35,8 @@ async def get_popular_countries() -> Dict[str, Any]:
         if country["code"] in popular_codes
     ]
     
-    # Sort by popularity (price multiplier as proxy)
-    popular_countries.sort(key=lambda x: x["price_multiplier"], reverse=True)
+    # Sort by tier and multiplier
+    popular_countries.sort(key=lambda x: (x["tier"] == "Premium", x["price_multiplier"]), reverse=True)
     
     return {
         "countries": popular_countries,
@@ -61,7 +45,7 @@ async def get_popular_countries() -> Dict[str, Any]:
 
 @router.get("/regions")
 async def get_countries_by_region() -> Dict[str, Any]:
-    """Get countries organized by regions."""
+    """Get countries organized by regions with continent structure."""
     all_countries = await get_available_countries()
     
     regions = {}
@@ -71,9 +55,9 @@ async def get_countries_by_region() -> Dict[str, Any]:
             regions[region] = []
         regions[region].append(country)
     
-    # Sort countries within each region by name
+    # Sort countries within each region by tier then name
     for region in regions:
-        regions[region].sort(key=lambda x: x["name"])
+        regions[region].sort(key=lambda x: (x["tier"] != "Premium", x["name"]))
     
     return {
         "regions": regions,
@@ -113,44 +97,124 @@ def is_voice_supported(country_code: str) -> bool:
     }
     return country_code in voice_supported_countries
 
+def get_textverified_countries() -> List[Dict[str, Any]]:
+    """Get comprehensive TextVerified country data from assessment."""
+    countries = [
+        # North America (3 countries)
+        {"code": "US", "name": "United States", "price_multiplier": 1.0, "voice_supported": True, "region": "North America", "tier": "Standard"},
+        {"code": "CA", "name": "Canada", "price_multiplier": 1.1, "voice_supported": True, "region": "North America", "tier": "Standard"},
+        {"code": "MX", "name": "Mexico", "price_multiplier": 0.4, "voice_supported": False, "region": "North America", "tier": "Economy"},
+        
+        # Europe (29 countries)
+        {"code": "GB", "name": "United Kingdom", "price_multiplier": 1.0, "voice_supported": True, "region": "Europe", "tier": "Standard"},
+        {"code": "DE", "name": "Germany", "price_multiplier": 1.0, "voice_supported": True, "region": "Europe", "tier": "Standard"},
+        {"code": "FR", "name": "France", "price_multiplier": 1.0, "voice_supported": True, "region": "Europe", "tier": "Standard"},
+        {"code": "NL", "name": "Netherlands", "price_multiplier": 1.0, "voice_supported": True, "region": "Europe", "tier": "Standard"},
+        {"code": "CH", "name": "Switzerland", "price_multiplier": 1.8, "voice_supported": True, "region": "Europe", "tier": "Premium"},
+        {"code": "AT", "name": "Austria", "price_multiplier": 1.0, "voice_supported": True, "region": "Europe", "tier": "Standard"},
+        {"code": "BE", "name": "Belgium", "price_multiplier": 1.0, "voice_supported": True, "region": "Europe", "tier": "Standard"},
+        {"code": "IE", "name": "Ireland", "price_multiplier": 1.0, "voice_supported": True, "region": "Europe", "tier": "Standard"},
+        {"code": "LU", "name": "Luxembourg", "price_multiplier": 1.2, "voice_supported": True, "region": "Europe", "tier": "Premium"},
+        {"code": "SE", "name": "Sweden", "price_multiplier": 1.5, "voice_supported": True, "region": "Europe", "tier": "Premium"},
+        {"code": "NO", "name": "Norway", "price_multiplier": 1.6, "voice_supported": True, "region": "Europe", "tier": "Premium"},
+        {"code": "FI", "name": "Finland", "price_multiplier": 1.3, "voice_supported": True, "region": "Europe", "tier": "Premium"},
+        {"code": "DK", "name": "Denmark", "price_multiplier": 1.4, "voice_supported": True, "region": "Europe", "tier": "Premium"},
+        {"code": "IS", "name": "Iceland", "price_multiplier": 1.7, "voice_supported": True, "region": "Europe", "tier": "Premium"},
+        {"code": "IT", "name": "Italy", "price_multiplier": 0.9, "voice_supported": True, "region": "Europe", "tier": "Standard"},
+        {"code": "ES", "name": "Spain", "price_multiplier": 0.9, "voice_supported": True, "region": "Europe", "tier": "Standard"},
+        {"code": "PT", "name": "Portugal", "price_multiplier": 0.8, "voice_supported": True, "region": "Europe", "tier": "Standard"},
+        {"code": "MT", "name": "Malta", "price_multiplier": 0.9, "voice_supported": False, "region": "Europe", "tier": "Standard"},
+        {"code": "CY", "name": "Cyprus", "price_multiplier": 0.8, "voice_supported": False, "region": "Europe", "tier": "Standard"},
+        {"code": "PL", "name": "Poland", "price_multiplier": 0.6, "voice_supported": True, "region": "Europe", "tier": "Economy"},
+        {"code": "CZ", "name": "Czech Republic", "price_multiplier": 0.6, "voice_supported": True, "region": "Europe", "tier": "Economy"},
+        {"code": "HU", "name": "Hungary", "price_multiplier": 0.6, "voice_supported": True, "region": "Europe", "tier": "Economy"},
+        {"code": "RO", "name": "Romania", "price_multiplier": 0.5, "voice_supported": False, "region": "Europe", "tier": "Economy"},
+        {"code": "BG", "name": "Bulgaria", "price_multiplier": 0.5, "voice_supported": False, "region": "Europe", "tier": "Economy"},
+        {"code": "HR", "name": "Croatia", "price_multiplier": 0.6, "voice_supported": False, "region": "Europe", "tier": "Economy"},
+        {"code": "SI", "name": "Slovenia", "price_multiplier": 0.7, "voice_supported": False, "region": "Europe", "tier": "Economy"},
+        {"code": "SK", "name": "Slovakia", "price_multiplier": 0.6, "voice_supported": False, "region": "Europe", "tier": "Economy"},
+        {"code": "LT", "name": "Lithuania", "price_multiplier": 0.5, "voice_supported": False, "region": "Europe", "tier": "Economy"},
+        {"code": "LV", "name": "Latvia", "price_multiplier": 0.5, "voice_supported": False, "region": "Europe", "tier": "Economy"},
+        {"code": "EE", "name": "Estonia", "price_multiplier": 0.5, "voice_supported": False, "region": "Europe", "tier": "Economy"},
+        
+        # Asia-Pacific (16 countries)
+        {"code": "JP", "name": "Japan", "price_multiplier": 1.5, "voice_supported": True, "region": "Asia-Pacific", "tier": "Premium"},
+        {"code": "KR", "name": "South Korea", "price_multiplier": 1.2, "voice_supported": True, "region": "Asia-Pacific", "tier": "Premium"},
+        {"code": "SG", "name": "Singapore", "price_multiplier": 1.3, "voice_supported": True, "region": "Asia-Pacific", "tier": "Premium"},
+        {"code": "AU", "name": "Australia", "price_multiplier": 1.4, "voice_supported": True, "region": "Asia-Pacific", "tier": "Premium"},
+        {"code": "HK", "name": "Hong Kong", "price_multiplier": 1.0, "voice_supported": True, "region": "Asia-Pacific", "tier": "Standard"},
+        {"code": "TW", "name": "Taiwan", "price_multiplier": 0.8, "voice_supported": False, "region": "Asia-Pacific", "tier": "Standard"},
+        {"code": "MY", "name": "Malaysia", "price_multiplier": 0.5, "voice_supported": False, "region": "Asia-Pacific", "tier": "Economy"},
+        {"code": "TH", "name": "Thailand", "price_multiplier": 0.4, "voice_supported": False, "region": "Asia-Pacific", "tier": "Economy"},
+        {"code": "PH", "name": "Philippines", "price_multiplier": 0.3, "voice_supported": False, "region": "Asia-Pacific", "tier": "Economy"},
+        {"code": "ID", "name": "Indonesia", "price_multiplier": 0.3, "voice_supported": False, "region": "Asia-Pacific", "tier": "Economy"},
+        {"code": "VN", "name": "Vietnam", "price_multiplier": 0.3, "voice_supported": False, "region": "Asia-Pacific", "tier": "Economy"},
+        {"code": "IN", "name": "India", "price_multiplier": 0.2, "voice_supported": False, "region": "Asia-Pacific", "tier": "Economy"},
+        {"code": "BD", "name": "Bangladesh", "price_multiplier": 0.2, "voice_supported": False, "region": "Asia-Pacific", "tier": "Economy"},
+        {"code": "PK", "name": "Pakistan", "price_multiplier": 0.2, "voice_supported": False, "region": "Asia-Pacific", "tier": "Economy"},
+        {"code": "LK", "name": "Sri Lanka", "price_multiplier": 0.2, "voice_supported": False, "region": "Asia-Pacific", "tier": "Economy"},
+        {"code": "NP", "name": "Nepal", "price_multiplier": 0.2, "voice_supported": False, "region": "Asia-Pacific", "tier": "Economy"},
+        {"code": "CN", "name": "China", "price_multiplier": 0.8, "voice_supported": False, "region": "Asia-Pacific", "tier": "Standard"},
+        
+        # Latin America (11 countries)
+        {"code": "BR", "name": "Brazil", "price_multiplier": 0.4, "voice_supported": True, "region": "Latin America", "tier": "Economy"},
+        {"code": "AR", "name": "Argentina", "price_multiplier": 0.3, "voice_supported": False, "region": "Latin America", "tier": "Economy"},
+        {"code": "CO", "name": "Colombia", "price_multiplier": 0.3, "voice_supported": False, "region": "Latin America", "tier": "Economy"},
+        {"code": "PE", "name": "Peru", "price_multiplier": 0.3, "voice_supported": False, "region": "Latin America", "tier": "Economy"},
+        {"code": "CL", "name": "Chile", "price_multiplier": 0.4, "voice_supported": False, "region": "Latin America", "tier": "Economy"},
+        {"code": "UY", "name": "Uruguay", "price_multiplier": 0.4, "voice_supported": False, "region": "Latin America", "tier": "Economy"},
+        {"code": "PY", "name": "Paraguay", "price_multiplier": 0.3, "voice_supported": False, "region": "Latin America", "tier": "Economy"},
+        {"code": "BO", "name": "Bolivia", "price_multiplier": 0.3, "voice_supported": False, "region": "Latin America", "tier": "Economy"},
+        {"code": "EC", "name": "Ecuador", "price_multiplier": 0.3, "voice_supported": False, "region": "Latin America", "tier": "Economy"},
+        {"code": "VE", "name": "Venezuela", "price_multiplier": 0.3, "voice_supported": False, "region": "Latin America", "tier": "Economy"},
+        
+        # Middle East & Africa (11 countries)
+        {"code": "ZA", "name": "South Africa", "price_multiplier": 0.5, "voice_supported": True, "region": "Middle East & Africa", "tier": "Economy"},
+        {"code": "NG", "name": "Nigeria", "price_multiplier": 0.3, "voice_supported": False, "region": "Middle East & Africa", "tier": "Economy"},
+        {"code": "KE", "name": "Kenya", "price_multiplier": 0.3, "voice_supported": False, "region": "Middle East & Africa", "tier": "Economy"},
+        {"code": "GH", "name": "Ghana", "price_multiplier": 0.3, "voice_supported": False, "region": "Middle East & Africa", "tier": "Economy"},
+        {"code": "EG", "name": "Egypt", "price_multiplier": 0.4, "voice_supported": False, "region": "Middle East & Africa", "tier": "Economy"},
+        {"code": "MA", "name": "Morocco", "price_multiplier": 0.4, "voice_supported": False, "region": "Middle East & Africa", "tier": "Economy"},
+        {"code": "TN", "name": "Tunisia", "price_multiplier": 0.4, "voice_supported": False, "region": "Middle East & Africa", "tier": "Economy"},
+        {"code": "DZ", "name": "Algeria", "price_multiplier": 0.4, "voice_supported": False, "region": "Middle East & Africa", "tier": "Economy"},
+        {"code": "AE", "name": "United Arab Emirates", "price_multiplier": 0.8, "voice_supported": True, "region": "Middle East & Africa", "tier": "Standard"},
+        {"code": "SA", "name": "Saudi Arabia", "price_multiplier": 0.6, "voice_supported": True, "region": "Middle East & Africa", "tier": "Economy"},
+        {"code": "IL", "name": "Israel", "price_multiplier": 1.0, "voice_supported": True, "region": "Middle East & Africa", "tier": "Standard"},
+        {"code": "QA", "name": "Qatar", "price_multiplier": 0.8, "voice_supported": False, "region": "Middle East & Africa", "tier": "Standard"},
+        {"code": "KW", "name": "Kuwait", "price_multiplier": 0.7, "voice_supported": False, "region": "Middle East & Africa", "tier": "Economy"},
+        {"code": "BH", "name": "Bahrain", "price_multiplier": 0.7, "voice_supported": False, "region": "Middle East & Africa", "tier": "Economy"},
+        {"code": "OM", "name": "Oman", "price_multiplier": 0.6, "voice_supported": False, "region": "Middle East & Africa", "tier": "Economy"},
+        {"code": "JO", "name": "Jordan", "price_multiplier": 0.5, "voice_supported": False, "region": "Middle East & Africa", "tier": "Economy"},
+        {"code": "LB", "name": "Lebanon", "price_multiplier": 0.5, "voice_supported": False, "region": "Middle East & Africa", "tier": "Economy"},
+        {"code": "IQ", "name": "Iraq", "price_multiplier": 0.4, "voice_supported": False, "region": "Middle East & Africa", "tier": "Economy"},
+        
+        # CIS (5 countries)
+        {"code": "RU", "name": "Russia", "price_multiplier": 0.5, "voice_supported": True, "region": "CIS", "tier": "Economy"},
+        {"code": "UA", "name": "Ukraine", "price_multiplier": 0.4, "voice_supported": False, "region": "CIS", "tier": "Economy"},
+        {"code": "BY", "name": "Belarus", "price_multiplier": 0.4, "voice_supported": False, "region": "CIS", "tier": "Economy"},
+        {"code": "KZ", "name": "Kazakhstan", "price_multiplier": 0.4, "voice_supported": False, "region": "CIS", "tier": "Economy"},
+        {"code": "UZ", "name": "Uzbekistan", "price_multiplier": 0.3, "voice_supported": False, "region": "CIS", "tier": "Economy"},
+        {"code": "TR", "name": "Turkey", "price_multiplier": 0.5, "voice_supported": True, "region": "CIS", "tier": "Economy"},
+    ]
+    
+    return countries
+
 def get_country_region(country_code: str) -> str:
     """Get region for country code."""
-    regions = {
-        "North America": ["US", "CA", "MX"],
-        "Europe": [
-            "GB", "DE", "FR", "NL", "SE", "NO", "DK", "FI", "CH", "AT", "BE",
-            "IT", "ES", "PT", "IE", "PL", "CZ", "HU", "RO", "BG", "HR", "SI",
-            "SK", "LT", "LV", "EE", "IS", "LU", "MT", "CY"
-        ],
-        "Asia-Pacific": [
-            "JP", "KR", "SG", "HK", "TW", "MY", "TH", "PH", "ID", "VN",
-            "IN", "BD", "PK", "LK", "NP", "CN", "AU"
-        ],
-        "Latin America": [
-            "BR", "AR", "CO", "PE", "CL", "UY", "PY", "BO", "EC", "VE"
-        ],
-        "Middle East & Africa": [
-            "AE", "SA", "QA", "KW", "BH", "OM", "JO", "LB", "IQ", "IL", "TR",
-            "ZA", "NG", "KE", "GH", "EG", "MA", "TN", "DZ"
-        ],
-        "CIS": ["RU", "UA", "BY", "KZ", "UZ"]
-    }
-    
-    for region, codes in regions.items():
-        if country_code in codes:
-            return region
+    countries = get_textverified_countries()
+    for country in countries:
+        if country["code"] == country_code:
+            return country["region"]
     return "Other"
 
 def get_pricing_tier(multiplier: float) -> str:
     """Get pricing tier based on multiplier."""
-    if multiplier >= 1.5:
+    if multiplier >= 1.2:
         return "Premium"
-    elif multiplier >= 1.0:
+    elif multiplier >= 0.8:
         return "Standard"
-    elif multiplier >= 0.5:
-        return "Economy"
     else:
-        return "Budget"
+        return "Economy"
 
 def get_regions_summary(countries: List[Dict]) -> Dict[str, int]:
     """Get summary of countries per region."""
@@ -188,32 +252,3 @@ def get_success_rate(country_code: str) -> float:
     else:
         return 95.0
 
-def get_fallback_countries() -> Dict[str, Any]:
-    """Comprehensive fallback country data."""
-    return {
-        "countries": [
-            {"code": "US", "name": "United States", "price_multiplier": 1.0, "voice_supported": True, "region": "North America", "tier": "Standard"},
-            {"code": "GB", "name": "United Kingdom", "price_multiplier": 1.2, "voice_supported": True, "region": "Europe", "tier": "Standard"},
-            {"code": "DE", "name": "Germany", "price_multiplier": 1.3, "voice_supported": True, "region": "Europe", "tier": "Standard"},
-            {"code": "CA", "name": "Canada", "price_multiplier": 1.1, "voice_supported": True, "region": "North America", "tier": "Standard"},
-            {"code": "AU", "name": "Australia", "price_multiplier": 1.4, "voice_supported": True, "region": "Asia-Pacific", "tier": "Standard"},
-            {"code": "FR", "name": "France", "price_multiplier": 1.3, "voice_supported": True, "region": "Europe", "tier": "Standard"},
-            {"code": "NL", "name": "Netherlands", "price_multiplier": 1.2, "voice_supported": True, "region": "Europe", "tier": "Standard"},
-            {"code": "CH", "name": "Switzerland", "price_multiplier": 1.8, "voice_supported": True, "region": "Europe", "tier": "Premium"},
-            {"code": "JP", "name": "Japan", "price_multiplier": 1.5, "voice_supported": True, "region": "Asia-Pacific", "tier": "Premium"},
-            {"code": "SG", "name": "Singapore", "price_multiplier": 1.3, "voice_supported": True, "region": "Asia-Pacific", "tier": "Standard"},
-            {"code": "IN", "name": "India", "price_multiplier": 0.2, "voice_supported": False, "region": "Asia-Pacific", "tier": "Budget"},
-            {"code": "BR", "name": "Brazil", "price_multiplier": 0.4, "voice_supported": True, "region": "Latin America", "tier": "Economy"},
-            {"code": "RU", "name": "Russia", "price_multiplier": 0.3, "voice_supported": True, "region": "CIS", "tier": "Economy"},
-            {"code": "AE", "name": "United Arab Emirates", "price_multiplier": 0.8, "voice_supported": True, "region": "Middle East & Africa", "tier": "Economy"},
-            {"code": "NG", "name": "Nigeria", "price_multiplier": 0.2, "voice_supported": False, "region": "Middle East & Africa", "tier": "Budget"}
-        ],
-        "total_count": 70,
-        "regions": {
-            "North America": 3,
-            "Europe": 29,
-            "Asia-Pacific": 16,
-            "Latin America": 11,
-            "Middle East & Africa": 11
-        }
-    }

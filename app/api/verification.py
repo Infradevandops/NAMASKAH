@@ -28,19 +28,10 @@ async def get_available_services():
         textverified = TextVerifiedService()
         result = await textverified.get_services()
         return result
-    except ExternalServiceError as e:
-        # Return mock services if there's any error
+    except Exception as e:
         return {
-            "services": [
-                {"id": 1, "name": "telegram", "price": 0.50},
-                {"id": 2, "name": "whatsapp", "price": 0.60},
-                {"id": 3, "name": "discord", "price": 0.45},
-                {"id": 4, "name": "instagram", "price": 0.55},
-                {"id": 5, "name": "twitter", "price": 0.50},
-                {"id": 6, "name": "google", "price": 0.65}
-            ],
-            "note": "Mock services - API configuration needed",
-            "error": str(e)
+            "error": f"Failed to fetch services: {str(e)}",
+            "services": []
         }
 
 
@@ -154,7 +145,7 @@ async def get_verification_status(
             
             # Send success notification
             return VerificationResponse.from_orm(verification)
-    except ExternalServiceError:
+    except Exception:
         pass  # Continue with current status if API call fails
     
     return VerificationResponse.from_orm(verification)
@@ -189,7 +180,7 @@ async def get_verification_messages(
         else:
             return {"messages": [], "status": verification.status}
             
-    except ExternalServiceError as e:
+    except Exception as e:
         return {"messages": [], "status": verification.status, "error": str(e)}
 
 
@@ -234,7 +225,7 @@ async def get_verification_voice(
         else:
             return {"messages": [], "status": verification.status}
             
-    except ExternalServiceError as e:
+    except Exception as e:
         return {"messages": [], "status": verification.status, "error": str(e)}
 
 
@@ -304,8 +295,8 @@ async def retry_verification(
         db.refresh(verification)
         return VerificationResponse.from_orm(verification)
         
-    except ExternalServiceError as e:
-        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"TextVerified service error: {str(e)}")
 
 
 @router.delete("/{verification_id}", response_model=SuccessResponse)
@@ -330,7 +321,7 @@ async def cancel_verification(
     try:
         textverified_service = TextVerifiedService()
         await textverified_service.cancel_verification(verification_id)
-    except ExternalServiceError:
+    except Exception:
         pass  # Continue with local cancellation even if API call fails
     
     # Refund credits

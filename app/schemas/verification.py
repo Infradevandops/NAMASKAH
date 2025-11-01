@@ -7,6 +7,7 @@ from pydantic import BaseModel, validator, Field
 class VerificationCreate(BaseModel):
     """Schema for creating SMS/voice verification."""
     service_name: str = Field(..., min_length=1, description="Service name (e.g., telegram, whatsapp)")
+    country: str = Field(default="US", description="Country code for verification")
     capability: str = Field(default="sms", description="Verification type: sms or voice")
     area_code: Optional[str] = Field(None, description="Preferred area code (+$4)")
     carrier: Optional[str] = Field(None, description="Preferred carrier (+$6)")
@@ -16,6 +17,12 @@ class VerificationCreate(BaseModel):
         if v not in ['sms', 'voice']:
             raise ValueError('Capability must be sms or voice')
         return v
+    
+    @validator('country')
+    def validate_country(cls, v):
+        if not v or len(v) != 2:
+            raise ValueError('Country must be a 2-letter code')
+        return v.upper()
     
     @validator('service_name')
     def validate_service_name(cls, v):
@@ -28,6 +35,7 @@ class VerificationCreate(BaseModel):
         "json_schema_extra": {
             "example": {
                 "service_name": "telegram",
+                "country": "US",
                 "capability": "sms",
                 "area_code": "212",
                 "carrier": "verizon"

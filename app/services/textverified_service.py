@@ -14,16 +14,14 @@ class TextVerifiedService:
     def __init__(self):
         self.api_key = settings.textverified_api_key
         self.base_url = "https://www.textverified.com/api"
-        self.use_mock = not self.api_key or self.api_key.startswith('tv_test') or len(self.api_key) < 20
         self.timeout = 30
         self.max_retries = 3
         
+        if not self.api_key or self.api_key.startswith('tv_test'):
+            raise ValueError("Valid TextVerified API key required. Current key is invalid or missing.")
+        
     async def _make_request(self, endpoint: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
         """Make authenticated request to TextVerified API with retry logic."""
-        if self.use_mock:
-            logger.info(f"Using mock response for {endpoint}")
-            return await self._mock_response(endpoint, params)
-            
         request_params = {"bearer": self.api_key}
         if params:
             request_params.update(params)
@@ -40,14 +38,17 @@ class TextVerifiedService:
                         data = response.json()
                         logger.info(f"TextVerified API success: {endpoint}")
                         return data
+                    elif response.status_code == 401:
+                        logger.error("Invalid API key")
+                        return {"error": "Invalid TextVerified API key"}
                     elif response.status_code == 429:  # Rate limited
                         wait_time = 2 ** attempt
                         logger.warning(f"Rate limited, waiting {wait_time}s")
                         await asyncio.sleep(wait_time)
                         continue
                     else:
-                        logger.error(f"TextVerified API error: {response.status_code}")
-                        break
+                        logger.error(f"TextVerified API error: {response.status_code} - {response.text}")
+                        return {"error": f"API error: {response.status_code}"}
                         
             except httpx.TimeoutException:
                 logger.warning(f"Request timeout (attempt {attempt + 1}/{self.max_retries})")
@@ -55,208 +56,19 @@ class TextVerifiedService:
                     await asyncio.sleep(1)
             except Exception as e:
                 logger.error(f"Request failed: {str(e)}")
-                break
+                return {"error": f"Request failed: {str(e)}"}
                 
-        logger.info(f"Falling back to mock for {endpoint}")
-        return await self._mock_response(endpoint, params)
+        return {"error": "Request failed after all retries"}
     
-    async def _mock_response(self, endpoint: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
-        """Generate mock responses for development and fallback."""
-        params = params or {}
-        
-        if endpoint == "GetBalance":
-            return {"balance": 25.50, "currency": "USD"}
-        
-        elif endpoint == "Services":
-            return {
-                "services": [
-                    {"id": 1, "name": "telegram", "price": 0.50, "voice_supported": True},
-                    {"id": 2, "name": "whatsapp", "price": 0.60, "voice_supported": False},
-                    {"id": 3, "name": "discord", "price": 0.45, "voice_supported": True},
-                    {"id": 4, "name": "instagram", "price": 0.55, "voice_supported": False},
-                    {"id": 5, "name": "twitter", "price": 0.50, "voice_supported": True},
-                    {"id": 6, "name": "google", "price": 0.65, "voice_supported": True},
-                    {"id": 7, "name": "facebook", "price": 0.55, "voice_supported": False},
-                    {"id": 8, "name": "microsoft", "price": 0.60, "voice_supported": True},
-                    {"id": 9, "name": "amazon", "price": 0.55, "voice_supported": True},
-                    {"id": 10, "name": "netflix", "price": 0.70, "voice_supported": False},
-                    {"id": 11, "name": "uber", "price": 0.45, "voice_supported": True},
-                    {"id": 12, "name": "airbnb", "price": 0.50, "voice_supported": False},
-                    {"id": 13, "name": "paypal", "price": 0.80, "voice_supported": True},
-                    {"id": 14, "name": "coinbase", "price": 0.90, "voice_supported": True},
-                    {"id": 15, "name": "binance", "price": 0.85, "voice_supported": True}
-                ]
-            }
-        
-        elif endpoint == "GetCountries":
-            return {
-                "countries": [
-                    {"code": "US", "name": "United States", "price_multiplier": 1.0},
-                    {"code": "CA", "name": "Canada", "price_multiplier": 1.1},
-                    {"code": "GB", "name": "United Kingdom", "price_multiplier": 1.2},
-                    {"code": "DE", "name": "Germany", "price_multiplier": 1.3},
-                    {"code": "FR", "name": "France", "price_multiplier": 1.3},
-                    {"code": "AU", "name": "Australia", "price_multiplier": 1.4},
-                    {"code": "NL", "name": "Netherlands", "price_multiplier": 1.2},
-                    {"code": "SE", "name": "Sweden", "price_multiplier": 1.5},
-                    {"code": "NO", "name": "Norway", "price_multiplier": 1.6},
-                    {"code": "FI", "name": "Finland", "price_multiplier": 1.4},
-                    {"code": "DK", "name": "Denmark", "price_multiplier": 1.5},
-                    {"code": "CH", "name": "Switzerland", "price_multiplier": 1.8},
-                    {"code": "AT", "name": "Austria", "price_multiplier": 1.3},
-                    {"code": "BE", "name": "Belgium", "price_multiplier": 1.2},
-                    {"code": "IT", "name": "Italy", "price_multiplier": 1.1},
-                    {"code": "ES", "name": "Spain", "price_multiplier": 1.0},
-                    {"code": "PT", "name": "Portugal", "price_multiplier": 0.9},
-                    {"code": "PL", "name": "Poland", "price_multiplier": 0.8},
-                    {"code": "CZ", "name": "Czech Republic", "price_multiplier": 0.7},
-                    {"code": "HU", "name": "Hungary", "price_multiplier": 0.7},
-                    {"code": "RO", "name": "Romania", "price_multiplier": 0.6},
-                    {"code": "BG", "name": "Bulgaria", "price_multiplier": 0.5},
-                    {"code": "HR", "name": "Croatia", "price_multiplier": 0.8},
-                    {"code": "SI", "name": "Slovenia", "price_multiplier": 0.9},
-                    {"code": "SK", "name": "Slovakia", "price_multiplier": 0.7},
-                    {"code": "LT", "name": "Lithuania", "price_multiplier": 0.6},
-                    {"code": "LV", "name": "Latvia", "price_multiplier": 0.6},
-                    {"code": "EE", "name": "Estonia", "price_multiplier": 0.7},
-                    {"code": "IE", "name": "Ireland", "price_multiplier": 1.3},
-                    {"code": "IS", "name": "Iceland", "price_multiplier": 1.7},
-                    {"code": "LU", "name": "Luxembourg", "price_multiplier": 1.5},
-                    {"code": "MT", "name": "Malta", "price_multiplier": 1.0},
-                    {"code": "CY", "name": "Cyprus", "price_multiplier": 0.9},
-                    {"code": "JP", "name": "Japan", "price_multiplier": 1.5},
-                    {"code": "KR", "name": "South Korea", "price_multiplier": 1.2},
-                    {"code": "SG", "name": "Singapore", "price_multiplier": 1.3},
-                    {"code": "HK", "name": "Hong Kong", "price_multiplier": 1.1},
-                    {"code": "TW", "name": "Taiwan", "price_multiplier": 1.0},
-                    {"code": "MY", "name": "Malaysia", "price_multiplier": 0.6},
-                    {"code": "TH", "name": "Thailand", "price_multiplier": 0.5},
-                    {"code": "PH", "name": "Philippines", "price_multiplier": 0.4},
-                    {"code": "ID", "name": "Indonesia", "price_multiplier": 0.3},
-                    {"code": "VN", "name": "Vietnam", "price_multiplier": 0.3},
-                    {"code": "IN", "name": "India", "price_multiplier": 0.2},
-                    {"code": "BD", "name": "Bangladesh", "price_multiplier": 0.2},
-                    {"code": "PK", "name": "Pakistan", "price_multiplier": 0.2},
-                    {"code": "LK", "name": "Sri Lanka", "price_multiplier": 0.3},
-                    {"code": "NP", "name": "Nepal", "price_multiplier": 0.2},
-                    {"code": "CN", "name": "China", "price_multiplier": 0.8},
-                    {"code": "BR", "name": "Brazil", "price_multiplier": 0.4},
-                    {"code": "AR", "name": "Argentina", "price_multiplier": 0.3},
-                    {"code": "MX", "name": "Mexico", "price_multiplier": 0.4},
-                    {"code": "CO", "name": "Colombia", "price_multiplier": 0.3},
-                    {"code": "PE", "name": "Peru", "price_multiplier": 0.3},
-                    {"code": "CL", "name": "Chile", "price_multiplier": 0.5},
-                    {"code": "UY", "name": "Uruguay", "price_multiplier": 0.4},
-                    {"code": "PY", "name": "Paraguay", "price_multiplier": 0.3},
-                    {"code": "BO", "name": "Bolivia", "price_multiplier": 0.2},
-                    {"code": "EC", "name": "Ecuador", "price_multiplier": 0.3},
-                    {"code": "VE", "name": "Venezuela", "price_multiplier": 0.2},
-                    {"code": "ZA", "name": "South Africa", "price_multiplier": 0.4},
-                    {"code": "NG", "name": "Nigeria", "price_multiplier": 0.2},
-                    {"code": "KE", "name": "Kenya", "price_multiplier": 0.3},
-                    {"code": "GH", "name": "Ghana", "price_multiplier": 0.3},
-                    {"code": "EG", "name": "Egypt", "price_multiplier": 0.2},
-                    {"code": "MA", "name": "Morocco", "price_multiplier": 0.3},
-                    {"code": "TN", "name": "Tunisia", "price_multiplier": 0.3},
-                    {"code": "DZ", "name": "Algeria", "price_multiplier": 0.2},
-                    {"code": "RU", "name": "Russia", "price_multiplier": 0.3},
-                    {"code": "UA", "name": "Ukraine", "price_multiplier": 0.2},
-                    {"code": "BY", "name": "Belarus", "price_multiplier": 0.2},
-                    {"code": "KZ", "name": "Kazakhstan", "price_multiplier": 0.2},
-                    {"code": "UZ", "name": "Uzbekistan", "price_multiplier": 0.2},
-                    {"code": "TR", "name": "Turkey", "price_multiplier": 0.3},
-                    {"code": "IL", "name": "Israel", "price_multiplier": 1.0},
-                    {"code": "AE", "name": "United Arab Emirates", "price_multiplier": 0.8},
-                    {"code": "SA", "name": "Saudi Arabia", "price_multiplier": 0.6},
-                    {"code": "QA", "name": "Qatar", "price_multiplier": 0.9},
-                    {"code": "KW", "name": "Kuwait", "price_multiplier": 0.7},
-                    {"code": "BH", "name": "Bahrain", "price_multiplier": 0.8},
-                    {"code": "OM", "name": "Oman", "price_multiplier": 0.6},
-                    {"code": "JO", "name": "Jordan", "price_multiplier": 0.4},
-                    {"code": "LB", "name": "Lebanon", "price_multiplier": 0.3},
-                    {"code": "IQ", "name": "Iraq", "price_multiplier": 0.2}
-                ]
-            }
-        
-        elif endpoint == "GetNumber":
-            country = params.get("country", "US")
-            service_id = params.get("service_id", 1)
-            voice = params.get("voice", False)
-            
-            # Generate realistic phone number based on country
-            if country == "US":
-                number = f"+1{random.randint(200, 999)}{random.randint(200, 999)}{random.randint(1000, 9999)}"
-            elif country == "GB":
-                number = f"+44{random.randint(7000, 7999)}{random.randint(100000, 999999)}"
-            elif country == "DE":
-                number = f"+49{random.randint(150, 179)}{random.randint(1000000, 9999999)}"
-            elif country == "CA":
-                number = f"+1{random.randint(200, 999)}{random.randint(200, 999)}{random.randint(1000, 9999)}"
-            else:
-                number = f"+{random.randint(1, 999)}{random.randint(1000000000, 9999999999)}"
-            
-            number_id = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
-            
-            return {
-                "id": number_id,
-                "number": number,
-                "service_id": service_id,
-                "country": country,
-                "voice": voice,
-                "expires_at": "2024-12-01T12:00:00Z"
-            }
-        
-        elif endpoint == "GetSMS":
-            number_id = params.get("number_id", "")
-            # Simulate SMS reception with random delay
-            if random.random() < 0.7:  # 70% chance of having SMS
-                code = ''.join(random.choices(string.digits, k=6))
-                return {
-                    "sms": code,
-                    "received_at": "2024-12-01T12:05:00Z",
-                    "number_id": number_id
-                }
-            else:
-                return {"message": "No SMS received yet"}
-        
-        elif endpoint == "GetVoice":
-            number_id = params.get("number_id", "")
-            # Simulate voice reception with more realistic data
-            if random.random() < 0.6:  # 60% chance of having voice
-                code = ''.join(random.choices(string.digits, k=6))
-                return {
-                    "voice": code,
-                    "transcription": f"Your verification code is {code}. I repeat, {code}.",
-                    "call_duration": random.randint(15, 45),
-                    "call_status": "completed",
-                    "received_at": "2024-12-01T12:03:00Z",
-                    "number_id": number_id,
-                    "audio_url": f"https://example.com/audio/{number_id}.mp3"
-                }
-            else:
-                return {"message": "No voice call received yet"}
-        
-        elif endpoint == "CancelNumber":
-            return {"success": True, "message": "Number cancelled successfully"}
-        
-        else:
-            return {"error": f"Unknown endpoint: {endpoint}"}
+
     
     async def get_services(self) -> Dict[str, Any]:
         """Get available services from TextVerified."""
-        if not self.use_mock:
-            result = await textverified_client.make_request("Services")
-            if "error" not in result:
-                return result
-        return await self._mock_response("Services", {})
+        return await textverified_client.make_request("Services")
     
     async def get_balance(self) -> Dict[str, Any]:
         """Get account balance."""
-        if not self.use_mock:
-            result = await textverified_client.make_request("GetBalance")
-            if "error" not in result:
-                return result
-        return await self._mock_response("GetBalance", {})
+        return await textverified_client.make_request("GetBalance")
     
     async def get_number(self, service_id: int, country: str = "US", voice: bool = False) -> Dict[str, Any]:
         """Get a phone number for verification."""
@@ -267,48 +79,49 @@ class TextVerifiedService:
         if voice:
             params["voice"] = "1"
             
-        if not self.use_mock:
-            result = await textverified_client.make_request("GetNumber", params)
-            if "error" not in result:
-                result["capability"] = "voice" if voice else "sms"
-                return result
-                
-        result = await self._mock_response("GetNumber", params)
+        result = await textverified_client.make_request("GetNumber", params)
         if "error" not in result:
             result["capability"] = "voice" if voice else "sms"
         return result
     
     async def get_sms(self, number_id: str) -> Dict[str, Any]:
         """Get SMS messages for a number."""
-        if not self.use_mock:
-            result = await textverified_client.make_request("GetSMS", {"number_id": number_id})
-            if "error" not in result:
-                return result
-        return await self._mock_response("GetSMS", {"number_id": number_id})
+        return await textverified_client.make_request("GetSMS", {"number_id": number_id})
     
     async def get_voice(self, number_id: str) -> Dict[str, Any]:
         """Get voice verification for a number."""
-        if not self.use_mock:
-            result = await textverified_client.make_request("GetVoice", {"number_id": number_id})
-            if "error" not in result:
-                return result
-        return await self._mock_response("GetVoice", {"number_id": number_id})
+        return await textverified_client.make_request("GetVoice", {"number_id": number_id})
     
     async def cancel_number(self, number_id: str) -> Dict[str, Any]:
         """Cancel a number if no SMS received."""
-        if not self.use_mock:
-            result = await textverified_client.make_request("CancelNumber", {"number_id": number_id})
-            if "error" not in result:
-                return result
-        return await self._mock_response("CancelNumber", {"number_id": number_id})
+        return await textverified_client.make_request("CancelNumber", {"number_id": number_id})
+    
+    async def cancel_verification(self, verification_id: str) -> Dict[str, Any]:
+        """Cancel verification."""
+        return await self.cancel_number(verification_id)
+    
+    async def get_country_pricing(self, country: str, service_name: str = "telegram") -> Dict[str, Any]:
+        """Get pricing information for a specific country and service."""
+        multiplier = self._get_country_multiplier(country)
+        voice_supported = self._is_voice_supported(country)
+        
+        # Base service price (using telegram as default)
+        base_price = 0.75
+        country_price = base_price * multiplier
+        voice_price = country_price + 0.30 if voice_supported else None
+        
+        return {
+            "country": country,
+            "base_price": country_price,
+            "voice_price": voice_price,
+            "voice_supported": voice_supported,
+            "multiplier": multiplier,
+            "tier": "Premium" if multiplier >= 1.2 else "Standard" if multiplier >= 0.8 else "Economy"
+        }
     
     async def get_countries(self) -> Dict[str, Any]:
         """Get available countries."""
-        if not self.use_mock:
-            result = await textverified_client.make_request("GetCountries")
-            if "error" not in result:
-                return result
-        return await self._mock_response("GetCountries", {})
+        return await textverified_client.make_request("GetCountries")
     
     async def poll_for_code(self, number_id: str, verification_type: str = "sms", max_attempts: int = 30) -> Dict[str, Any]:
         """Poll for verification code with exponential backoff."""
@@ -337,7 +150,7 @@ class TextVerifiedService:
         return {"success": False, "error": "Timeout waiting for verification code", "attempts": max_attempts}
     
     async def create_verification(self, service_name: str, country: str = "US", capability: str = "sms") -> Dict[str, Any]:
-        """Create verification by getting a phone number."""
+        """Create verification by getting a phone number with country-specific pricing."""
         # Comprehensive service mapping for 1,800+ services
         service_mapping = {
             "telegram": {"id": 1, "price": 0.75}, "whatsapp": {"id": 2, "price": 0.75}, 
@@ -366,9 +179,17 @@ class TextVerifiedService:
         if not service_info:
             return {"error": f"Service {service_name} not supported"}
         
-        # Calculate cost with voice premium
-        base_cost = service_info["price"]
-        total_cost = base_cost + (0.30 if capability == "voice" else 0)
+        # Get country multiplier from TextVerified assessment data
+        country_multiplier = self._get_country_multiplier(country)
+        
+        # Calculate cost with country multiplier and voice premium
+        base_cost = service_info["price"] * country_multiplier
+        voice_premium = 0.30 if capability == "voice" else 0
+        total_cost = base_cost + voice_premium
+        
+        # Validate voice capability for country
+        if capability == "voice" and not self._is_voice_supported(country):
+            return {"error": f"Voice verification not supported in {country}"}
         
         # Get phone number from TextVerified
         number_result = await self.get_number(service_info["id"], country, voice=(capability == "voice"))
@@ -381,5 +202,42 @@ class TextVerifiedService:
             "number_id": number_result.get("id"),
             "service_id": service_info["id"],
             "capability": capability,
-            "cost": total_cost
+            "cost": total_cost,
+            "country": country,
+            "country_multiplier": country_multiplier
         }
+    
+    def _get_country_multiplier(self, country_code: str) -> float:
+        """Get price multiplier for country based on TextVerified assessment."""
+        country_multipliers = {
+            # Premium Tier (1.2x - 1.8x)
+            "CH": 1.8, "IS": 1.7, "NO": 1.6, "SE": 1.5, "JP": 1.5,
+            "AU": 1.4, "DK": 1.4, "FI": 1.3, "SG": 1.3, "LU": 1.2, "KR": 1.2,
+            
+            # Standard Tier (0.8x - 1.1x)
+            "CA": 1.1, "US": 1.0, "GB": 1.0, "DE": 1.0, "FR": 1.0, "NL": 1.0,
+            "AT": 1.0, "BE": 1.0, "IE": 1.0, "HK": 1.0, "IL": 1.0,
+            "IT": 0.9, "ES": 0.9, "MT": 0.9, "PT": 0.8, "CY": 0.8, "AE": 0.8, "CN": 0.8,
+            
+            # Economy Tier (0.2x - 0.7x)
+            "SI": 0.7, "KW": 0.7, "BH": 0.7, "PL": 0.6, "CZ": 0.6, "HU": 0.6,
+            "HR": 0.6, "SK": 0.6, "SA": 0.6, "OM": 0.6, "RO": 0.5, "BG": 0.5,
+            "LT": 0.5, "LV": 0.5, "EE": 0.5, "RU": 0.5, "TR": 0.5, "ZA": 0.5,
+            "JO": 0.5, "LB": 0.5, "MY": 0.5, "MX": 0.4, "BR": 0.4, "CL": 0.4,
+            "UY": 0.4, "TH": 0.4, "EG": 0.4, "MA": 0.4, "TN": 0.4, "DZ": 0.4,
+            "UA": 0.4, "BY": 0.4, "KZ": 0.4, "IQ": 0.4, "AR": 0.3, "CO": 0.3,
+            "PE": 0.3, "PY": 0.3, "BO": 0.3, "EC": 0.3, "VE": 0.3, "PH": 0.3,
+            "ID": 0.3, "VN": 0.3, "NG": 0.3, "KE": 0.3, "GH": 0.3, "UZ": 0.3,
+            "IN": 0.2, "BD": 0.2, "PK": 0.2, "LK": 0.2, "NP": 0.2
+        }
+        
+        return country_multipliers.get(country_code, 1.0)  # Default to 1.0x
+    
+    def _is_voice_supported(self, country_code: str) -> bool:
+        """Check if voice verification is supported in country."""
+        voice_supported_countries = {
+            "US", "CA", "GB", "DE", "FR", "AU", "NL", "SE", "NO", "DK", "FI",
+            "CH", "AT", "BE", "IT", "ES", "IE", "JP", "KR", "SG", "HK", "AE",
+            "SA", "IL", "BR", "RU", "PL", "CZ", "HU", "ZA", "TR"
+        }
+        return country_code in voice_supported_countries
