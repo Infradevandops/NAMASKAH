@@ -407,6 +407,37 @@
                     <!-- Verification cards will be populated here -->
                 </div>
             </div>
+            
+            <!-- Account Section -->
+            <div id="account-section" class="section" style="display: none;">
+                <h2 class="section-title">Account Management</h2>
+                
+                <div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                    <h3>💳 Add Credits</h3>
+                    <div class="create-form">
+                        <div class="form-group">
+                            <label>Amount (USD)</label>
+                            <select id="credit-amount">
+                                <option value="10">$10 - 5 Credits</option>
+                                <option value="25">$25 - 12.5 Credits</option>
+                                <option value="50">$50 - 25 Credits</option>
+                                <option value="100">$100 - 50 Credits</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="initializePayment()">
+                        <span id="payment-btn-text">Add Credits via Paystack</span>
+                        <span id="payment-loading" class="loading" style="display: none;"></span>
+                    </button>
+                </div>
+                
+                <div style="background: white; padding: 20px; border-radius: 12px;">
+                    <h3>📋 Transaction History</h3>
+                    <div id="transaction-history">
+                        <p style="color: #6b7280;">Loading transactions...</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -633,6 +664,79 @@
             }, 10000); // Poll every 10 seconds as fallback
         }
         
+        // Initialize payment
+        async function initializePayment() {
+            const amount = parseFloat(document.getElementById('credit-amount').value);
+            const paymentBtn = document.getElementById('payment-btn-text');
+            const loading = document.getElementById('payment-loading');
+            
+            paymentBtn.style.display = 'none';
+            loading.style.display = 'inline-block';
+            
+            try {
+                const response = await fetch('/wallet/paystack/initialize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ amount_usd: amount })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    // Redirect to Paystack payment page
+                    window.open(data.authorization_url, '_blank');
+                } else {
+                    const error = await response.json();
+                    alert(`Payment failed: ${error.detail || error.message}`);
+                }
+            } catch (error) {
+                alert('Payment initialization failed. Please try again.');
+            } finally {
+                paymentBtn.style.display = 'inline-block';
+                loading.style.display = 'none';
+            }
+        }
+        
+        // Load transaction history
+        async function loadTransactionHistory() {
+            try {
+                const response = await fetch('/wallet/transactions', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    displayTransactionHistory(data.transactions);
+                }
+            } catch (error) {
+                console.error('Failed to load transactions:', error);
+            }
+        }
+        
+        // Display transaction history
+        function displayTransactionHistory(transactions) {
+            const container = document.getElementById('transaction-history');
+            
+            if (!transactions || transactions.length === 0) {
+                container.innerHTML = '<p style="color: #6b7280;">No transactions found</p>';
+                return;
+            }
+            
+            container.innerHTML = transactions.slice(0, 10).map(tx => `
+                <div style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #e5e7eb;">
+                    <div>
+                        <div style="font-weight: 600;">${tx.description}</div>
+                        <div style="font-size: 12px; color: #6b7280;">${new Date(tx.created_at).toLocaleDateString()}</div>
+                    </div>
+                    <div style="font-weight: 600; color: ${tx.type === 'credit' ? '#10b981' : '#ef4444'};">
+                        ${tx.type === 'credit' ? '+' : '-'}$${Math.abs(tx.amount).toFixed(2)}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
         // Show section
         function showSection(section) {
             // Update nav
@@ -641,9 +745,22 @@
             });
             event.target.classList.add('active');
             
-            // Show appropriate content
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(s => {
+                s.style.display = 'none';
+            });
+            
+            // Show selected section
+            const sectionElement = document.getElementById(`${section}-section`);
+            if (sectionElement) {
+                sectionElement.style.display = 'block';
+            }
+            
+            // Load section-specific content
             if (section === 'active') {
                 loadActiveVerifications();
+            } else if (section === 'account') {
+                loadTransactionHistory();
             }
         }
         
