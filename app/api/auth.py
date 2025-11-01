@@ -42,11 +42,10 @@ async def register(
         await notification_service.send_email(
             to_email=new_user.email,
             subject="Welcome to Namaskah SMS!",
-            body=f"""<h2>Welcome to Namaskah SMS!</h2>
-            <p>Your account has been created successfully.</p>
-            <p>You have {new_user.free_verifications} free verification(s) to get started.</p>
-            <p><a href="/app">Start Using Namaskah SMS</a></p>
-            """
+            body=f"<h2>Welcome to Namaskah SMS!</h2>" + \
+                 f"<p>Your account has been created successfully.</p>" + \
+                 f"<p>You have {new_user.free_verifications} free verification(s) to get started.</p>" + \
+                 f"<p><a href='/app'>Start Using Namaskah SMS</a></p>"
         )
         
         return TokenResponse(

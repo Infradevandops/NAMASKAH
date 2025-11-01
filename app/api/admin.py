@@ -1,10 +1,9 @@
 """Admin API router for user management and system monitoring."""
 from typing import List, Optional
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 
 from app.core.database import get_db
 from app.core.dependencies import get_admin_user_id
@@ -13,8 +12,7 @@ from app.models.verification import Verification
 from app.models.transaction import Transaction
 from app.models.system import SupportTicket
 from app.schemas import (
-    UserResponse, SuccessResponse, SupportTicketResponse,
-    PaginationResponse, AnalyticsResponse
+    UserResponse, SuccessResponse, SupportTicketResponse
 )
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -245,16 +243,15 @@ async def respond_to_ticket(
     await notification_service.send_email(
         to_email=ticket.email,
         subject=f"Re: Support Request #{ticket.id} - Namaskah SMS",
-        body=f"""<h2>Support Response</h2>
-        <p>Hi {ticket.name},</p>
-        <p>We've reviewed your support request regarding <strong>{ticket.category}</strong>.</p>
-        <p><strong>Your Message:</strong></p>
-        <p>{ticket.message}</p>
-        <p><strong>Our Response:</strong></p>
-        <p>{response_text}</p>
-        <p>If you need further assistance, please reply to this email.</p>
-        <p>Best regards,<br>Namaskah Support Team</p>
-        """
+        body=f"<h2>Support Response</h2>" + \
+             f"<p>Hi {ticket.name},</p>" + \
+             f"<p>We've reviewed your support request regarding <strong>{ticket.category}</strong>.</p>" + \
+             f"<p><strong>Your Message:</strong></p>" + \
+             f"<p>{ticket.message}</p>" + \
+             f"<p><strong>Our Response:</strong></p>" + \
+             f"<p>{response_text}</p>" + \
+             f"<p>If you need further assistance, please reply to this email.</p>" + \
+             f"<p>Best regards,<br>Namaskah Support Team</p>"
     )
     
     return SuccessResponse(message="Response sent successfully")
@@ -440,10 +437,9 @@ async def broadcast_notification(
             await notification_service.send_email(
                 to_email=user.email,
                 subject=title,
-                body=f"""<h2>{title}</h2>
-                <p>{message}</p>
-                <p>Best regards,<br>Namaskah Team</p>
-                """
+                body=f"<h2>{title}</h2>" + \
+                     f"<p>{message}</p>" + \
+                     f"<p>Best regards,<br>Namaskah Team</p>"
             )
             sent_count += 1
         except Exception:
