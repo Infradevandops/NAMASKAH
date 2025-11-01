@@ -115,15 +115,15 @@ class SecretsManager:
         timestamp = secrets.token_hex(8)
         env_content = f"# Generated environment file for {environment}\n" + \
                      f"# Generated on: {timestamp}\n" + \
-                     f"# \n" + \
-                     f"# IMPORTANT: Keep this file secure and never commit to version control\n\n" + \
+                     "# \n" + \
+                     "# IMPORTANT: Keep this file secure and never commit to version control\n\n" + \
                      f"ENVIRONMENT={environment}\n" + \
                      f"SECRET_KEY={keys['SECRET_KEY']}\n" + \
                      f"JWT_SECRET_KEY={keys['JWT_SECRET_KEY']}\n\n" + \
-                     f"# Add your other environment-specific variables below:\n" + \
-                     f"# DATABASE_URL=your-database-url\n" + \
-                     f"# TEXTVERIFIED_API_KEY=your-api-key\n" + \
-                     f"# PAYSTACK_SECRET_KEY=your-paystack-key\n"
+                     "# Add your other environment-specific variables below:\n" + \
+                     "# DATABASE_URL=your-database-url\n" + \
+                     "# TEXTVERIFIED_API_KEY=your-api-key\n" + \
+                     "# PAYSTACK_SECRET_KEY=your-paystack-key\n"
         
         Path(output_path).write_text(env_content)
         return output_path
