@@ -305,6 +305,21 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .notification {
+            animation: slideIn 0.3s ease;
+        }
     </style>
 </head>
 <body>
@@ -380,10 +395,7 @@
                     <div class="form-group">
                         <label>Country</label>
                         <select id="country-select">
-                            <option value="US">United States</option>
-                            <option value="UK">United Kingdom</option>
-                            <option value="CA">Canada</option>
-                            <option value="NG">Nigeria</option>
+                            <option value="">Loading countries...</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -454,10 +466,72 @@
                 return;
             }
             
+            loadCountries();
             loadUserBalance();
             loadActiveVerifications();
             startPolling();
         });
+        
+        // Load countries from API
+        async function loadCountries() {
+            try {
+                const response = await fetch('/countries/popular');
+                if (response.ok) {
+                    const data = await response.json();
+                    populateCountrySelect(data.countries);
+                } else {
+                    // Fallback to basic countries
+                    populateCountrySelect([
+                        {code: 'US', name: 'United States', voice_supported: true},
+                        {code: 'GB', name: 'United Kingdom', voice_supported: true},
+                        {code: 'CA', name: 'Canada', voice_supported: true},
+                        {code: 'DE', name: 'Germany', voice_supported: true}
+                    ]);
+                }
+            } catch (error) {
+                console.error('Failed to load countries:', error);
+                // Fallback countries
+                populateCountrySelect([
+                    {code: 'US', name: 'United States', voice_supported: true},
+                    {code: 'GB', name: 'United Kingdom', voice_supported: true}
+                ]);
+            }
+        }
+        
+        // Populate country select dropdown
+        function populateCountrySelect(countries) {
+            const select = document.getElementById('country-select');
+            select.innerHTML = '<option value="">Select a country...</option>';
+            
+            countries.forEach(country => {
+                const option = document.createElement('option');
+                option.value = country.code;
+                option.textContent = `${country.name} ${country.voice_supported ? '(Voice Available)' : '(SMS Only)'}`;
+                option.dataset.voiceSupported = country.voice_supported;
+                select.appendChild(option);
+            });
+            
+            // Update voice capability when country changes
+            select.addEventListener('change', updateVoiceCapability);
+        }
+        
+        // Update voice capability based on selected country
+        function updateVoiceCapability() {
+            const countrySelect = document.getElementById('country-select');
+            const capabilitySelect = document.getElementById('capability-select');
+            const selectedOption = countrySelect.options[countrySelect.selectedIndex];
+            
+            if (selectedOption && selectedOption.dataset.voiceSupported === 'false') {
+                // Disable voice option for countries that don't support it
+                capabilitySelect.innerHTML = '<option value="sms">SMS</option>';
+            } else {
+                // Enable both options
+                capabilitySelect.innerHTML = `
+                    <option value="sms">SMS</option>
+                    <option value="voice">Voice Call</option>
+                `;
+            }
+        }
         
         // Load user balance
         async function loadUserBalance() {
@@ -481,6 +555,16 @@
             const country = document.getElementById('country-select').value;
             const capability = document.getElementById('capability-select').value;
             
+            // Validation
+            if (!service) {
+                alert('Please select a service');
+                return;
+            }
+            if (!country) {
+                alert('Please select a country');
+                return;
+            }
+            
             const createBtn = document.getElementById('create-btn-text');
             const loading = document.getElementById('create-loading');
             
@@ -496,31 +580,92 @@
                     },
                     body: JSON.stringify({
                         service_name: service,
-                        capability: capability,
-                        country: country
+                        country: country,
+                        capability: capability
                     })
                 });
                 
+                const responseData = await response.json();
+                
                 if (response.ok) {
-                    const verification = await response.json();
-                    activeVerifications.push(verification);
+                    activeVerifications.push(responseData);
                     
                     // Connect WebSocket for real-time updates
-                    connectWebSocket(verification.id);
+                    connectWebSocket(responseData.id);
                     
                     renderVerifications();
                     showSection('active');
                     loadUserBalance(); // Refresh balance
+                    
+                    // Show success message
+                    showNotification('Verification created successfully!', 'success');
                 } else {
-                    const error = await response.json();
-                    alert(`Failed to create verification: ${error.detail || 'Unknown error'}`);
+                    // Handle specific error cases
+                    let errorMessage = 'Unknown error';
+                    if (responseData.detail) {
+                        errorMessage = responseData.detail;
+                    } else if (responseData.message) {
+                        errorMessage = responseData.message;
+                    } else if (response.status === 402) {
+                        errorMessage = 'Insufficient credits. Please add credits to your account.';
+                    } else if (response.status === 401) {
+                        errorMessage = 'Authentication failed. Please login again.';
+                        logout();
+                        return;
+                    } else if (response.status === 503) {
+                        errorMessage = 'Service temporarily unavailable. Please try again later.';
+                    }
+                    
+                    showNotification(`Failed to create verification: ${errorMessage}`, 'error');
                 }
             } catch (error) {
-                alert('Network error. Please try again.');
+                console.error('Network error:', error);
+                showNotification('Network error. Please check your connection and try again.', 'error');
             } finally {
                 createBtn.style.display = 'inline-block';
                 loading.style.display = 'none';
             }
+        }
+        
+        // Show notification
+        function showNotification(message, type = 'info') {
+            // Remove existing notifications
+            const existing = document.querySelector('.notification');
+            if (existing) existing.remove();
+            
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 16px 20px;
+                border-radius: 8px;
+                color: white;
+                font-weight: 600;
+                z-index: 1000;
+                max-width: 400px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                animation: slideIn 0.3s ease;
+            `;
+            
+            if (type === 'success') {
+                notification.style.background = '#10b981';
+            } else if (type === 'error') {
+                notification.style.background = '#ef4444';
+            } else {
+                notification.style.background = '#3b82f6';
+            }
+            
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
         }
         
         // Load active verifications
@@ -626,19 +771,29 @@
         
         // WebSocket connection for real-time updates
         function connectWebSocket(verificationId) {
-            const ws = new WebSocket(`wss://namaskahsms.onrender.com/ws/verification/${verificationId}`);
-            
-            ws.onmessage = function(event) {
-                const update = JSON.parse(event.data);
-                updateVerificationStatus(verificationId, update);
-            };
-            
-            ws.onerror = function() {
-                // Fallback to polling if WebSocket fails
+            try {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const host = window.location.host;
+                const ws = new WebSocket(`${protocol}//${host}/ws/verification/${verificationId}`);
+                
+                ws.onmessage = function(event) {
+                    const update = JSON.parse(event.data);
+                    updateVerificationStatus(verificationId, update);
+                };
+                
+                ws.onerror = function() {
+                    console.log('WebSocket failed, using polling fallback');
+                    // Fallback to polling if WebSocket fails
+                    setTimeout(() => refreshMessages(verificationId), 5000);
+                };
+                
+                return ws;
+            } catch (error) {
+                console.log('WebSocket not available, using polling');
+                // Fallback to polling
                 setTimeout(() => refreshMessages(verificationId), 5000);
-            };
-            
-            return ws;
+                return null;
+            }
         }
         
         // Update verification status from WebSocket

@@ -10,6 +10,7 @@ class Verification(BaseModel):
     user_id = Column(String, nullable=False, index=True)
     service_name = Column(String, nullable=False, index=True)
     phone_number = Column(String)
+    country = Column(String, default="US", nullable=False)
     capability = Column(String, default="sms", nullable=False)
     status = Column(String, default="pending", nullable=False, index=True)
     verification_code = Column(String)

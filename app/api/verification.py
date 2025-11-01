@@ -28,10 +28,25 @@ async def get_available_services():
         textverified = TextVerifiedService()
         result = await textverified.get_services()
         return result
+    except ValueError as e:
+        # Return fallback services if API key issues
+        return {
+            "services": [
+                {"name": "telegram", "price": 0.75, "voice_supported": True},
+                {"name": "whatsapp", "price": 0.75, "voice_supported": True},
+                {"name": "discord", "price": 0.75, "voice_supported": True},
+                {"name": "google", "price": 0.75, "voice_supported": True},
+                {"name": "instagram", "price": 1.00, "voice_supported": True},
+                {"name": "twitter", "price": 1.00, "voice_supported": True}
+            ]
+        }
     except Exception as e:
         return {
             "error": f"Failed to fetch services: {str(e)}",
-            "services": []
+            "services": [
+                {"name": "telegram", "price": 0.75, "voice_supported": True},
+                {"name": "whatsapp", "price": 0.75, "voice_supported": True}
+            ]
         }
 
 
@@ -58,16 +73,25 @@ async def create_verification(
     if not current_user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Get service pricing
-    textverified = TextVerifiedService()
-    verification_result = await textverified.create_verification(
-        verification_data.service_name, 
-        country,
-        capability
-    )
-    
-    if "error" in verification_result:
-        raise HTTPException(status_code=400, detail=verification_result["error"])
+    # Get service pricing with error handling
+    try:
+        textverified = TextVerifiedService()
+        verification_result = await textverified.create_verification(
+            verification_data.service_name, 
+            country,
+            capability
+        )
+        
+        if "error" in verification_result:
+            raise HTTPException(status_code=400, detail=verification_result["error"])
+            
+    except ValueError as e:
+        # Handle API key issues
+        if "API key" in str(e):
+            raise HTTPException(status_code=503, detail="Service temporarily unavailable. Please try again later.")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"External service error: {str(e)}")
     
     cost = verification_result["cost"]
     
@@ -96,6 +120,9 @@ async def create_verification(
     
     # Store TextVerified number_id for polling
     verification.verification_code = number_id
+    
+    # Store country information
+    verification.country = country
     
     # Store additional metadata for voice verifications
     if capability == "voice":
