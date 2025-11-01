@@ -6,7 +6,7 @@ from app.core.config import settings
 class TextVerifiedService:
     def __init__(self):
         self.api_key = settings.textverified_api_key
-        self.base_url = "https://api.textverified.com"  # Updated endpoint
+        self.base_url = "https://www.textverified.com/api"
         
     async def get_services(self) -> Dict[str, Any]:
         """Get available services from TextVerified."""
@@ -28,7 +28,7 @@ class TextVerifiedService:
             try:
                 response = await client.get(
                     f"{self.base_url}/Services",
-                    params={"bearer": self.api_key},
+                    headers={"Authorization": f"Bearer {self.api_key}"},
                     timeout=15
                 )
                 if response.status_code == 200:
@@ -43,8 +43,8 @@ class TextVerifiedService:
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f"{self.base_url}/GetNumber",
+                headers={"Authorization": f"Bearer {self.api_key}"},
                 params={
-                    "bearer": self.api_key,
                     "service_id": service_id,
                     "country": country
                 }
@@ -56,8 +56,8 @@ class TextVerifiedService:
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f"{self.base_url}/GetSMS",
+                headers={"Authorization": f"Bearer {self.api_key}"},
                 params={
-                    "bearer": self.api_key,
                     "number_id": number_id
                 }
             )
@@ -68,8 +68,8 @@ class TextVerifiedService:
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f"{self.base_url}/CancelNumber",
+                headers={"Authorization": f"Bearer {self.api_key}"},
                 params={
-                    "bearer": self.api_key,
                     "number_id": number_id
                 }
             )
