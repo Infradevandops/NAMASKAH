@@ -13,6 +13,7 @@ from app.core.logging import setup_logging, get_logger
 from app.api.admin import router as admin_router
 from app.api.analytics import router as analytics_router
 from app.api.system import router as system_router, root_router
+from fastapi.responses import HTMLResponse
 from app.api.auth import router as auth_router
 from app.api.verification import router as verification_router
 from app.api.wallet import router as wallet_router
@@ -67,6 +68,12 @@ def create_app() -> FastAPI:
     
     # Static files and templates
     fastapi_app.mount("/static", StaticFiles(directory="static"), name="static")
+    
+    # Add verification page route
+    @fastapi_app.get("/verification", response_class=HTMLResponse)
+    async def verification_page():
+        with open("templates/verification.html", "r") as f:
+            return HTMLResponse(content=f.read())
     
     # Startup and shutdown events
     @fastapi_app.on_event("startup")
