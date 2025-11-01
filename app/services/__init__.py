@@ -22,8 +22,8 @@ class ServiceFactory:
     @staticmethod
     def get_textverified_service():
         """Get or create TextVerifiedService instance."""
-        # Placeholder - TextVerifiedService not implemented yet
-        return None
+        from app.services.textverified_service import TextVerifiedService
+        return TextVerifiedService()
     
     def get_payment_service(self) -> PaymentService:
         """Get or create PaymentService instance."""
@@ -56,10 +56,10 @@ def get_auth_service(db: Session) -> AuthService:
     return AuthService(db)
 
 
-def get_textverified_service(db_session: Session):
+def get_textverified_service():
     """Get TextVerifiedService instance."""
-    # Placeholder - TextVerifiedService not implemented yet
-    return None
+    from app.services.textverified_service import TextVerifiedService
+    return TextVerifiedService()
 
 
 def get_payment_service(db: Session) -> PaymentService:

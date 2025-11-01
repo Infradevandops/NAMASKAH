@@ -129,6 +129,7 @@ class MetricsCollector:
             
         except Exception as e:
             logger.error("Failed to update system metrics", error=str(e))
+            # Continue execution instead of raising
     
     def get_application_metrics(self) -> Dict[str, Any]:
         """Get application-specific metrics."""

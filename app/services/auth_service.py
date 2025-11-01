@@ -1,9 +1,7 @@
 """Authentication service for user management and JWT operations."""
 from typing import Optional, Dict, Any
 from datetime import timedelta
-from sqlalchemy import text
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
 
 from app.models.user import User, APIKey
 from app.services.base import BaseService
@@ -90,7 +88,7 @@ class AuthService(BaseService[User]):
         """Verify API key and return associated user."""
         api_key = self.db.query(APIKey).filter(
             APIKey.key == key,
-            APIKey.is_active == True
+            APIKey.is_active.is_(True)
         ).first()
         
         if not api_key:

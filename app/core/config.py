@@ -2,9 +2,9 @@
 from typing import Optional
 try:
     from pydantic_settings import BaseSettings
+    from pydantic import field_validator
 except ImportError:
-    from pydantic import BaseSettings
-from pydantic import validator
+    from pydantic import BaseSettings, validator as field_validator
 
 
 class Settings(BaseSettings):
@@ -74,32 +74,32 @@ class Settings(BaseSettings):
     ssl_cert_path: Optional[str] = None
     ssl_key_path: Optional[str] = None
     
-    @validator('secret_key', 'jwt_secret_key')
-    @staticmethod
-    def validate_key_length(value):
+    @field_validator('secret_key', 'jwt_secret_key')
+    @classmethod
+    def validate_key_length(cls, value):
         """Validate secret keys are at least 32 characters."""
         if value and len(value) < 32:
             raise ValueError('Secret keys must be at least 32 characters long')
         return value
     
-    @validator('database_url')
-    @staticmethod
-    def validate_database_url(value, values=None):
+    @field_validator('database_url')
+    @classmethod
+    def validate_database_url(cls, value, info=None):
         """Validate database URL format."""
         if not value:
             raise ValueError('Database URL is required')
         
-        # Check for production database requirements (skip if values not available)
-        if values:
-            environment = values.get('environment', 'development')
+        # Check for production database requirements
+        if info and hasattr(info, 'data'):
+            environment = info.data.get('environment', 'development')
             if value.startswith('sqlite://') and environment == 'production':
                 raise ValueError('SQLite is not recommended for production. Use PostgreSQL.')
         
         return value
     
-    @validator('base_url')
-    @staticmethod
-    def validate_base_url(value):
+    @field_validator('base_url')
+    @classmethod
+    def validate_base_url(cls, value):
         """Validate base URL format."""
         if not value.startswith(('http://', 'https://')):
             raise ValueError('Base URL must start with http:// or https://')

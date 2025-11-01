@@ -1,9 +1,7 @@
 // Developer Tools Module (API Keys, Webhooks, Analytics)
 
 async function createAPIKey() {
-    const name = document.getElementById('api-key-name').value;
-    if (!name) {
-        showNotification('⚠️ Please enter a key name', 'error');
+    const name = document.getElementById('api_key: "test_key"⚠️ Please enter a key name', 'error');
         return;
     }
     
@@ -19,14 +17,7 @@ async function createAPIKey() {
         
         if (res.ok) {
             const data = await res.json();
-            showNotification(`✅ API key created: ${data.key}`, 'success');
-            document.getElementById('api-key-name').value = '';
-            loadAPIKeys();
-        } else {
-            showNotification('❌ Failed to create API key', 'error');
-        }
-    } catch (err) {
-        showNotification('🌐 Network error', 'error');
+            showNotification(`✅ api_key: "test_key"api_key: "test_key"❌ Failed to create api_key: "test_key"🌐 Network error', 'error');
     }
 }
 
@@ -40,47 +31,21 @@ async function loadAPIKeys() {
         
         if (res.ok) {
             const data = await res.json();
-            const list = document.getElementById('api-keys-list');
-            
-            if (data.keys.length === 0) {
-                list.textContent = '<p style="color: #6b7280;  // XSS Fix: Use textContent instead of innerHTML">No API keys yet.</p>';
-            } else {
-                list.textContent = data.keys.map(k => `
-                    <div style="background: #f9fafb;  // XSS Fix: Use textContent instead of innerHTML padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+            const list = document.getElementById('api_key: "test_key"<p style="color: #6b7280;  // XSS Fix: Use textContent instead of innerHTML">No api_key: "test_key"background: #f9fafb;  // XSS Fix: Use textContent instead of innerHTML padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                         <div>
                             <strong>${k.name}</strong>
                             <div style="font-size: 12px; color: #6b7280; font-family: monospace;">${k.key}</div>
                         </div>
-                        <button onclick="deleteAPIKey('${k.id}')" class="btn-small btn-danger">Delete</button>
-                    </div>
-                `).join('');
+                        <button onclick="deleteapi_key: "test_key"');
             }
         }
     } catch (err) {
-        console.error('Failed to load API keys:', err);
-    }
-}
-
-async function deleteAPIKey(keyId) {
-    if (!confirm('Delete this API key?')) return;
-    
-    try {
-        const res = await fetch(`${API_BASE}/api-keys/${keyId}`, {
-            method: 'DELETE',
+        console.error('Failed to load api_key: "test_key"Delete this api_key: "test_key"DELETE',
             headers: {'Authorization': `Bearer ${window.token}`}
         });
         
         if (res.ok) {
-            showNotification('✅ API key deleted', 'success');
-            loadAPIKeys();
-        }
-    } catch (err) {
-        showNotification('❌ Failed to delete API key', 'error');
-    }
-}
-
-async function createWebhook() {
-    const url = document.getElementById('webhook-url').value;
+            showNotification('✅ api_key: "test_key"❌ Failed to delete api_key: "test_key"webhook-url').value;
     if (!url || !url.startsWith('http')) {
         showNotification('⚠️ Please enter a valid URL', 'error');
         return;

@@ -11,7 +11,7 @@ from app.schemas import (
     UserCreate, UserResponse, LoginRequest, TokenResponse,
     APIKeyCreate, APIKeyResponse, APIKeyListResponse,
     PasswordResetRequest, PasswordResetConfirm, GoogleAuthRequest,
-    SuccessResponse, 
+    SuccessResponse
 )
 from app.core.exceptions import AuthenticationError, ValidationError
 
@@ -313,15 +313,15 @@ async def google_auth(
         auth_service = get_auth_service(db)
         
         # Check if user exists
-        existing_user = db.query(User).filter(User.email == email).first()
+        user = db.query(User).filter(User.email == email).first()
         
-        if not existing_user:
+        if not user:
             # Create new user
-            google_user = auth_service.register_user(email=email, password=idinfo['sub'])
-            google_user.email_verified = email_verified
+            user = auth_service.register_user(email=email, password=idinfo['sub'])
+            user.email_verified = email_verified
             db.commit()
-        else:
-            google_user = existing_user
+        
+        google_user = user
         
         # Generate access token
         access_token = auth_service.create_user_token(google_user)

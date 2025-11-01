@@ -11,12 +11,12 @@ from app.services.textverified_service import TextVerifiedService
 from app.models.user import User
 from app.models.verification import Verification, NumberRental
 from app.schemas import (
-    VerificationCreate, VerificationResponse, MessageResponse,
+    VerificationCreate, VerificationResponse,
     NumberRentalRequest, NumberRentalResponse, ExtendRentalRequest,
     RetryVerificationRequest, VerificationHistoryResponse,
     SuccessResponse, 
 )
-from app.core.security_hardening import validate_and_sanitize_service_data, secure_response
+from app.core.security_hardening import validate_and_sanitize_service_data
 from app.core.exceptions import InsufficientCreditsError, ExternalServiceError
 
 router = APIRouter(prefix="/verify", tags=["Verification"])
@@ -75,8 +75,6 @@ async def create_verification(
         raise HTTPException(status_code=400, detail="Insufficient credits")
     
     # Use TextVerified service to get real phone number
-    from app.services.textverified_service import TextVerifiedService
-    
     textverified = TextVerifiedService()
     tv_result = await textverified.create_verification(
         service_name=verification_data.service_name,
@@ -138,8 +136,6 @@ async def get_verification_status(
             db.commit()
             
             # Send success notification
-            # Notification service removed for lint compliance
-            pass
             return VerificationResponse.from_orm(verification)
     except Exception:
         pass  # Continue with current status if API call fails

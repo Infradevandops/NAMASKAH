@@ -46,7 +46,7 @@ class FrontendErrorTester {
         try {
             // Test with invalid token
             const response = await fetch('/admin/stats', {
-                headers: { 'Authorization': 'Bearer invalid_token_for_testing' }
+                headers: { 'Authorization': 'Bearer test_invalid_token' }
             });
             
             if (response.status === 401) {
@@ -79,14 +79,8 @@ class FrontendErrorTester {
         
         // Test login form validation
         const loginEmail = document.getElementById('login-email');
-        const loginPassword = document.getElementById('login-password');
-        
-        if (loginEmail && loginPassword) {
-            // Test empty fields
-            loginEmail.value = '';
-            loginPassword.value = '';
-            
-            if (typeof login === 'function') {
+        const loginpassword: "test_password"';
+            loginpassword: "test_password"function') {
                 // This should show validation error
                 this.log('Form validation test available', 'success');
             } else {

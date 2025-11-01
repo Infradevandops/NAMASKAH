@@ -331,7 +331,7 @@ def get_system_health(
     
     # User statistics
     total_users = db.query(User).count()
-    active_users = db.query(User).filter(User.is_active == True).count()
+    active_users = db.query(User).filter(User.is_active.is_(True)).count()
     
     # Verification statistics
     total_verifications = db.query(Verification).count()
@@ -423,7 +423,7 @@ async def broadcast_notification(
     if target_users:
         users = db.query(User).filter(User.id.in_(target_users)).all()
     else:
-        users = db.query(User).filter(User.is_active == True).all()
+        users = db.query(User).filter(User.is_active.is_(True)).all()
     
     if not users:
         raise HTTPException(status_code=404, detail="No target users found")

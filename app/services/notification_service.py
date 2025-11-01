@@ -58,7 +58,7 @@ class NotificationService(BaseService[InAppNotification]):
         """Send webhook notifications to user's configured endpoints."""
         webhooks = self.db.query(Webhook).filter(
             Webhook.user_id == user_id,
-            Webhook.is_active == True
+            Webhook.is_active.is_(True)
         ).all()
         
         results = []

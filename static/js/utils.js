@@ -30,22 +30,7 @@ class Utils {
 
     validatePassword(password) {
         if (!password || password.length < 6) {
-            return { valid: false, message: 'Password must be at least 6 characters' };
-        }
-        if (password.length > 128) {
-            return { valid: false, message: 'Password is too long' };
-        }
-        
-        const weakPasswords = ['123456', 'password', '123456789', 'qwerty', 'abc123'];
-        if (weakPasswords.includes(password.toLowerCase())) {
-            return { valid: false, message: 'Password is too weak' };
-        }
-        
-        return { valid: true };
-    }
-
-    // Performance utilities
-    debounce(func, delay, key = 'default') {
+            return { valid: false, message: 'password: "test_password"password: "test_password"123456', 'password: "test_password"password: "test_password"default') {
         if (this.debounceTimers.has(key)) {
             clearTimeout(this.debounceTimers.get(key));
         }

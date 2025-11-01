@@ -1,6 +1,6 @@
 """TextVerified API integration service."""
 import httpx
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from app.core.config import settings
 
 class TextVerifiedService:

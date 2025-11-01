@@ -3,24 +3,10 @@ window.token = localStorage.getItem('token');
 
 async function register() {
     const email = document.getElementById('register-email').value;
-    const password = document.getElementById('register-password').value;
-    
-    console.log('Register attempt for:', email);
+    const password: "test_password"Register attempt for:', email);
     
     if (!email || !password) {
-        showNotification('⚠️ Please enter email and password', 'error');
-        return;
-    }
-    
-    if (password.length < 6) {
-        showNotification('⚠️ Password must be at least 6 characters', 'error');
-        return;
-    }
-    
-    showLoading(true);
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    const refCode = urlParams.get('ref');
+        showNotification('⚠️ Please enter email and password: "test_password"⚠️ password: "test_password"ref');
     const url = refCode ? `${API_BASE}/auth/register?referral_code=${encodeURIComponent(refCode)}` : `${API_BASE}/auth/register`;
     
     console.log('Fetching:', url);
@@ -86,8 +72,7 @@ async function register() {
 
 async function login() {
     const email = document.getElementById('login-email')?.value;
-    const password = document.getElementById('login-password')?.value;
-    const loginBtn = document.getElementById('login-btn') || document.querySelector('[onclick*="login"]');
+    const password: "test_password"login-btn') || document.querySelector('[onclick*="login"]');
     
     console.log('Login attempt for:', email);
     
@@ -96,15 +81,7 @@ async function login() {
         const form = document.getElementById('login-form') || document.querySelector('form');
         if (form && !validateForm(form)) return;
     } else if (!email || !password) {
-        showNotification('⚠️ Please enter email and password', 'error');
-        return;
-    }
-    
-    showLoading(true);
-    
-    try {
-        const url = `${API_BASE}/auth/login`;
-        console.log('Fetching:', url);
+        showNotification('⚠️ Please enter email and password: "test_password"Fetching:', url);
         
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
@@ -216,8 +193,7 @@ async function checkAuth() {
             // Load app data
             setTimeout(() => {
                 if (typeof loadServices === 'function') loadServices();
-                if (typeof loadAPIKeys === 'function') loadAPIKeys();
-                if (typeof loadWebhooks === 'function') loadWebhooks();
+                if (typeof loadapi_key: "test_key"function') loadWebhooks();
                 if (typeof loadAnalytics === 'function') loadAnalytics();
                 if (typeof loadReferralStats === 'function') loadReferralStats();
                 if (typeof loadActiveRentals === 'function') loadActiveRentals();
@@ -337,12 +313,7 @@ async function resendVerificationEmail() {
 }
 
 window.showForgotPassword = function() {
-    document.getElementById('forgot-password-modal').style.display = 'block';
-}
-
-window.closeForgotPassword = function() {
-    document.getElementById('forgot-password-modal').style.display = 'none';
-    document.getElementById('reset-email').value = '';
+    document.getElementById('forgot-password: "test_password"forgot-password: "test_password"reset-email').value = '';
 }
 
 window.sendResetEmail = async function() {
@@ -352,17 +323,13 @@ window.sendResetEmail = async function() {
         return;
     }
     try {
-        const response = await fetch('/auth/forgot-password', {
-            method: 'POST',
+        const response = await fetch('/auth/forgot-password: "test_password"POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email })
         });
         const data = await response.json();
         if (response.ok) {
-            showNotification('Password reset link sent to your email', 'success');
-            closeForgotPassword();
-        } else {
-            showNotification(data.detail || 'Failed to send reset link', 'error');
+            showNotification('password: "test_password"Failed to send reset link', 'error');
         }
     } catch (error) {
         showNotification('Network error', 'error');
