@@ -10,7 +10,8 @@ class TextVerifiedService:
         
     async def get_services(self) -> Dict[str, Any]:
         """Get available services from TextVerified."""
-        if not self.api_key or self.api_key in ['your_production_textverified_api_key', 'your_textverified_api_key']:
+        # Always try real API first if key exists
+        if not self.api_key:
             # Return mock services for testing when API key not configured
             return {
                 "services": [
