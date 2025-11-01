@@ -1,7 +1,7 @@
 """Countries API router for TextVerified country information."""
 from fastapi import APIRouter
 from typing import List, Dict, Any
-from app.services.textverified_service import TextVerifiedService
+
 
 router = APIRouter(prefix="/countries", tags=["Countries"])
 

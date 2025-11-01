@@ -207,7 +207,8 @@ class TextVerifiedService:
             "country_multiplier": country_multiplier
         }
     
-    def _get_country_multiplier(self, country_code: str) -> float:
+    @staticmethod
+    def _get_country_multiplier(country_code: str) -> float:
         """Get price multiplier for country based on TextVerified assessment."""
         country_multipliers = {
             # Premium Tier (1.2x - 1.8x)
@@ -233,7 +234,8 @@ class TextVerifiedService:
         
         return country_multipliers.get(country_code, 1.0)  # Default to 1.0x
     
-    def _is_voice_supported(self, country_code: str) -> bool:
+    @staticmethod
+    def _is_voice_supported(country_code: str) -> bool:
         """Check if voice verification is supported in country."""
         voice_supported_countries = {
             "US", "CA", "GB", "DE", "FR", "AU", "NL", "SE", "NO", "DK", "FI",
