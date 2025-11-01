@@ -151,7 +151,6 @@ def activate_user(
 @router.get("/stats")
 def get_platform_stats(
     admin_id: str = Depends(get_admin_user_id),
-    period: int = Query(7, description="Period in days"),
     db: Session = Depends(get_db)
 ):
     """Get platform-wide statistics (admin only)."""
@@ -287,7 +286,7 @@ async def admin_cancel_verification(
         raise HTTPException(status_code=400, detail="Already cancelled")
     
     # Cancel with TextVerified
-    textverified_service = get_textverified_service(db)
+    textverified_service = get_textverified_service()
     try:
         await textverified_service.cancel_verification(verification_id)
     except Exception:

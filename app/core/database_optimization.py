@@ -79,7 +79,7 @@ class QueryOptimizer:
         """), {"user_id": user_id}).fetchall()
 
 
-def configure_connection_pool(_engine):
+def configure_connection_pool():
     """Configure database connection pooling."""
     # Connection pool is configured in engine creation
     # This function documents the recommended settings
